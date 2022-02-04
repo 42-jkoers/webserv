@@ -1,0 +1,5 @@
+a.out
+obj/
+test.cpp
+.DS_Store
+/webserv

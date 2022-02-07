@@ -8,15 +8,15 @@
 			"name": "",
 			"type": "cppdbg",
 			"request": "launch",
-			"program": "${workspaceFolder}/exercise",
+			"program": "${workspaceFolder}/webserv",
 			"args": [],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}",
 			"environment": [],
 			"externalConsole": false,
-			"MIMode": "gdb",
+			"MIMode": "lldb",
 			"preLaunchTask": "make",
-			"miDebuggerPath": "/usr/bin/gdb"
+			// "miDebuggerPath": "/usr/local/bin/gdb"
 		}
 	]
 }

@@ -17,8 +17,8 @@ INCLUDES		= -I$(HEADERDIR)
 LINK			=
 
 OBJ_IN_DIR 		= $(BUILDDIR)/*.$(OBJEXT)
-SRC 			= $(wildcard $(SRCDIR)/*.$(SRCEXT))
-HEADERS 		= $(wildcard $(HEADERDIR)/*.$(HEADEREXT))
+SRC 			= $(shell find $(SRCDIR) -name '*.$(SRCEXT)')
+HEADERS 		= $(shell find $(HEADERDIR) -name '*.$(HEADEREXT)')
 OBJ				= $(foreach src,$(SRC),$(BUILDDIR)/$(notdir $(src:.$(SRCEXT)=.$(OBJEXT))))
 
 SILECE_MAKE 	= | grep -v -E ".*Leaving directory|.*Entering directory"

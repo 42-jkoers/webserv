@@ -1,11 +1,9 @@
+// See: https://go.microsoft.com/fwlink/?linkid=830387
 {
-	// Use IntelliSense to learn about possible attributes.
-	// Hover to view descriptions of existing attributes.
-	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"name": "",
+			"name": "osx x64",
 			"type": "cppdbg",
 			"request": "launch",
 			"program": "${workspaceFolder}/webserv",
@@ -15,8 +13,20 @@
 			"environment": [],
 			"externalConsole": false,
 			"MIMode": "lldb",
-			"preLaunchTask": "make",
-			// "miDebuggerPath": "/usr/local/bin/gdb"
-		}
+			"preLaunchTask": "make"
+		},
+		{
+			"name": "osx arm64",
+			"type": "lldb",
+			"request": "launch",
+			"program": "${workspaceFolder}/webserv",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}",
+			"environment": [],
+			"externalConsole": false,
+			"MIMode": "lldb",
+			"preLaunchTask": "make"
+		},
 	]
 }

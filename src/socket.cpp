@@ -31,7 +31,7 @@ fd_t accept_from_fd(fd_t fd, const struct sockaddr_in& address) {
 	return socket_fd;
 }
 
-bool is_end_of_http_request(const std::string& s) {
+bool is_end_of_http_request(const std::string& s) { // TODO: better?
 	if (s.size() < 4)
 		return true;
 	return strncmp(s.data() + (s.size() - 4), "\r\n\r\n", 4) == 0;

@@ -13,7 +13,7 @@ int main() {
 		fd_t		request_fd = accept_from_fd(server_fd, address);
 		std::string request_headers = read_request(request_fd);
 
-		write_response(request_fd, "Hello World!");
+		write_response(request_fd, "HTTP/1.0 200 OK\r\n\r\nHello World!");
 		close(request_fd);
 
 		std::cout << "request headers: " << std::endl;

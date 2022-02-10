@@ -12,8 +12,12 @@ int main() {
 	while (true) {
 		fd_t		request_fd = accept_from_fd(server_fd, address);
 		std::string request_headers = read_request(request_fd);
+		std::string client_address = get_client_address(address);
 
+		std::cout << "Client address:" << std::endl;
+		std::cout << client_address << std::endl << std::endl;
 		write_response(request_fd, "HTTP/1.0 200 OK\r\n\r\nHello World!");
+		
 		close(request_fd);
 
 		std::cout << "request headers: " << std::endl;

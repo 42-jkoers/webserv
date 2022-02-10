@@ -1,0 +1,32 @@
+// See: https://go.microsoft.com/fwlink/?linkid=830387
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "osx x64",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/webserv",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}",
+			"environment": [],
+			"externalConsole": false,
+			"MIMode": "lldb",
+			"preLaunchTask": "make"
+		},
+		{
+			"name": "osx arm64",
+			"type": "lldb",
+			"request": "launch",
+			"program": "${workspaceFolder}/webserv",
+			"args": [],
+			"stopAtEntry": false,
+			"cwd": "${workspaceFolder}",
+			"environment": [],
+			"externalConsole": false,
+			"MIMode": "lldb",
+			"preLaunchTask": "make"
+		},
+	]
+}

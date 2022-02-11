@@ -1,8 +1,9 @@
 #include "main.hpp"
+#include "request.hpp"
 #include <netinet/in.h>
 #include <sys/socket.h>
 
-#define PORT 8081
+#define PORT 8080
 
 int main() {
 	fd_t			   server_fd = create_socket();
@@ -13,6 +14,7 @@ int main() {
 	while (true) {
 		fd_t		request_fd = accept_from_fd(server_fd, address);
 		std::string request_headers = read_request(request_fd);
+		Request		request = parse_request(request_headers);
 		std::string client_address = get_client_address(address);
 
 		std::cout << "Client address:" << std::endl;

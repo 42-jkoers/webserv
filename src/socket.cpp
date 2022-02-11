@@ -61,7 +61,3 @@ std::string read_request(fd_t fd) {
 	} while (!is_end_of_http_request(str));
 	return str;
 }
-
-void write_response(fd_t fd, const std::string& message) {
-	write(fd, message.c_str(), message.length());
-}

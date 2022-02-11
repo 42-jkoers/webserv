@@ -21,7 +21,7 @@ void response(fd_t fd, uint32_t response_code, const std::string& message) {
 	m[502] = "Bad Gateway";
 	m[503] = "Service Unavailable";
 
-	std::string response = "HTTP/1.0 ";
+	std::string response = "HTTP/1.1 ";
 	response += cpp11::to_string(response_code);
 	response += " ";
 	response += m[response_code];

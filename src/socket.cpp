@@ -11,7 +11,6 @@ fd_t create_socket() {
 }
 
 void listen_on_socket(fd_t fd, unsigned int port, struct sockaddr_in& address) {
-
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;
 	address.sin_port = htons(port);
@@ -19,7 +18,7 @@ void listen_on_socket(fd_t fd, unsigned int port, struct sockaddr_in& address) {
 
 	if (bind(fd, (struct sockaddr*)&address, sizeof(address)) < 0)
 		exit_with::e_perror("Cannot bind to port");
-	if (listen(fd, 10) < 0) // TODO: change number of clients
+	if (listen(fd, SERVER_BACKLOG) < 0) // TODO: change number of clients; depends whether we do multiple threads
 		exit_with::e_perror("Cannot listen on port");
 }
 
@@ -31,10 +30,21 @@ fd_t accept_from_fd(fd_t fd, const struct sockaddr_in& address) {
 	return socket_fd;
 }
 
-bool is_end_of_http_request(const std::string& s) { // TODO: better?
-	if (s.size() < 4)
-		return true;
-	return strncmp(s.data() + (s.size() - 4), "\r\n\r\n", 4) == 0;
+bool is_end_of_http_request(const std::string& s) {
+	if (s.find("\r\n\r\n") == std::string::npos)
+		return (0);
+	return 1;
+}
+
+std::string get_client_address(struct sockaddr_in& address) {
+	static char buf[BUFFER_SIZE + 1];
+	std::string str;
+
+	if (int ret = inet_ntop(AF_INET, &address, buf, BUFFER_SIZE) == NULL)
+		exit_with::e_perror("Cannot get address");
+	buf[BUFFER_SIZE] = '\0';
+	str = buf;
+	return str;
 }
 
 std::string read_request(fd_t fd) {
@@ -50,8 +60,4 @@ std::string read_request(fd_t fd) {
 		str += buf;
 	} while (!is_end_of_http_request(str));
 	return str;
-}
-
-void write_response(fd_t fd, const std::string& message) {
-	write(fd, message.c_str(), message.length());
 }

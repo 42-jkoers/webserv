@@ -6,8 +6,8 @@
 #include <sys/poll.h>
 
 // returns fd to socket
-fd_t create_socket() {
-	fd_t fd = socket(AF_INET6, SOCK_STREAM, 0);
+fd_t create_server_socket(IP_mode ip_mode, uint32_t port) {
+	fd_t fd = socket(ip_mode == mode_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
 		exit_with::e_perror("Cannot create socket");
 	int on = 1;
@@ -16,40 +16,92 @@ fd_t create_socket() {
 	if (ioctl(fd, FIONBIO, (char*)&on) < 0)
 		exit_with::e_perror("ioctl() failed");
 
+	int rc;
+	if (ip_mode == mode_ipv6) {
+		struct sockaddr_in6 address = get_address6(port);
+		rc = bind(fd, (struct sockaddr*)&address, sizeof(address));
+	} else {
+		struct sockaddr_in address = get_address(port);
+		rc = bind(fd, (struct sockaddr*)&address, sizeof(address));
+	}
+	if (rc < 0)
+		exit_with::e_perror("Cannot bind to port");
+
+	if (fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | O_NONBLOCK) == -1)
+		exit_with::e_perror("Cannot set non blocking");
+	if (listen(fd, 128) < 0) // TODO: what should this number be? 128 is maximum
+		exit_with::e_perror("Cannot listen on port");
+
 	return fd;
 }
 
-// void listen_on_socket(fd_t fd, unsigned int port, uint32_t clients, struct sockaddr_in& address) {
-// 	bzero(&address, sizeof(address));
-// 	address.sin_family = AF_INET;
-// 	address.sin_addr.s_addr = INADDR_ANY;
-// 	address.sin_port = htons(port);
+struct sockaddr_in6 get_address6(uint32_t port) {
+	struct sockaddr_in6 address;
+	memset(&address, 0, sizeof(address));
+	address.sin6_family = AF_INET6;
+	memcpy(&address.sin6_addr, &in6addr_any, sizeof(in6addr_any));
+	address.sin6_port = htons(port);
+	return address;
+}
 
-// 	if (bind(fd, (struct sockaddr*)&address, sizeof(address)) < 0)
-// 		exit_with::e_perror("Cannot bind to port");
-// 	// if (fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | O_NONBLOCK) == -1)
-// 	// 	exit_with::e_perror("Cannot set non blocking");
-// 	if (listen(fd, clients) < 0) // TODO: change number of clients
-// 		exit_with::e_perror("Cannot listen on port");
-// }
+struct sockaddr_in get_address(uint32_t port) {
+	struct sockaddr_in address;
+	bzero(&address, sizeof(address));
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = INADDR_ANY;
+	address.sin_port = htons(port);
+	return address;
+}
 
-// std::vector<struct pollfd> accept_from_fd(fd_t socket_fd, uint32_t clients) {
-// 	std::vector<struct pollfd> poll_fds;
-// 	struct sockaddr_in		   client;
-// 	socklen_t				   address_len = sizeof(client);
+Poller::Poller(fd_t server_socket, int timeout) : _server_socket(server_socket), _timeout(timeout) {
+	_pollfds.reserve(1);
+	_pollfds.push_back(_create_pollfd(server_socket, POLLIN /* | POLLOUT */));
+}
 
-// 	for (size_t i = 0; i < clients; i++) {
-// 		bzero(&client, sizeof(client));
-// 		struct pollfd poll_fd;
-// 		poll_fd.fd = accept(socket_fd, (struct sockaddr*)&client, &address_len);
-// 		if (poll_fd.fd < 0)
-// 			exit_with::e_perror("Cannot accept");
-// 		poll_fd.events = POLLIN;
-// 		poll_fds.push_back(poll_fd);
-// 	}
-// 	sleep(1);
-// 	return poll_fds;
-// }
+void Poller::_accept_clients() {
+	while (true) {
+		int newfd = accept(_server_socket, NULL, NULL);
+		if (newfd < 0 && errno != EWOULDBLOCK) // TODO errno is not allowed
+			exit_with::e_perror("accept() failed");
+		if (newfd < 0)
+			break;
+
+		// New incoming connection
+		_pollfds.push_back(_create_pollfd(newfd, POLLIN));
+	}
+}
+
+void Poller::start() {
+	while (true) {
+		int rc = poll(_pollfds.data(), _pollfds.size(), _timeout);
+		if (rc < 0)
+			exit_with::e_perror("poll() failed");
+		if (rc == 0)
+			exit_with::e_perror("poll() timeout");
+		_accept_clients();
+		for (std::vector<struct pollfd>::iterator fd = _pollfds.begin() + 1; fd != _pollfds.end(); ++fd) {
+			if (fd->fd < 0) // TODO: remove from list
+				continue;
+			if (fd->revents == 0)
+				continue;
+			if (fd->revents != POLLIN)
+				exit_with::message("Unexpected revents value");
+			std::string request = read_request(fd->fd);
+			response(fd->fd, 200, "Hello World!"); // TODO: add event hook or something similar
+			close(fd->fd);
+			fd->fd = -1; // TODO: remove from list
+		}
+	}
+}
+
+struct pollfd Poller::_create_pollfd(int fd, short events) {
+	struct pollfd pfd;
+	pfd.fd = fd;
+	pfd.events = events;
+	return pfd;
+}
+
+Poller::~Poller() {} // TODO: close fds etc.
 
 bool is_end_of_http_request(const std::string& s) { // TODO: better?
 	if (s.size() < 4)

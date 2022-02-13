@@ -5,6 +5,24 @@
 #include <sys/ioctl.h>
 #include <sys/poll.h>
 
+struct sockaddr_in6 get_address6(uint32_t port) {
+	struct sockaddr_in6 address;
+	memset(&address, 0, sizeof(address));
+	address.sin6_family = AF_INET6;
+	memcpy(&address.sin6_addr, &in6addr_any, sizeof(in6addr_any));
+	address.sin6_port = htons(port);
+	return address;
+}
+
+struct sockaddr_in get_address(uint32_t port) {
+	struct sockaddr_in address;
+	bzero(&address, sizeof(address));
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = INADDR_ANY;
+	address.sin_port = htons(port);
+	return address;
+}
+
 // returns fd to socket
 fd_t create_server_socket(IP_mode ip_mode, uint32_t port) {
 	fd_t fd = socket(ip_mode == mode_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
@@ -33,24 +51,6 @@ fd_t create_server_socket(IP_mode ip_mode, uint32_t port) {
 		exit_with::e_perror("Cannot listen on port");
 
 	return fd;
-}
-
-struct sockaddr_in6 get_address6(uint32_t port) {
-	struct sockaddr_in6 address;
-	memset(&address, 0, sizeof(address));
-	address.sin6_family = AF_INET6;
-	memcpy(&address.sin6_addr, &in6addr_any, sizeof(in6addr_any));
-	address.sin6_port = htons(port);
-	return address;
-}
-
-struct sockaddr_in get_address(uint32_t port) {
-	struct sockaddr_in address;
-	bzero(&address, sizeof(address));
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = INADDR_ANY;
-	address.sin_port = htons(port);
-	return address;
 }
 
 Poller::Poller(fd_t server_socket, int timeout) : _server_socket(server_socket), _timeout(timeout) {

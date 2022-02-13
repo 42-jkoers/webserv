@@ -13,7 +13,7 @@ typedef int fd_t;
 
 enum IP_mode {
 	mode_ipv4,
-	mode_ipv6,
+	mode_ipv6
 };
 
 namespace exit_with {

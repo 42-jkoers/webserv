@@ -15,8 +15,7 @@ void on_request(Request& request) {
 }
 
 int main() {
-	fd_t   listen_fd = create_server_socket(mode_ipv6, PORT);
-	Poller poller(listen_fd, 500000);
+	Poller poller(mode_ipv6, PORT, 500000);
 
 	poller.start(on_request);
 	return 0;

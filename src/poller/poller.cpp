@@ -25,7 +25,7 @@ struct sockaddr_in get_address(uint32_t port) {
 }
 
 // returns fd to socket
-fd_t create_server_socket(IP_mode ip_mode, uint32_t port) {
+static fd_t create_server_socket(IP_mode ip_mode, uint32_t port) {
 	fd_t fd = socket(ip_mode == mode_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
 		exit_with::e_perror("Cannot create socket");
@@ -54,9 +54,10 @@ fd_t create_server_socket(IP_mode ip_mode, uint32_t port) {
 	return fd;
 }
 
-Poller::Poller(fd_t server_socket, int timeout) : _server_socket(server_socket), _timeout(timeout) {
+Poller::Poller(IP_mode ip_mode, uint32_t port, int timeout) : _timeout(timeout) {
+	_server_socket = create_server_socket(ip_mode, port);
 	_pollfds.reserve(1);
-	_pollfds.push_back(_create_pollfd(server_socket, POLLIN /* | POLLOUT */));
+	_pollfds.push_back(_create_pollfd(_server_socket, POLLIN /* | POLLOUT */));
 }
 
 void Poller::_accept_clients() {

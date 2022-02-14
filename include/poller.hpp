@@ -8,7 +8,6 @@ class Request {
 	std::string get_user_agent();
 	std::string get_();
 
-
 	std::string raw;
 
   private:
@@ -20,10 +19,9 @@ class Request {
 	Request& operator=(const Request& cp);
 };
 
-fd_t create_server_socket(IP_mode ip_mode, uint32_t port);
 class Poller {
   public:
-	Poller(fd_t server_socket, int timeout);
+	Poller(IP_mode ip_mode, uint32_t port, int timeout);
 	void start(void (*on_request)(Request& request));
 	~Poller();
 
@@ -33,6 +31,7 @@ class Poller {
 	fd_t					   _server_socket;
 	std::vector<struct pollfd> _pollfds;
 	int						   _timeout;
+
 	// disabled
 	Poller(const Poller& cp);
 	Poller& operator=(const Poller& cp);

@@ -5,16 +5,20 @@
 #include <iostream>
 #include <map>
 
-int config_parser(void);
-// class config_parser
-// {
+class config
+{
+public:
+	config(/* args */);
+	~config();
+	void			set_port(unsigned int set);
+	unsigned int	get_port();
 
-// public:
-// 	config_parser(/* args */);
-// 	~config_parser();
-// private:
+private:
+	unsigned int port;
 
-// };
+};
+
+int config_parser(config &config);
 
 // typedef struct config {
 // 	std::map<int, std::string> config;

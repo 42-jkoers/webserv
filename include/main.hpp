@@ -6,9 +6,13 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <vector>
+#include <stdio.h>
+#include <cstdlib>
+#include <string.h>
 
 #define BUFFER_SIZE 4096
 #define SERVER_BACKLOG 100
+#define PORT 8081
 typedef int fd_t;
 
 namespace exit_with {

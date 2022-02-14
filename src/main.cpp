@@ -1,13 +1,14 @@
 #include "main.hpp"
+#include "config_parser.hpp"
 #include <netinet/in.h>
 #include <sys/socket.h>
-
-#define PORT 8081
 
 int main() {
 	fd_t			   server_fd = create_socket();
 	struct sockaddr_in address;
 
+	config			   config;
+	config_parser(config);
 	listen_on_socket(server_fd, PORT, address);
 	std::cout << "Listening on: http://localhost:" << PORT << std::endl;
 	while (true) {

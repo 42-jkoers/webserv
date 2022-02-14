@@ -71,6 +71,7 @@ void Poller::_accept_clients() {
 	}
 }
 
+#define FD_CLOSED -1
 void Poller::start() {
 	while (true) {
 		int rc = poll(_pollfds.data(), _pollfds.size(), _timeout);
@@ -80,8 +81,6 @@ void Poller::start() {
 			exit_with::e_perror("poll() timeout");
 		_accept_clients();
 		for (std::vector<struct pollfd>::iterator fd = _pollfds.begin() + 1; fd != _pollfds.end(); ++fd) {
-			if (fd->fd < 0) // TODO: remove from list
-				continue;
 			if (fd->revents == 0)
 				continue;
 			if (fd->revents != POLLIN)
@@ -89,8 +88,20 @@ void Poller::start() {
 			std::string request = read_request(fd->fd);
 			response(fd->fd, 200, "Hello World!"); // TODO: add event hook or something similar
 			close(fd->fd);
-			fd->fd = -1; // TODO: remove from list
+			fd->fd = FD_CLOSED;
 		}
+
+		// removing closed fds from array by shifting them to the left
+		std::vector<struct pollfd>::iterator valid = _pollfds.begin();
+		std::vector<struct pollfd>::iterator current = _pollfds.begin();
+		while (current != _pollfds.end()) {
+			if (current->fd == FD_CLOSED) {
+				++current;
+				continue;
+			}
+			*valid++ = *current++;
+		}
+		_pollfds.erase(valid, _pollfds.end());
 	}
 }
 

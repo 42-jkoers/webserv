@@ -18,7 +18,7 @@ private:
 
 };
 
-int config_parser(config &config);
+int config_parser(config& config);
 
 // typedef struct config {
 // 	std::map<int, std::string> config;

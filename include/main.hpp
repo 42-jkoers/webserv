@@ -1,5 +1,6 @@
 #pragma once
 #include <arpa/inet.h>
+#include "config_parser.hpp"
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
@@ -10,6 +11,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <vector>
+#include <errno.h>
 
 #define BUFFER_SIZE 4096
 #define SERVER_BACKLOG 100

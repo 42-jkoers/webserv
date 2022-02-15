@@ -16,7 +16,9 @@ void on_request(Request& request) {
 }
 
 int main() {
-	Poller poller(mode_ipv6, PORT, 500000);
+	config config;
+	config_parser(config);
+	Poller poller(mode_ipv6, config.get_port(), 500000);
 
 	poller.start(on_request);
 	return 0;

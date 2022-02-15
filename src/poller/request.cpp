@@ -6,7 +6,17 @@
 Request::Request(const pollfd& pfd) : _fd(pfd.fd) {
 	if (pfd.revents != POLLIN)
 		exit_with::message("Unexpected revents value");
+	_read_request(pfd);
+	_request_line["method"] = "GET";
+	_request_line["URI"] = "locahost";
+	_request_line["version"] = "HTTP/1.1";
+	// _parse_request(pfd);
+}
 
+Request::~Request() {
+}
+
+void Request::_read_request(const pollfd& pfd) {
 	static char buf[BUFFER_SIZE + 1];
 	ssize_t		bytes_read;
 	do {
@@ -20,10 +30,29 @@ Request::Request(const pollfd& pfd) : _fd(pfd.fd) {
 	} while (!_is_end_of_http_request(this->raw));
 }
 
-bool Request::_is_end_of_http_request(const std::string& s) { // TODO: better?
-	if (s.size() < 4)
-		return true;
-	return strncmp(s.data() + (s.size() - 4), "\r\n\r\n", 4) == 0;
+bool Request::_is_end_of_http_request(const std::string& s) {
+	if (s.find("\r\n\r\n") == std::string::npos)
+		return 0;
+	return 1;
+}
+
+std::map<std::string, std::string> Request::get_request_line(void) const {
+	return _request_line;
+}
+
+std::map<std::string, std::string> Request::get_request_header_fields(void) const {
+	return _request_header_fields;
+}
+
+std::ostream& operator<<(std::ostream& output, Request const& rhs) {
+	std::map<std::string, std::string> rhs_request_line;
+
+	rhs_request_line = rhs.get_request_line();
+	output << "Request line: " << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = rhs_request_line.begin(); it != rhs_request_line.end(); ++it) {
+		std::cout << it->first << " | " << it->second << std::endl;
+	}
+	return output;
 }
 
 // TODO: optimize

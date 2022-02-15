@@ -1,23 +1,6 @@
 #pragma once
 #include "main.hpp"
-
-class Request {
-  public:
-	Request(const pollfd& pfd);
-	void		send_response(uint32_t response_code, const std::string& message);
-	std::string get_user_agent();
-	std::string get_();
-
-	std::string raw;
-
-  private:
-	fd_t _fd;
-	bool _is_end_of_http_request(const std::string& s);
-
-	// disabled
-	Request(const Request& cp);
-	Request& operator=(const Request& cp);
-};
+#include "request.hpp"
 
 class Poller {
   public:

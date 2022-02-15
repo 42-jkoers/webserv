@@ -1,23 +1,31 @@
 #pragma once
 #include <arpa/inet.h>
+#include <cstdlib>
 #include <iostream>
 #include <sstream>
+#include <stdio.h>
+#include <string.h>
 #include <string>
+#include <sys/poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <vector>
-#include <stdio.h>
-#include <cstdlib>
-#include <string.h>
 
 #define BUFFER_SIZE 4096
 #define SERVER_BACKLOG 100
-#define PORT 8081
+#define MAX_CLIENTS 5
+
 typedef int fd_t;
+
+enum IP_mode {
+	mode_ipv4,
+	mode_ipv6
+};
 
 namespace exit_with {
 
 void e_perror(const std::string& msg);
+void message(const std::string& msg);
 
 } // namespace exit_with
 
@@ -32,9 +40,4 @@ std::string to_string(T value) {
 
 } // namespace cpp11
 
-fd_t		create_socket();
-void		listen_on_socket(fd_t fd, unsigned int port, struct sockaddr_in& address);
-fd_t		accept_from_fd(fd_t fd, const struct sockaddr_in& address);
-std::string read_request(fd_t fd);
-void		response(fd_t fd, uint32_t response_code, const std::string& message);
 std::string get_client_address(struct sockaddr_in& address);

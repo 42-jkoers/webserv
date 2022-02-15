@@ -31,33 +31,39 @@ void tokenizer(std::string option, std::map<const std::string, std::string>& con
 	size_t		pos_first = line.find_first_of(delimiters, pos_not);
 	pos_not = line.find_first_not_of(delimiters, pos_first);
 	config_info[option] = &line[pos_not];
+	std::cout << config_info[option] << std::endl;
 }
 
-void safe_info(std::string line, std::map<const std::string, std::string>& config_info, config& config) {
+void safe_info(std::string line, std::map<const std::string, std::string>& config_info, class config& config) {
 	std::vector<std::string> options;
 	options.push_back("server_name");
 	options.push_back("listen");
 	options.push_back("error_page");
 	options.push_back("client_max_body_size");
-	options.push_back("allow_methods");
-
+	options.push_back("allowed_methods");
+	options.push_back("root");
+	void (*jump_table[6])(std::string, std::map<const std::string, std::string>&, std::string, class config&) = {parseServerName,
+	parseListen,
+	parseErrorPage,
+	parseClientMaxBodySize,
+	parseAllowedMethods,
+	parseRoot
+	}; // why can I not add config as argument??
 	for (size_t i = 0; i < options.size(); i++) {
 		if (line.find(options[i]) != std::string::npos) {
 			tokenizer(options[i], config_info, line);
+			jump_table[i](options[i], config_info, line, config);
 		}
 	}
-	unsigned int	port;
-	size_t pos = config_info["listen"].find_first_of(":");
-	parse_int(port, &config_info["listen"][pos + 1]);
-	config.set_port(port);
+	(void)config;
 }
 
-int config_parser(config& config) {
+int config_parser(config& config, char **argv) {
 	std::ifstream					   config_file;
 	std::string						   buffer;
 	std::map<const std::string, std::string> config_info;
 
-	config_file.open("config_file.conf");
+	config_file.open(argv[1]);
 	if (!config_file.is_open())
 		exit_with::e_perror("Cannot open config file");
 	while (getline(config_file, buffer)) {

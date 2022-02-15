@@ -16,11 +16,14 @@ void on_request(Request& request) {
 	request.send_response(200, "Hello World!");
 }
 
-int main() {
+int main(int argc, char **argv) {
 	config config;
-	config_parser(config);
-	Poller poller(mode_ipv6, config.get_port(), 500000);
 
+	if (argc != 2)
+		exit_with::e_perror("Not the right amount of arguments");
+	config_parser(config, argv);
+	std::cout << config.get_port() << std::endl;
+	Poller poller(mode_ipv6, config.get_port(), 500000);
 	poller.start(on_request);
 	return 0;
 }

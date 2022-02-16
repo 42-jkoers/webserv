@@ -24,9 +24,12 @@ public:
 	~config();
 	void			set_port(unsigned int set);
 	unsigned int	get_port();
+	void			set_ip(std::string ip_adres);
+	std::string		get_ip();
 
 private:
-	unsigned int port;
+	unsigned int	port;
+	std::string		ip;
 	// std::vector<std::string> methods;
 
 };

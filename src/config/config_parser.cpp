@@ -16,14 +16,6 @@ config::config() {
 config::~config() {
 }
 
-void	config::set_port(unsigned int set)	{
-	this->port = set;
-}
-
-unsigned int	config::get_port() {
-	return (this->port);
-}
-
 void tokenizer(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
 	std::string delimiters = "\t ";
 
@@ -31,7 +23,6 @@ void tokenizer(std::string option, std::map<const std::string, std::string>& con
 	size_t		pos_first = line.find_first_of(delimiters, pos_not);
 	pos_not = line.find_first_not_of(delimiters, pos_first);
 	config_info[option] = &line[pos_not];
-	std::cout << config_info[option] << std::endl;
 }
 
 void safe_info(std::string line, std::map<const std::string, std::string>& config_info, class config& config) {
@@ -48,7 +39,7 @@ void safe_info(std::string line, std::map<const std::string, std::string>& confi
 	parseClientMaxBodySize,
 	parseAllowedMethods,
 	parseRoot
-	}; // why can I not add config as argument??
+	};
 	for (size_t i = 0; i < options.size(); i++) {
 		if (line.find(options[i]) != std::string::npos) {
 			tokenizer(options[i], config_info, line);

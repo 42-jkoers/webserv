@@ -22,7 +22,7 @@ class Request {
 class Poller {
   public:
 	Poller(IP_mode ip_mode, uint32_t port, int timeout);
-	void start(void (*on_request)(Request& request));
+	void start(void (*on_request)(Request& request, config& config), config& config);
 	~Poller();
 
   private:

@@ -5,7 +5,7 @@
 class Poller {
   public:
 	Poller(IP_mode ip_mode, uint32_t port, int timeout);
-	void start(void (*on_request)(Request& request));
+	void start(void (*on_request)(Request& request, Config& config), Config& config);
 	~Poller();
 
   private:

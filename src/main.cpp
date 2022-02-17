@@ -6,10 +6,7 @@
 
 void on_request(Request& request) {
 	std::cout << request.raw << std::endl;
-	if (request.raw.find("/upload") == std::string::npos) { // TODO: this is not great
-		request.send_response(200, fs::read_file("html/404.html"));
-	} else
-		request.send_response(200, "Hello World!");
+	request.send_response(200, "Hello World!");
 }
 
 int main() {

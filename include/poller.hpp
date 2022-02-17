@@ -3,7 +3,7 @@
 
 class Request {
   public:
-	Request(const pollfd& pfd);
+	Request(const pollfd& pfd, const std::string& raw);
 	void		send_response(uint32_t response_code, const std::string& message);
 	std::string get_user_agent();
 	std::string get_();
@@ -19,6 +19,11 @@ class Request {
 	Request& operator=(const Request& cp);
 };
 
+enum Read_status {
+	NOT_DONE,
+	DONE
+};
+
 class Poller {
   public:
 	Poller(IP_mode ip_mode, uint32_t port, int timeout);
@@ -28,8 +33,10 @@ class Poller {
   private:
 	struct pollfd			   _create_pollfd(int fd, short events);
 	void					   _accept_clients();
+	Read_status				   _read_request(const pollfd& pfd, std::string& buffer);
 	fd_t					   _server_socket;
 	std::vector<struct pollfd> _pollfds;
+	std::vector<std::string>   _buffers;
 	int						   _timeout;
 
 	// disabled

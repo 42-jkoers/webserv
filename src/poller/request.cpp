@@ -3,21 +3,7 @@
 #include <map>
 #include <netinet/in.h>
 
-Request::Request(const pollfd& pfd) : _fd(pfd.fd) {
-	if (pfd.revents != POLLIN)
-		exit_with::message("Unexpected revents value");
-
-	static char buf[BUFFER_SIZE + 1];
-	ssize_t		bytes_read;
-	do {
-		bytes_read = read(pfd.fd, buf, BUFFER_SIZE);
-		if (bytes_read == -1)
-			exit_with::e_perror("Cannot read from fd");
-		if (bytes_read == 0)
-			break;
-		buf[bytes_read] = '\0';
-		this->raw += buf;
-	} while (!_is_end_of_http_request(this->raw));
+Request::Request(const pollfd& pfd, const std::string& raw) : raw(raw), _fd(pfd.fd) {
 }
 
 bool Request::_is_end_of_http_request(const std::string& s) { // TODO: better?

@@ -36,6 +36,4 @@ class Config {
 	std::string	 _root;
 };
 
-std::string get_html_request(Config& config);
-
 bool		parse_int(unsigned int& output, const std::string& str);

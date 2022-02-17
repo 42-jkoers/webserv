@@ -12,9 +12,9 @@
 #define PORT 8080
 
 void on_request(Request& request, Config& config) {
-	std::string request_line = get_html_request(config); // getting the right html file
 	std::cout << request.raw << std::endl;
-	request.send_response(200, request_line);
+	std::string html_response = get_index(config); // getting the right html file
+	request.send_response(200, html_response);
 	(void)config;
 }
 

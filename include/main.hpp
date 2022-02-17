@@ -1,7 +1,7 @@
 #pragma once
 #include <arpa/inet.h>
-#include "config_parser.hpp"
 #include <cstdlib>
+#include <errno.h>
 #include <iostream>
 #include <sstream>
 #include <stdio.h>
@@ -11,13 +11,13 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <vector>
-#include <errno.h>
 
 #define BUFFER_SIZE 4096
 #define SERVER_BACKLOG 100
 #define MAX_CLIENTS 5
 
 typedef int fd_t;
+class Config;
 
 enum IP_mode {
 	mode_ipv4,
@@ -41,5 +41,5 @@ std::string to_string(T value) {
 }
 
 } // namespace cpp11
-
+std::string get_index(Config& config);
 std::string get_client_address(struct sockaddr_in& address);

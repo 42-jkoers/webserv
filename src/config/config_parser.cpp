@@ -27,6 +27,7 @@ void tokenizer(std::string option, std::map<const std::string, std::string>& con
 	config_info[option] = &line[pos_not];
 }
 
+//Don't allow invalid lines in configuration file
 void Config::safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options) {
 	typedef void (Config::*Jump_table)(std::string, std::map<const std::string, std::string>&, std::string);
 	const static Jump_table jump_table[] = {

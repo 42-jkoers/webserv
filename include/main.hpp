@@ -49,3 +49,4 @@ std::string readFile(const std::string& path);
 // Someone should probably move this
 std::string get_client_address(struct sockaddr_in& address);
 void		log_pollfd(const struct pollfd& pfd);
+void		log_event(short event);

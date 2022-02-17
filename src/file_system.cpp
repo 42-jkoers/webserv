@@ -19,13 +19,11 @@ std::string read_file(const std::string& path) {
 
 	file.open(path.c_str());
 	if (!file.is_open())
-		exit_with::e_perror("Could not open file");
+		throw std::runtime_error(exception_str(path));
 	ss << file.rdbuf();
 	file.close();
 	return ss.str();
 }
-
-// vir
 
 std::vector<std::string> list_dir(const std::string& path) {
 	std::vector<std::string> files;
@@ -37,8 +35,8 @@ std::vector<std::string> list_dir(const std::string& path) {
 		struct dirent* entry = readdir(dir);
 		if (!entry)
 			break;
-		if (!strcmp(entry->d_name, ".") && !strcmp(entry->d_name, ".."))
-			files.push_back(entry->d_name);
+		// if (!strcmp(entry->d_name, ".") && !strcmp(entry->d_name, ".."))
+		files.push_back(entry->d_name);
 	}
 	closedir(dir);
 	return files;

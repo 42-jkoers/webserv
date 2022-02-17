@@ -1,18 +1,13 @@
 #include "main.hpp"
+#include "file_system.hpp"
 #include "poller.hpp"
-#include <fcntl.h>
-#include <netinet/in.h>
-#include <sstream>
-#include <sys/ioctl.h>
-#include <sys/poll.h>
-#include <sys/socket.h>
 
 #define PORT 8081
 
 void on_request(Request& request) {
 	std::cout << request.raw << std::endl;
 	if (request.raw.find("/upload") == std::string::npos) { // TODO: this is not great
-		request.send_response(200, readFile("html/404.html"));
+		request.send_response(200, fs::read_file("html/404.html"));
 	} else
 		request.send_response(200, "Hello World!");
 }

@@ -1,9 +1,8 @@
 
-#include "main.hpp"
 #include "config_parser.hpp"
+#include "main.hpp"
 
-void	cut_till_collon(std::string& line)
-{
+void cut_till_collon(std::string& line) {
 	size_t find_collon;
 	size_t end;
 
@@ -14,27 +13,25 @@ void	cut_till_collon(std::string& line)
 	line = line.substr(0, end + 1); // getting rid of the ';' and whitespace
 }
 
-void parseServerName(std::string option, std::map<const std::string, std::string>& config_info, std::string line, config& config){
+void Config::_parseServerName(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
 	std::string serverName = config_info["server_name"];
-	size_t split;
+	size_t		split;
 
 	cut_till_collon(serverName);
 	split = serverName.find_first_of(" \t");
-
-	config.set_serverName(serverName.substr(0, split));
+	_serverName = serverName.substr(0, split);
 	split = serverName.find_last_of("\t ");
-	config.set_serverUrl(serverName.substr(split + 1, serverName.size()));
+	_serverUrl = serverName.substr(split + 1, serverName.size());
 	// std::cout << config.get_serverName() << "\\" << config.get_serverUrl() << std::endl;
 	(void)option;
 	(void)line;
 }
 
-void parseListen(std::string option, std::map<const std::string, std::string>& config_info, std::string line, config& config){
+void Config::_parseListen(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
 	std::string listen = config_info["listen"];
-	size_t i = 0;
-	size_t check_dots = 0;
-	size_t check_ip = 0;
-
+	size_t		i = 0;
+	size_t		check_dots = 0;
+	size_t		check_ip = 0;
 
 	cut_till_collon(listen);
 	if (strchr(listen.c_str(), ':')) {
@@ -53,46 +50,45 @@ void parseListen(std::string option, std::map<const std::string, std::string>& c
 				check_ip++;
 			i++;
 		}
-		unsigned int	port;
-		size_t pos = config_info["listen"].find_first_of(":");
-		config.set_ip(listen.substr(0, pos));
+		unsigned int port;
+		size_t		 pos = config_info["listen"].find_first_of(":");
+		_ip = listen.substr(0, pos);
 		parse_int(port, &config_info["listen"][pos + 1]);
-		config.set_port(port);
-	}
-	else{
+		_port = port;
+	} else {
 		unsigned int port;
 		if (parse_int(port, listen) == false)
 			exit_with::e_perror("config error: listen");
-		config.set_port(port);
+		_port = port;
 	}
 	(void)line;
 	(void)option;
 }
-void parseErrorPage(std::string option, std::map<const std::string, std::string>& config_info, std::string line, config& config){
+
+void Config::_parseErrorPage(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
 	(void)option;
 	(void)config_info;
 	(void)line;
-	(void)config;
 }
-void parseClientMaxBodySize(std::string option, std::map<const std::string, std::string>& config_info, std::string line, config& config){
+
+void Config::_parseClientMaxBodySize(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
 	(void)option;
 	(void)config_info;
 	(void)line;
-	(void)config;
 }
-void parseAllowedMethods(std::string option, std::map<const std::string, std::string>& config_info, std::string line, config& config){
+
+void Config::_parseAllowedMethods(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
 	(void)option;
 	(void)config_info;
 	(void)line;
-	(void)config;
 }
-void parseRoot(std::string option, std::map<const std::string, std::string>& config_info, std::string line, config& config){
+
+void Config::_parseRoot(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
 	std::string root = config_info["root"];
 
 	cut_till_collon(root);
-	config.set_root(root);
+	_root = root;
 	(void)option;
 	(void)config_info;
 	(void)line;
-	(void)config;
 }

@@ -1,41 +1,41 @@
 #include "config_parser.hpp"
 
-void	config::set_port(unsigned int set)	{
-	this->port = set;
+void Config::set_port(unsigned int set) {
+	_port = set;
 }
 
-unsigned int	config::get_port() {
-	return this->port;
+unsigned int Config::get_port() const {
+	return _port;
 }
 
-void	config::set_ip(std::string ip_adres) {
-	this->ip = ip_adres;
+void Config::set_ip(std::string ip_adres) {
+	_ip = ip_adres;
 }
 
-std::string config::get_ip() {
-	return this->ip;
+std::string Config::get_ip() const {
+	return _ip;
 }
 
-void	config::set_serverName(std::string name) {
-	this->serverName = name;
+void Config::set_serverName(std::string name) {
+	_serverName = name;
 }
 
-std::string	config::get_serverName() {
-	return this->serverName;
+std::string Config::get_serverName() const {
+	return _serverName;
 }
 
-void	config::set_serverUrl(std::string url) {
-	this->serverUrl = url;
+void Config::set_serverUrl(std::string url) {
+	_serverUrl = url;
 }
 
-std::string	config::get_serverUrl() {
-	return this->serverUrl;
+std::string Config::get_serverUrl() const {
+	return _serverUrl;
 }
 
-void	config::set_root(std::string set) {
-	this->root = set;
+void Config::set_root(std::string set) {
+	_root = set;
 }
 
-std::string	config::get_root() {
-	return this->root;
+std::string Config::get_root() const {
+	return _root;
 }

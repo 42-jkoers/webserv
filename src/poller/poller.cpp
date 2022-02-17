@@ -74,7 +74,7 @@ void Poller::_accept_clients() {
 }
 
 #define FD_CLOSED -1
-void Poller::start(void (*on_request)(Request& request, config& config), config& config) {
+void Poller::start(void (*on_request)(Request& request, Config& config), Config& config) {
 	while (true) {
 		int rc = poll(_pollfds.data(), _pollfds.size(), _timeout);
 		if (rc < 0)

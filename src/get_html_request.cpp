@@ -1,7 +1,7 @@
 #include "config_parser.hpp"
 #include "main.hpp"
 
-std::string	get_html_request(config& config) {
+std::string	get_html_request(Config& config) {
 	std::ifstream html_file;
 	std::string line;
 	std::string html;

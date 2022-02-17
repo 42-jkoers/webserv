@@ -5,58 +5,37 @@
 #include <iostream>
 #include <map>
 
+class Config {
+  public:
+	Config(int argc, char** argv);
+	~Config();
+	void		 set_port(unsigned int set);
+	unsigned int get_port() const;
+	void		 set_ip(std::string ip_adres);
+	std::string	 get_ip() const;
+	void		 set_serverName(std::string name);
+	std::string	 get_serverName() const;
+	void		 set_serverUrl(std::string url);
+	std::string	 get_serverUrl() const;
+	void		 set_root(std::string set);
+	std::string	 get_root() const;
 
-// enum functions {
-// 	ParseServerName,
-// 	ParseListen,
-// 	ParseErrorPage,
-// 	ParseClientMaxBodySize,
-// 	ParseAllowedMethods,
-// 	ParseRoot
-// };
-
-// void (*functionPointers[6])() = {parseServerName, parseListen, parseErrorPage, parseClientMaxBodySize, parseAllowedMethods, parseRoot};
-
-class config
-{
-public:
-	config(/* args */);
-	~config();
-	void			set_port(unsigned int set);
-	unsigned int	get_port();
-	void			set_ip(std::string ip_adres);
-	std::string		get_ip();
-	void			set_serverName(std::string name);
-	std::string		get_serverName();
-	void			set_serverUrl(std::string url);
-	std::string		get_serverUrl();
-	void			set_root(std::string set);
-	std::string		get_root();
-
-private:
-	unsigned int	port;
-	std::string		ip;
-	std::string		serverName;
-	std::string		serverUrl;
-	std::string		root;
-	// std::vector<std::string> methods;
-
+  private:
+	void		 _parseServerName(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void		 _parseListen(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void		 _parseErrorPage(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void		 _parseClientMaxBodySize(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void		 _parseAllowedMethods(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void		 _parseRoot(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void		 _config_parser(char** argv);
+	void		 safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);
+	unsigned int _port;
+	std::string	 _ip;
+	std::string	 _serverName;
+	std::string	 _serverUrl;
+	std::string	 _root;
 };
 
-void parseServerName(std::string option, std::map<const std::string, std::string>& config_info, std::string line, class config& config);
-void parseListen(std::string option, std::map<const std::string, std::string>& config_info, std::string line, class config& config);
-void parseErrorPage(std::string option, std::map<const std::string, std::string>& config_info, std::string line, class config& config);
-void parseClientMaxBodySize(std::string option, std::map<const std::string, std::string>& config_info, std::string line, class config& config);
-void parseAllowedMethods(std::string option, std::map<const std::string, std::string>& config_info, std::string line, class config& config);
-void parseRoot(std::string option, std::map<const std::string, std::string>& config_info, std::string line, class config& config);
-std::string	get_html_request(config& config);
+std::string get_html_request(Config& config);
 
-
-int config_parser(config& config, char **argv);
-bool parse_int(unsigned int& output, const std::string& str);
-
-
-
-// typedef struct config {
-// 	std::map<int, std::string> config;
-// };
+bool		parse_int(unsigned int& output, const std::string& str);

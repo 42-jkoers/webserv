@@ -73,8 +73,41 @@ void Poller::_accept_clients() {
 	}
 }
 
+bool Poller::_is_end_of_http_request(const std::string& s) { // TODO: better?
+	if (s.size() < 4)
+		return false;
+	return strncmp(s.data() + (s.size() - 4), "\r\n\r\n", 4) == 0;
+}
+
+Poller::Read_status Poller::_read_request(const pollfd& pfd, std::string& buffer) {
+	static char buf[BUFFER_SIZE + 1];
+	ssize_t		bytes_read;
+	do {
+		bytes_read = read(pfd.fd, buf, BUFFER_SIZE);
+		if (bytes_read == 0)
+			return DONE;
+		if (bytes_read < 0) // TODO: this might not be accurate enough
+			return NOT_DONE;
+		buf[bytes_read] = '\0';
+		buffer += buf;
+	} while (!_is_end_of_http_request(buffer));
+	return DONE;
+}
+
 #define FD_CLOSED -1
-void Poller::start(void (*on_request)(Request& request, Config& config), Config& config) {
+void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
+	_buffers.reserve(pfd.fd + 1);
+	Poller::Read_status rs = _read_request(pfd, _buffers[pfd.fd]);
+	if (rs != DONE)
+		return;
+	Request request(pfd, _buffers[pfd.fd]);
+	on_request(request);
+	_buffers[pfd.fd] = "";
+	close(pfd.fd);
+	pfd.fd = FD_CLOSED;
+}
+
+void Poller::start(void (*on_request)(Request& request), Config& config) {
 	while (true) {
 		int rc = poll(_pollfds.data(), _pollfds.size(), _timeout);
 		if (rc < 0)
@@ -85,10 +118,9 @@ void Poller::start(void (*on_request)(Request& request, Config& config), Config&
 		for (std::vector<struct pollfd>::iterator fd = _pollfds.begin() + 1; fd != _pollfds.end(); ++fd) {
 			if (fd->revents == 0)
 				continue;
-			Request request(*fd);
-			on_request(request, config);
-			close(fd->fd);
-			fd->fd = FD_CLOSED;
+			if (fd->revents != POLLIN)
+				exit_with::message("Unexpected revents value");
+			_on_new_pollfd(*fd, on_request);
 		}
 
 		// removing closed fds from array by shifting them to the left
@@ -103,12 +135,14 @@ void Poller::start(void (*on_request)(Request& request, Config& config), Config&
 		}
 		_pollfds.erase(valid, _pollfds.end());
 	}
+	(void)config;
 }
 
 struct pollfd Poller::_create_pollfd(int fd, short events) {
 	struct pollfd pfd;
 	pfd.fd = fd;
 	pfd.events = events;
+	log_pollfd(pfd);
 	return pfd;
 }
 

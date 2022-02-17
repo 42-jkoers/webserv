@@ -4,7 +4,7 @@
 
 class Request {
   public:
-	Request(const pollfd& pfd);
+	Request(const pollfd& pfd, const std::string& raw);
 	void		send_response(uint32_t response_code, const std::string& message);
 	std::string raw;
 	~Request();

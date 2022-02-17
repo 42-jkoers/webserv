@@ -1,12 +1,10 @@
+#include "request.hpp"
 #include "main.hpp"
 #include "poller.hpp"
 #include <map>
 #include <netinet/in.h>
 
-Request::Request(const pollfd& pfd) : _fd(pfd.fd) {
-	if (pfd.revents != POLLIN)
-		exit_with::message("Unexpected revents value");
-	_read_request(pfd);
+Request::Request(const pollfd& pfd, const std::string& raw) : raw(raw), _fd(pfd.fd) {
 	_request_line["method"] = "GET";
 	_request_line["URI"] = "locahost";
 	_request_line["version"] = "HTTP/1.1";
@@ -14,26 +12,6 @@ Request::Request(const pollfd& pfd) : _fd(pfd.fd) {
 }
 
 Request::~Request() {
-}
-
-void Request::_read_request(const pollfd& pfd) {
-	static char buf[BUFFER_SIZE + 1];
-	ssize_t		bytes_read;
-	do {
-		bytes_read = read(pfd.fd, buf, BUFFER_SIZE);
-		if (bytes_read == -1)
-			exit_with::e_perror("Cannot read from fd");
-		if (bytes_read == 0)
-			break;
-		buf[bytes_read] = '\0';
-		this->raw += buf;
-	} while (!_is_end_of_http_request(this->raw));
-}
-
-bool Request::_is_end_of_http_request(const std::string& s) {
-	if (s.find("\r\n\r\n") == std::string::npos)
-		return 0;
-	return 1;
 }
 
 std::map<std::string, std::string> Request::get_request_line(void) const {

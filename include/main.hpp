@@ -18,6 +18,7 @@
 #define MAX_CLIENTS 5
 
 typedef int fd_t;
+class Config;
 
 enum IP_mode {
 	mode_ipv4,
@@ -41,6 +42,10 @@ std::string to_string(T value) {
 }
 
 } // namespace cpp11
+std::string get_index(Config& config);
 
+std::string readFile(const std::string& path);
+
+// Someone should probably move this
 std::string get_client_address(struct sockaddr_in& address);
 void		log_pollfd(const struct pollfd& pfd);

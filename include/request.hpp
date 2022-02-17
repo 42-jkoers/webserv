@@ -4,7 +4,7 @@
 
 class Request {
   public:
-	Request(const pollfd& pfd);
+	Request(const pollfd& pfd, const std::string& raw);
 	void		send_response(uint32_t response_code, const std::string& message);
 	std::string raw;
 	~Request();
@@ -17,7 +17,6 @@ class Request {
   private:
 	fd_t							   _fd;
 	bool							   _is_end_of_http_request(const std::string& s);
-	void							   _read_request(const pollfd& pfd);
 	void							   _parse_request();
 	void							   _parse_request_line();
 	std::map<std::string, std::string> _request_line;

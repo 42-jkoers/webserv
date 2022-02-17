@@ -3,28 +3,13 @@
 #include <map>
 #include <netinet/in.h>
 
-Request::Request(const pollfd& pfd) : _fd(pfd.fd) {
+Request::Request(const pollfd& pfd, const std::string& raw) : raw(raw), _fd(pfd.fd) {
 	if (pfd.revents != POLLIN)
 		exit_with::message("Unexpected revents value");
-	_read_request(pfd);
+	_parse_request();
 }
 
 Request::~Request() {
-}
-
-void Request::_read_request(const pollfd& pfd) {
-	static char buf[BUFFER_SIZE + 1];
-	ssize_t		bytes_read;
-	do {
-		bytes_read = read(pfd.fd, buf, BUFFER_SIZE);
-		if (bytes_read == -1)
-			exit_with::e_perror("Unable to read from file");
-		if (bytes_read == 0)
-			break;
-		buf[bytes_read] = '\0';
-		this->raw += buf;
-	} while (!_is_end_of_http_request(this->raw));
-	_parse_request();
 }
 
 bool Request::_is_end_of_http_request(const std::string& s) {
@@ -34,7 +19,7 @@ bool Request::_is_end_of_http_request(const std::string& s) {
 }
 
 // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
-void Request::_parse_request_line() { // TO DO: check method (1/3) and http version(1/0/1.1)
+void Request::_parse_request_line() { // to do: check method (1/3) and http version(1/0/1.1)
 	size_t		end;
 	size_t		sp;
 	std::string keys[] = {"method", "URI", "HTTP_version"};
@@ -63,6 +48,16 @@ void Request::_parse_request_line() { // TO DO: check method (1/3) and http vers
 }
 
 void Request::_parse_request() {
+	// std::stringstream ss; // do not use streams for parsing
+	// std::string		  key;
+	// std::string		  value;
+	// ss << buf;
+	// std::getline(ss, _request_line["method"], ' ');
+	// std::getline(ss, _request_line["URI"], ' ');
+	// std::getline(ss, _request_line["HTTP_version"]);
+	// while (ss >> key >> value) {
+	// 	_request_headers[key] = value;
+	// }
 	_parse_request_line();
 }
 

@@ -1,5 +1,6 @@
 #include "main.hpp"
 #include "config_parser.hpp"
+#include "file_system.hpp"
 #include "poller.hpp"
 #include "request.hpp"
 #include <fcntl.h>
@@ -17,12 +18,9 @@ void on_request(Request& request) {
 }
 
 int main(int argc, char** argv) {
-	config config;
+	Config config(argc, argv);
 
-	if (argc != 2)
-		exit_with::e_perror("Not the right amount of arguments");
-	config_parser(config, argv);
 	Poller poller(mode_ipv6, config.get_port(), 50000);
-	poller.start(on_request);
+	poller.start(on_request, config);
 	return 0;
 }

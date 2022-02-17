@@ -11,7 +11,10 @@
 
 void on_request(Request& request) {
 	std::cout << request.raw << std::endl;
-	request.send_response(200, "Hello World!");
+	if (request.raw.find("/upload") == std::string::npos) { // TODO: this is not great
+		request.send_response(200, readFile("html/404.html"));
+	} else
+		request.send_response(200, "Hello World!");
 }
 
 int main() {

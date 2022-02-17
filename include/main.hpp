@@ -37,4 +37,7 @@ std::string to_string(T value) {
 
 } // namespace cpp11
 
+std::string readFile(const std::string& path);
+
+// Someone should probably move this
 std::string get_client_address(struct sockaddr_in& address);

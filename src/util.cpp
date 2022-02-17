@@ -1,5 +1,6 @@
 #include "main.hpp"
 #include <fcntl.h>
+#include <fstream>
 #include <iostream>
 
 namespace exit_with {
@@ -15,3 +16,15 @@ void message(const std::string& msg) {
 }
 
 } // namespace exit_with
+
+std::string readFile(const std::string& path) {
+	std::ifstream	  file;
+	std::stringstream ss;
+
+	file.open(path.c_str());
+	if (!file.is_open())
+		exit_with::e_perror("Could not open file");
+	ss << file.rdbuf();
+	file.close();
+	return ss.str();
+}

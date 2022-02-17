@@ -73,20 +73,20 @@ void Poller::_accept_clients() {
 	}
 }
 
-bool is_end_of_http_request(const std::string& s) { // TODO: better?
+bool Poller::_is_end_of_http_request(const std::string& s) { // TODO: better?
 	if (s.size() < 4)
-		return true;
+		return false;
 	return strncmp(s.data() + (s.size() - 4), "\r\n\r\n", 4) == 0;
 }
 
-Read_status Poller::_read_request(const pollfd& pfd, std::string& buffer) {
+Poller::Read_status Poller::_read_request(const pollfd& pfd, std::string& buffer) {
 	static char buf[BUFFER_SIZE + 1];
 	ssize_t		bytes_read;
 	do {
 		bytes_read = read(pfd.fd, buf, BUFFER_SIZE);
 		if (bytes_read == 0)
 			return DONE;
-		if (bytes_read < 0)
+		if (bytes_read < 0) // TODO: this might not be accurate enough
 			return NOT_DONE;
 		buf[bytes_read] = '\0';
 		buffer += buf;
@@ -95,6 +95,18 @@ Read_status Poller::_read_request(const pollfd& pfd, std::string& buffer) {
 }
 
 #define FD_CLOSED -1
+void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
+	_buffers.reserve(pfd.fd + 1);
+	Poller::Read_status rs = _read_request(pfd, _buffers[pfd.fd]);
+	if (rs != DONE)
+		return;
+	Request request(pfd, _buffers[pfd.fd]);
+	on_request(request);
+	_buffers[pfd.fd] = "";
+	close(pfd.fd);
+	pfd.fd = FD_CLOSED;
+}
+
 void Poller::start(void (*on_request)(Request& request)) {
 	while (true) {
 		int rc = poll(_pollfds.data(), _pollfds.size(), _timeout);
@@ -108,16 +120,7 @@ void Poller::start(void (*on_request)(Request& request)) {
 				continue;
 			if (fd->revents != POLLIN)
 				exit_with::message("Unexpected revents value");
-			_buffers.reserve(fd->fd + 1);
-			Read_status rs = _read_request(*fd, _buffers[fd->fd]);
-			if (rs == DONE) {
-				Request request(*fd, _buffers[fd->fd]);
-				on_request(request);
-				_buffers[fd->fd] = "";
-				close(fd->fd);
-				fd->fd = FD_CLOSED;
-			} else
-				std::cout << "not done" << std::endl;
+			_on_new_pollfd(*fd, on_request);
 		}
 
 		// removing closed fds from array by shifting them to the left

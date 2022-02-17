@@ -6,12 +6,6 @@
 Request::Request(const pollfd& pfd, const std::string& raw) : raw(raw), _fd(pfd.fd) {
 }
 
-bool Request::_is_end_of_http_request(const std::string& s) { // TODO: better?
-	if (s.size() < 4)
-		return true;
-	return strncmp(s.data() + (s.size() - 4), "\r\n\r\n", 4) == 0;
-}
-
 // TODO: optimize
 void Request::send_response(uint32_t response_code, const std::string& message) {
 	std::map<uint32_t, std::string> m; // TODO: make this static

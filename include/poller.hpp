@@ -12,16 +12,10 @@ class Request {
 
   private:
 	fd_t _fd;
-	bool _is_end_of_http_request(const std::string& s);
 
 	// disabled
 	Request(const Request& cp);
 	Request& operator=(const Request& cp);
-};
-
-enum Read_status {
-	NOT_DONE,
-	DONE
 };
 
 class Poller {
@@ -31,9 +25,16 @@ class Poller {
 	~Poller();
 
   private:
-	struct pollfd			   _create_pollfd(int fd, short events);
-	void					   _accept_clients();
+	struct pollfd _create_pollfd(int fd, short events);
+	void		  _accept_clients();
+
+	enum Read_status {
+		NOT_DONE,
+		DONE
+	};
 	Read_status				   _read_request(const pollfd& pfd, std::string& buffer);
+	void					   _on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request));
+	bool					   _is_end_of_http_request(const std::string& s);
 	fd_t					   _server_socket;
 	std::vector<struct pollfd> _pollfds;
 	std::vector<std::string>   _buffers;

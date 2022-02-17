@@ -9,4 +9,9 @@ void e_perror(const std::string& msg) {
 	exit(EXIT_FAILURE);
 }
 
+void message(const std::string& msg) {
+	std::cerr << msg << std::endl;
+	exit(EXIT_FAILURE);
+}
+
 } // namespace exit_with

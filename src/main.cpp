@@ -1,27 +1,29 @@
 #include "main.hpp"
+#include "config_parser.hpp"
+#include "poller.hpp"
+#include <fcntl.h>
 #include <netinet/in.h>
+#include <sstream>
+#include <sys/ioctl.h>
+#include <sys/poll.h>
 #include <sys/socket.h>
 
 #define PORT 8081
 
-int main() {
-	fd_t			   server_fd = create_socket();
-	struct sockaddr_in address;
+void on_request(Request& request, config& config) {
+	std::string request_line = get_html_request(config); // getting the right html file
+	std::cout << request.raw << std::endl;
+	request.send_response(200, request_line);
+	(void)config;
+}
 
-	listen_on_socket(server_fd, PORT, address);
-	std::cout << "Listening on: http://localhost:" << PORT << std::endl;
-	while (true) {
-		fd_t		request_fd = accept_from_fd(server_fd, address);
-		std::string request_headers = read_request(request_fd);
-		std::string client_address = get_client_address(address);
+int main(int argc, char **argv) {
+	config config;
 
-		std::cout << "Client address:" << std::endl;
-		response(request_fd, 200, "Hello World!");
-
-		close(request_fd);
-
-		std::cout << "request headers: " << std::endl;
-		std::cout << request_headers << std::endl;
-	}
+	if (argc != 2)
+		exit_with::e_perror("Not the right amount of arguments");
+	config_parser(config, argv);
+	Poller poller(mode_ipv6, config.get_port(), 500000);
+	poller.start(on_request, config);
 	return 0;
 }

@@ -18,24 +18,13 @@ void Request::_read_request(const pollfd& pfd) {
 	do {
 		bytes_read = read(pfd.fd, buf, BUFFER_SIZE);
 		if (bytes_read == -1)
-			exit_with::e_perror("Cannot read from fd");
+			exit_with::e_perror("Unable to read from file");
 		if (bytes_read == 0)
 			break;
 		buf[bytes_read] = '\0';
 		this->raw += buf;
 	} while (!_is_end_of_http_request(this->raw));
 	_parse_request();
-	// FILE* f;
-	// char  buf[BUFFER_SIZE + 1];
-
-	// f = fdopen(pfd.fd, "r");
-	// if (f == NULL)
-	// 	exit_with::e_perror("fdopen() did not work");
-	// do {
-	// 	if (fgets(buf, BUFFER_SIZE, f) == NULL)
-	// 		break;
-	// 	this->raw += buf;
-	// } while (!_is_end_of_http_request(this->raw));
 }
 
 bool Request::_is_end_of_http_request(const std::string& s) {
@@ -44,46 +33,36 @@ bool Request::_is_end_of_http_request(const std::string& s) {
 	return 1;
 }
 
-void Request::_parse_request_line() { // to do: check method (1/3) and http version(1/0/1.1)
+// Request-Line = Method SP Request-URI SP HTTP-Version CRLF
+void Request::_parse_request_line() { // TO DO: check method (1/3) and http version(1/0/1.1)
 	size_t		end;
 	size_t		sp;
 	std::string keys[] = {"method", "URI", "HTTP_version"};
 
-	end = raw.find_first_of('\n');
+	end = raw.find("\r\n");
 	if (end == std::string::npos)
-		exit_with::message("invalid request-line: 400 bad request/301 moved permanently");
-	std::string request_line = raw.substr(0, end);
-	std::cout << "request line: " << request_line << std::endl;
+		exit_with::message("[CRLF]invalid request-line: 400 bad request/301 moved permanently");
+	std::string line = raw.substr(0, end);
 
-	sp = request_line.find_first_of(' ');
+	sp = line.find_first_of(' ');
 	if (sp == std::string::npos)
-		exit_with::message("invalid request-line: 400 bad request/301 moved permanently");
-	_request_line["method"] = request_line.substr(0, sp);
-	request_line.erase(0, sp + 1);
+		exit_with::message("[method]invalid request-line: 400 bad request/301 moved permanently");
+	_request_line["method"] = line.substr(0, sp);
+	line.erase(0, sp + 1);
 
-	sp = request_line.find_first_of(' ');
+	sp = line.find_first_of(' ');
 	if (sp == std::string::npos)
-		exit_with::message("invalid request-line: 400 bad request/301 moved permanently");
-	_request_line["URI"] = request_line.substr(0, sp);
-	request_line.erase(0, sp + 1);
+		exit_with::message("[URI]invalid request-line: 400 bad request/301 moved permanently");
+	_request_line["URI"] = line.substr(0, sp);
+	line.erase(0, sp + 1);
 
-	end = request_line.find_first_of('\n'); // TODO: are trailing whitespaces possible?
-	if (sp == std::string::npos)
-		exit_with::message("invalid request-line: 400 bad request/301 moved permanently");
-	_request_line["HTTP_version"] = request_line.substr(0, sp);
+	sp = line.find_first_of(' ');
+	if (sp != std::string::npos)
+		exit_with::message("[HTTP_versison]invalid request-line: 400 bad request/301 moved permanently");
+	_request_line["HTTP_version"] = line;
 }
 
 void Request::_parse_request() {
-	// std::stringstream ss; // do not use streams for parsing
-	// std::string		  key;
-	// std::string		  value;
-	// ss << buf;
-	// std::getline(ss, _request_line["method"], ' ');
-	// std::getline(ss, _request_line["URI"], ' ');
-	// std::getline(ss, _request_line["HTTP_version"]);
-	// while (ss >> key >> value) {
-	// 	_request_headers[key] = value;
-	// }
 	_parse_request_line();
 }
 
@@ -104,7 +83,6 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 	std::map<std::string, std::string> request_headers = rhs.get_request_headers();
 	std::map<std::string, std::string> body = rhs.get_body();
 
-	output << "Request consists of:" << std::endl;
 	output << "Request line-------------" << std::endl;
 	for (std::map<std::string, std::string>::const_iterator it = request_line.begin(); it != request_line.end(); ++it) {
 		std::cout << it->first << ": " << it->second << std::endl;

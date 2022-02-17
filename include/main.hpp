@@ -1,7 +1,8 @@
 #pragma once
-#include <arpa/inet.h>
 #include "config_parser.hpp"
+#include <arpa/inet.h>
 #include <cstdlib>
+#include <errno.h>
 #include <iostream>
 #include <sstream>
 #include <stdio.h>
@@ -11,7 +12,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <vector>
-#include <errno.h>
 
 #define BUFFER_SIZE 4096
 #define SERVER_BACKLOG 100
@@ -43,3 +43,4 @@ std::string to_string(T value) {
 } // namespace cpp11
 
 std::string get_client_address(struct sockaddr_in& address);
+void		log_pollfd(const struct pollfd& pfd);

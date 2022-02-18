@@ -13,6 +13,17 @@ void cut_till_collon(std::string& line) {
 	line = line.substr(0, end + 1); // getting rid of the ';' and whitespace
 }
 
+void cut_till_bracket(std::string& line) {
+	size_t find_bracket;
+	size_t end;
+
+	find_bracket = line.find_last_not_of("\t ");
+	if (line[find_bracket] != '{')
+		exit_with::e_perror("config error: line");
+	end = line.find_last_not_of("\t {");
+	line = line.substr(0, end + 1); // getting rid of the ';' and whitespace
+}
+
 void Config::_parseServerName(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
 	std::string serverName = config_info["server_name"];
 	size_t		split;
@@ -37,15 +48,15 @@ void Config::_parseListen(std::string option, std::map<const std::string, std::s
 	if (strchr(listen.c_str(), ':')) {
 		while (i < listen.size()) {
 			if (listen[i] != '.' && !isdigit(listen[i]) && listen[i] != ':' && listen[i] != ';')
-				exit_with::e_perror("config error: listen not right");
+				exit_with::e_perror("config error: listen");
 			if (listen[i] == '.') {
 				check_ip = 0;
 				if (check_dots > 2) // check if its a real ip adress
-					exit_with::e_perror("config error: listen dots");
+					exit_with::e_perror("config error: listen");
 				check_dots++;
 			}
 			if (check_ip > 2 && check_dots != 3) // check if its only 3 numbers long
-				exit_with::e_perror("config error: listen ip");
+				exit_with::e_perror("config error: listen");
 			if (isdigit(listen[i]))
 				check_ip++;
 			i++;
@@ -90,5 +101,48 @@ void Config::_parseRoot(std::string option, std::map<const std::string, std::str
 	_root = root;
 	(void)option;
 	(void)config_info;
+	(void)line;
+}
+
+bool IsPathExist(const std::string &s)
+{
+  struct stat buffer;
+  return (stat (s.c_str(), &buffer) == 0);
+}
+
+void Config::_parseLocation(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+	std::string location = config_info["location"];
+
+	cut_till_bracket(location);
+	if (location[0] == '/')
+		location.insert(0, ".");
+	if (!IsPathExist(location))
+		exit_with::e_perror("config error: location");
+	_location.push_back(location);
+	(void)option;
+	(void)config_info;
+	(void)line;
+}
+
+void Config::_parseIndex(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+	(void)option;
+	(void)config_info;
+	(void)line;
+}
+
+void Config::_parseServer(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+	(void)option;
+	(void)config_info;
+	(void)line;
+}
+
+void Config::_parseAutoIndex(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+	std::string autoIndex = config_info["autoindex"];
+
+	cut_till_collon(autoIndex);
+	if (autoIndex.compare("on") != 0 && autoIndex.compare("off") != 0)
+		exit_with::e_perror("config error: autoindex");
+	_autoIndex = autoIndex;
+	(void)option;
 	(void)line;
 }

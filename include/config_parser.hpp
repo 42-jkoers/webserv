@@ -21,19 +21,26 @@ class Config {
 	std::string	 get_root() const;
 
   private:
-	void		 _parseServerName(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void		 _parseListen(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void		 _parseErrorPage(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void		 _parseClientMaxBodySize(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void		 _parseAllowedMethods(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void		 _parseRoot(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void		 _config_parser(char** argv);
-	void		 safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);
-	unsigned int _port;
-	std::string	 _ip;
-	std::string	 _serverName;
-	std::string	 _serverUrl;
-	std::string	 _root;
+	void					 _parseServerName(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void					 _parseListen(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void					 _parseErrorPage(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void					 _parseClientMaxBodySize(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void					 _parseAllowedMethods(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void					 _parseRoot(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void					 _parseIndex(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void					 _parseAutoIndex(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void					 _parseServer(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void					 _parseLocation(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+
+	void					 _config_parser(char** argv);
+	void					 safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);
+	unsigned int			 _port;
+	std::string				 _ip;
+	std::string				 _serverName;
+	std::string				 _serverUrl;
+	std::string				 _root;
+	std::vector<std::string> _location;
+	std::string				 _autoIndex;
 };
 
-bool		parse_int(unsigned int& output, const std::string& str);
+bool parse_int(unsigned int& output, const std::string& str);

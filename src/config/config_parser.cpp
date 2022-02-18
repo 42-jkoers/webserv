@@ -1,4 +1,4 @@
-#include "../include/config_parser.hpp"
+#include "config_parser.hpp"
 #include "main.hpp"
 #include <sstream>
 
@@ -11,7 +11,7 @@ bool parse_int(unsigned int& output, const std::string& str) {
 }
 
 Config::Config(int argc, char** argv) {
-	_config_parser(argv);
+	_config_parser(argc, argv);
 	(void)argc;
 }
 
@@ -51,13 +51,18 @@ void Config::safe_info(std::string line, std::map<const std::string, std::string
 			return;
 		} else if (line.find_first_not_of("\t ") == std::string::npos)
 			return;
-		else if (line.find_first_of("}") != std::string::npos)
+		else if (line.find_first_of("}") != std::string::npos) {
+			if (_location_check == true){
+				_current_location++;
+				_location_check = false;
+			}
 			return;
+		}
 	}
 	exit_with::e_perror("config error: invalid line");
 }
 
-void Config::_config_parser(char** argv) {
+void Config::_config_parser(int argc, char** argv) {
 	std::ifstream							 config_file;
 	std::string								 buffer;
 	std::map<const std::string, std::string> config_info;
@@ -73,7 +78,12 @@ void Config::_config_parser(char** argv) {
 	options.push_back("autoindex");
 	options.push_back("index");
 	options.push_back("server");
-	config_file.open(argv[1]);
+	_current_location = 0;
+	_location_check = false;
+	if (argc == 2)
+		config_file.open(argv[1]);
+	else
+		config_file.open("default.conf");
 	if (!config_file.is_open())
 		exit_with::e_perror("Cannot open config file");
 	while (getline(config_file, buffer)) {

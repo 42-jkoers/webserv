@@ -14,6 +14,7 @@
 
 void on_request(Request& request) {
 	std::cout << request.raw << std::endl;
+	std::cout << "hello\n";
 	request.send_response(200, "Hello World!");
 }
 

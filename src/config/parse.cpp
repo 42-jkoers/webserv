@@ -77,20 +77,48 @@ void Config::_parseListen(std::string option, std::map<const std::string, std::s
 }
 
 void Config::_parseErrorPage(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+	std::string error = config_info["error_page"];
+	size_t		space;
+
+	cut_till_collon(error);
+	size_t error_code;
+	space = error.find_first_of(" \t");
+	if (space == std::string::npos)
+		exit_with::e_perror("config error: error_page");
+	error_code = atoi(error.substr(0, space).c_str());
+	_error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
+
 	(void)option;
 	(void)config_info;
 	(void)line;
+	std::cout << "--------------------------------------\n";
 }
 
 void Config::_parseClientMaxBodySize(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+	std::string body_size = config_info["client_max_body_size"];
+	cut_till_collon(body_size);
+	if (body_size[body_size.size() - 1] != 'M' && body_size[body_size.size() - 1] != 'm')
+		exit_with::e_perror("config error: client_max_body_size");
+	_client_max_body_size = body_size;
+
 	(void)option;
 	(void)config_info;
 	(void)line;
 }
 
 void Config::_parseAllowedMethods(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
-	(void)option;
+	// std::string methods = config_info["allowed_methods"];
+	// size_t		space;
+
+	//Make it work for multiple allowed methods
+	// cut_till_collon(methods);
+	// std::cout << methods << std::endl;
+	// while (methods.find_first_of("\t ") != std::string::npos){
+	// 	space = methods.find_first_of("\t ");
+	// 	_methods.push_back(methods.substr(space));
+	// }
 	(void)config_info;
+	(void)option;
 	(void)line;
 }
 
@@ -104,27 +132,37 @@ void Config::_parseRoot(std::string option, std::map<const std::string, std::str
 	(void)line;
 }
 
-bool IsPathExist(const std::string &s)
-{
-  struct stat buffer;
-  return (stat (s.c_str(), &buffer) == 0);
+bool IsPathExist(const std::string& s) {
+	struct stat buffer;
+	return (stat(s.c_str(), &buffer) == 0);
 }
 
 void Config::_parseLocation(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
 	std::string location = config_info["location"];
 
+	_location_check = true;
 	cut_till_bracket(location);
 	if (location[0] == '/')
 		location.insert(0, ".");
 	if (!IsPathExist(location))
 		exit_with::e_perror("config error: location");
-	_location.push_back(location);
+	_location[_current_location] = location;
 	(void)option;
 	(void)config_info;
 	(void)line;
 }
 
 void Config::_parseIndex(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+	std::string	  index = config_info["index"];
+	std::ifstream try_file;
+	std::string	  path_to_file;
+
+	cut_till_collon(index);
+	path_to_file = _location[_current_location] + "/" + index;
+	try_file.open(path_to_file);
+	if (!try_file.is_open())
+		exit_with::e_perror("config error: index");
+	try_file.close();
 	(void)option;
 	(void)config_info;
 	(void)line;

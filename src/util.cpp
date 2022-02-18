@@ -1,5 +1,6 @@
 #include "main.hpp"
 #include <fcntl.h>
+#include <fstream>
 #include <iostream>
 
 namespace exit_with {

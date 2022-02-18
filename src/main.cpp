@@ -1,7 +1,8 @@
 #include "main.hpp"
-#include "request.hpp"
 #include "config_parser.hpp"
+#include "file_system.hpp"
 #include "poller.hpp"
+#include "request.hpp"
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <sstream>
@@ -11,11 +12,9 @@
 
 #define PORT 8080
 
-void on_request(Request& request, Config& config) {
+void on_request(Request& request) {
 	std::cout << request.raw << std::endl;
-	std::string html_response = get_index(config); // getting the right html file
-	request.send_response(200, html_response);
-	(void)config;
+	request.send_response(200, "Hello World!");
 }
 
 int main(int argc, char** argv) {

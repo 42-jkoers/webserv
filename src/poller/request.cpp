@@ -1,33 +1,15 @@
+#include "request.hpp"
 #include "main.hpp"
-#include "poller.hpp"
 #include <map>
 #include <netinet/in.h>
 
-Request::Request(const pollfd& pfd) : _fd(pfd.fd) {
+Request::Request(const pollfd& pfd, const std::string& raw) : raw(raw), _fd(pfd.fd) {
 	if (pfd.revents != POLLIN)
 		exit_with::message("Unexpected revents value");
-	_read_request(pfd);
-	_request_line["method"] = "GET";
-	_request_line["URI"] = "locahost";
-	_request_line["version"] = "HTTP/1.1";
-	// _parse_request(pfd);
+	_parse_request();
 }
 
 Request::~Request() {
-}
-
-void Request::_read_request(const pollfd& pfd) {
-	static char buf[BUFFER_SIZE + 1];
-	ssize_t		bytes_read;
-	do {
-		bytes_read = read(pfd.fd, buf, BUFFER_SIZE);
-		if (bytes_read == -1)
-			exit_with::e_perror("Cannot read from fd");
-		if (bytes_read == 0)
-			break;
-		buf[bytes_read] = '\0';
-		this->raw += buf;
-	} while (!_is_end_of_http_request(this->raw));
 }
 
 bool Request::_is_end_of_http_request(const std::string& s) {
@@ -36,21 +18,77 @@ bool Request::_is_end_of_http_request(const std::string& s) {
 	return 1;
 }
 
-std::map<std::string, std::string> Request::get_request_line(void) const {
+// Request-Line = Method SP Request-URI SP HTTP-Version CRLF
+void Request::_parse_request_line() { // to do: check method (1/3) and http version(1/0/1.1)
+	size_t		end;
+	size_t		sp;
+	std::string keys[] = {"method", "URI", "HTTP_version"};
+
+	end = raw.find("\r\n");
+	if (end == std::string::npos)
+		exit_with::message("[CRLF]invalid request-line: 400 bad request/301 moved permanently");
+	std::string line = raw.substr(0, end);
+
+	sp = line.find_first_of(' ');
+	if (sp == std::string::npos)
+		exit_with::message("[method]invalid request-line: 400 bad request/301 moved permanently");
+	_request_line["method"] = line.substr(0, sp);
+	line.erase(0, sp + 1);
+
+	sp = line.find_first_of(' ');
+	if (sp == std::string::npos)
+		exit_with::message("[URI]invalid request-line: 400 bad request/301 moved permanently");
+	_request_line["URI"] = line.substr(0, sp);
+	line.erase(0, sp + 1);
+
+	sp = line.find_first_of(' ');
+	if (sp != std::string::npos)
+		exit_with::message("[HTTP_versison]invalid request-line: 400 bad request/301 moved permanently");
+	_request_line["HTTP_version"] = line;
+}
+
+void Request::_parse_request() {
+	// std::stringstream ss; // do not use streams for parsing
+	// std::string		  key;
+	// std::string		  value;
+	// ss << buf;
+	// std::getline(ss, _request_line["method"], ' ');
+	// std::getline(ss, _request_line["URI"], ' ');
+	// std::getline(ss, _request_line["HTTP_version"]);
+	// while (ss >> key >> value) {
+	// 	_request_headers[key] = value;
+	// }
+	_parse_request_line();
+}
+
+std::map<std::string, std::string> Request::get_request_line() const {
 	return _request_line;
 }
 
-std::map<std::string, std::string> Request::get_request_header_fields(void) const {
-	return _request_header_fields;
+std::map<std::string, std::string> Request::get_request_headers() const {
+	return _request_headers;
+}
+
+std::map<std::string, std::string> Request::get_body() const {
+	return _body;
 }
 
 std::ostream& operator<<(std::ostream& output, Request const& rhs) {
-	std::map<std::string, std::string> rhs_request_line;
+	std::map<std::string, std::string> request_line = rhs.get_request_line();
+	std::map<std::string, std::string> request_headers = rhs.get_request_headers();
+	std::map<std::string, std::string> body = rhs.get_body();
 
-	rhs_request_line = rhs.get_request_line();
-	output << "Request line: " << std::endl;
-	for (std::map<std::string, std::string>::const_iterator it = rhs_request_line.begin(); it != rhs_request_line.end(); ++it) {
-		std::cout << it->first << " | " << it->second << std::endl;
+	output << "Request line-------------" << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = request_line.begin(); it != request_line.end(); ++it) {
+		std::cout << it->first << ": " << it->second << std::endl;
+	}
+	output << "Request header fields----" << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = request_headers.begin(); it != request_headers.end(); ++it) {
+		std::cout << it->first << ": " << it->second << std::endl;
+	}
+	output << "Request body-------------" << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = body.begin(); it != body.end(); ++it) {
+		std::cout << it->first << ": " << it->second << std::endl;
 	}
 	return output;
 }
@@ -80,5 +118,5 @@ void Request::send_response(uint32_t response_code, const std::string& message) 
 	response += m[response_code];
 	response += "\r\n\r\n";
 	response += message;
-	write(_fd, response.c_str(), response.length()); // TODO: error hadling
+	write(_fd, response.c_str(), response.length()); // TODO: error handling
 }

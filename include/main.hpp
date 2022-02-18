@@ -1,4 +1,5 @@
 #pragma once
+#include "config_parser.hpp"
 #include <arpa/inet.h>
 #include <cstdlib>
 #include <errno.h>
@@ -43,4 +44,9 @@ std::string to_string(T value) {
 
 } // namespace cpp11
 std::string get_index(Config& config);
+
+std::string readFile(const std::string& path);
+
+// Someone should probably move this
 std::string get_client_address(struct sockaddr_in& address);
+void		log_pollfd(const struct pollfd& pfd);

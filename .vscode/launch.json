@@ -2,6 +2,7 @@
 {
 	"version": "0.2.0",
 	"configurations": [
+	
 		{
 			"name": "osx x64",
 			"type": "cppdbg",

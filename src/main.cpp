@@ -13,8 +13,10 @@
 #define PORT 8080
 
 void on_request(Request& request) {
+	std::cout << "========== raw start ==========" << std::endl;
 	std::cout << request.raw << std::endl;
-	request.send_response(200, fs::read_file("./html/upload.html"));
+	std::cout << "=========== raw end ============" << std::endl;
+	request.send_response(200, "Hello World!");
 }
 
 int main(int argc, char** argv) {

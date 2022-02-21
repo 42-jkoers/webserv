@@ -4,7 +4,7 @@
 #include <netinet/in.h>
 
 Request::Request(const pollfd& pfd, const std::string& raw) : raw(raw), _fd(pfd.fd) {
-	_parse_request();
+	// _parse_request();
 }
 
 Request::~Request() {

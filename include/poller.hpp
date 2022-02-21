@@ -5,17 +5,21 @@
 class Buffer {
   public:
 	Buffer();
-	enum Read_status {
+	enum Status {
+		UNSET,
+		NORMAL,
 		MULTIPART,
 		DONE
 	};
-	Read_status read_pollfd(const pollfd& pfd);
+	Status		read_pollfd(const pollfd& pfd);
 	void		reset();
 
 	std::string data;
 
   private:
-	bool _is_end_of_http_request(const std::string& s);
+	Status	_status;
+	ssize_t _bytes_to_read;
+	bool	_is_end_of_http_request(const std::string& s);
 };
 
 class Poller {

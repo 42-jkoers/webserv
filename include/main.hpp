@@ -50,3 +50,12 @@ std::string readFile(const std::string& path);
 std::string get_client_address(struct sockaddr_in& address);
 void		log_pollfd(const struct pollfd& pfd);
 void		log_event(short event);
+
+// true on success
+template <typename T>
+bool parse_int(T& output, const std::string& str) { // todo std::is_integral
+	char			  c;
+	std::stringstream ss(str);
+	ss >> output;
+	return !(ss.fail() || ss.get(c));
+}

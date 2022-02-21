@@ -1,6 +1,7 @@
 #include "poller.hpp"
 #include "main.hpp"
 #include <fcntl.h>
+#include <limits>
 #include <netinet/in.h>
 #include <sstream>
 #include <sys/ioctl.h>
@@ -125,32 +126,47 @@ Poller::~Poller() {} // TODO: close fds etc.
 // Buffer
 
 Buffer::Buffer() { // TODO: disable
+	_status = UNSET;
+	_bytes_to_read = std::numeric_limits<size_t>::max();
 }
 
-bool Buffer::_is_end_of_http_request(const std::string& s) {
-	if (s.find("\r\n\r\n") == std::string::npos)
-		return 0;
-	return 1;
-}
+// TODO: fix this horrible unstable abomination of what is not even allowed to be called "code"
+Buffer::Status Buffer::read_pollfd(const pollfd& pfd) {
+	static char		  buf[BUFFER_SIZE + 1];
+	ssize_t			  bytes_read;
+	const std::string cl = "Content-Length: ";
 
-Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
-	static char buf[BUFFER_SIZE + 1];
-	ssize_t		bytes_read;
-	do {
+	while (true) {
 		bytes_read = read(pfd.fd, buf, BUFFER_SIZE);
 		if (bytes_read == 0)
 			break;
-		if (bytes_read < 0) // TODO: this might not be accurate enough
-			return MULTIPART;
+		if (bytes_read < 0) {
+			return UNSET;
+		}
 		buf[bytes_read] = '\0';
 		data += buf;
-	} while (!_is_end_of_http_request(data));
-	if (pfd.revents & POLLOUT && data.find("Content-Type: multipart/form-data;") != std::string::npos) { // TODO
+
+		size_t p;
+		if (_status == UNSET && (p = data.find(cl)) != std::string::npos) {
+			std::string len_str = std::string(data.begin() + p + cl.length(), data.begin() + data.find("\r\n", p));
+			assert(parse_int(_bytes_to_read, len_str));
+			_status = MULTIPART;
+		}
+		_bytes_to_read -= bytes_read;
+		if (_bytes_to_read <= 0) { // TODO: what the fuck
+			_status = DONE;
+			return _status;
+		}
+		if (_status == UNSET && data.find("\r\n\r\n") != std::string::npos) {
+			_status = DONE;
+			return _status;
+		}
+	}
+	if (_status == MULTIPART && pfd.revents & POLLOUT) { // TODO: do not repeat code
 		std::string resp = "GET / HTTP/1.1 100 Continue\n\r\n\r";
 		write(pfd.fd, resp.data(), resp.length());
-		return MULTIPART;
 	}
-	return DONE;
+	return _status;
 }
 
 void Buffer::reset() {

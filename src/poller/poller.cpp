@@ -57,7 +57,7 @@ static fd_t create_server_socket(IP_mode ip_mode, uint32_t port) {
 Poller::Poller(IP_mode ip_mode, uint32_t port, int timeout) : _timeout(timeout) {
 	_server_socket = create_server_socket(ip_mode, port);
 	_pollfds.reserve(1);
-	_pollfds.push_back(_create_pollfd(_server_socket, POLLIN /* | POLLOUT */));
+	_pollfds.push_back(_create_pollfd(_server_socket, POLLIN | POLLOUT));
 }
 
 void Poller::_accept_clients() {
@@ -69,45 +69,23 @@ void Poller::_accept_clients() {
 			break;
 
 		// New incoming connection
-		_pollfds.push_back(_create_pollfd(newfd, POLLIN));
+		_pollfds.push_back(_create_pollfd(newfd, POLLIN | POLLOUT));
 	}
-}
-
-bool Poller::_is_end_of_http_request(const std::string& s) { // TODO: better?
-	if (s.size() < 4)
-		return false;
-	return strncmp(s.data() + (s.size() - 4), "\r\n\r\n", 4) == 0;
-}
-
-Poller::Read_status Poller::_read_request(const pollfd& pfd, std::string& buffer) {
-	static char buf[BUFFER_SIZE + 1];
-	ssize_t		bytes_read;
-	do {
-		bytes_read = read(pfd.fd, buf, BUFFER_SIZE);
-		if (bytes_read == 0)
-			return DONE;
-		if (bytes_read < 0) // TODO: this might not be accurate enough
-			return NOT_DONE;
-		buf[bytes_read] = '\0';
-		buffer += buf;
-	} while (!_is_end_of_http_request(buffer));
-	return DONE;
 }
 
 #define FD_CLOSED -1
 void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
 	_buffers.reserve(pfd.fd + 1);
-	Poller::Read_status rs = _read_request(pfd, _buffers[pfd.fd]);
-	if (rs != DONE)
+	if (_buffers[pfd.fd].read_pollfd(pfd) != Buffer::DONE)
 		return;
-	Request request(pfd, _buffers[pfd.fd]);
-	on_request(request);
-	_buffers[pfd.fd] = "";
+	Request r(pfd, _buffers[pfd.fd].data);
+	on_request(r);
+	_buffers[pfd.fd].reset();
 	close(pfd.fd);
 	pfd.fd = FD_CLOSED;
 }
 
-void Poller::start(void (*on_request)(Request& request), Config& config) {
+void Poller::start(void (*on_request)(Request& request)) {
 	while (true) {
 		int rc = poll(_pollfds.data(), _pollfds.size(), _timeout);
 		if (rc < 0)
@@ -118,8 +96,6 @@ void Poller::start(void (*on_request)(Request& request), Config& config) {
 		for (std::vector<struct pollfd>::iterator fd = _pollfds.begin() + 1; fd != _pollfds.end(); ++fd) {
 			if (fd->revents == 0)
 				continue;
-			if (fd->revents != POLLIN)
-				exit_with::message("Unexpected revents value");
 			_on_new_pollfd(*fd, on_request);
 		}
 
@@ -135,15 +111,50 @@ void Poller::start(void (*on_request)(Request& request), Config& config) {
 		}
 		_pollfds.erase(valid, _pollfds.end());
 	}
-	(void)config;
 }
 
 struct pollfd Poller::_create_pollfd(int fd, short events) {
 	struct pollfd pfd;
 	pfd.fd = fd;
 	pfd.events = events;
-	log_pollfd(pfd);
 	return pfd;
 }
 
 Poller::~Poller() {} // TODO: close fds etc.
+
+// Buffer
+
+Buffer::Buffer() { // TODO: disable
+}
+
+bool Buffer::_is_end_of_http_request(const std::string& s) {
+	if (s.find("\r\n\r\n") == std::string::npos)
+		return 0;
+	return 1;
+}
+
+Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
+	static char buf[BUFFER_SIZE + 1];
+	ssize_t		bytes_read;
+
+	do {
+		bytes_read = read(pfd.fd, buf, BUFFER_SIZE);
+		if (bytes_read == 0)
+			break;
+		if (bytes_read < 0) // TODO: this might not be accurate enough
+			break;
+		buf[bytes_read] = '\0';
+		data += buf;
+	} while (!_is_end_of_http_request(data)); // TODO error
+	// if (data.find("Content-Type: multipart/form-data;") != std::string::npos) { // TODO
+	// 	std::string resp = "HTTP/1.1 100 Continue\n\r\n\r";
+	// 	write(pfd.fd, resp.data(), resp.length());
+	// 	return MULTIPART;
+	// }
+	return DONE;
+}
+
+void Buffer::reset() {
+	data = "";
+	data.shrink_to_fit();
+}

@@ -14,13 +14,13 @@
 
 void on_request(Request& request) {
 	std::cout << request.raw << std::endl;
-	request.send_response(200, "Hello World!");
+	request.send_response(200, fs::read_file("./html/upload.html"));
 }
 
 int main(int argc, char** argv) {
 	Config config(argc, argv);
 
 	Poller poller(mode_ipv6, config.get_port(), 50000);
-	poller.start(on_request, config);
+	poller.start(on_request);
 	return 0;
 }

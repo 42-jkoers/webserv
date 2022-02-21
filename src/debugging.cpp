@@ -10,8 +10,8 @@ void log_event(short event) {
 		std::cout << "POLLOUT ";
 	if (event & POLLRDNORM)
 		std::cout << "POLLRDNORM ";
-	if (event & POLLWRNORM)
-		std::cout << "POLLWRNORM ";
+	// if (event & POLLWRNORM) // same as POLLOUT
+	// 	std::cout << "POLLWRNORM ";
 	if (event & POLLRDBAND)
 		std::cout << "POLLRDBAND ";
 	if (event & POLLWRBAND)

@@ -42,7 +42,6 @@ std::string to_string(T value) {
 }
 
 } // namespace cpp11
-std::string get_index(Config& config);
 
 std::string readFile(const std::string& path);
 

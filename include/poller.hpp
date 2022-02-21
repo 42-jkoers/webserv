@@ -9,6 +9,7 @@ class Buffer {
 		UNSET,
 		NORMAL,
 		MULTIPART,
+		TEMPORALLY_UNIAVAILABLE,
 		DONE
 	};
 	Status		read_pollfd(const pollfd& pfd);

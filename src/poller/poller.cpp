@@ -126,8 +126,7 @@ Poller::~Poller() {} // TODO: close fds etc.
 // Buffer
 
 Buffer::Buffer() { // TODO: disable
-	_status = UNSET;
-	_bytes_to_read = std::numeric_limits<size_t>::max();
+	reset();
 }
 
 // TODO: fix this horrible unstable abomination of what is not even allowed to be called "code"
@@ -140,9 +139,8 @@ Buffer::Status Buffer::read_pollfd(const pollfd& pfd) {
 		bytes_read = read(pfd.fd, buf, BUFFER_SIZE);
 		if (bytes_read == 0)
 			break;
-		if (bytes_read < 0) {
-			return UNSET;
-		}
+		if (bytes_read < 0)
+			return TEMPORALLY_UNIAVAILABLE;
 		buf[bytes_read] = '\0';
 		data += buf;
 
@@ -153,11 +151,11 @@ Buffer::Status Buffer::read_pollfd(const pollfd& pfd) {
 			_status = MULTIPART;
 		}
 		_bytes_to_read -= bytes_read;
-		if (_bytes_to_read <= 0) { // TODO: what the fuck
+		if (_status == MULTIPART && _bytes_to_read <= 0) { // TODO: what the fuck
 			_status = DONE;
 			return _status;
 		}
-		if (_status == UNSET && data.find("\r\n\r\n") != std::string::npos) {
+		if (_status == UNSET && _bytes_to_read <= 0 && data.find("\r\n\r\n") != std::string::npos) {
 			_status = DONE;
 			return _status;
 		}
@@ -170,6 +168,8 @@ Buffer::Status Buffer::read_pollfd(const pollfd& pfd) {
 }
 
 void Buffer::reset() {
+	_status = UNSET;
+	_bytes_to_read = -1;
 	data = "";
 	data.shrink_to_fit();
 }

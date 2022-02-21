@@ -136,21 +136,20 @@ bool Buffer::_is_end_of_http_request(const std::string& s) {
 Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
 	static char buf[BUFFER_SIZE + 1];
 	ssize_t		bytes_read;
-
 	do {
 		bytes_read = read(pfd.fd, buf, BUFFER_SIZE);
 		if (bytes_read == 0)
 			break;
 		if (bytes_read < 0) // TODO: this might not be accurate enough
-			break;
+			return MULTIPART;
 		buf[bytes_read] = '\0';
 		data += buf;
-	} while (!_is_end_of_http_request(data)); // TODO error
-	// if (data.find("Content-Type: multipart/form-data;") != std::string::npos) { // TODO
-	// 	std::string resp = "HTTP/1.1 100 Continue\n\r\n\r";
-	// 	write(pfd.fd, resp.data(), resp.length());
-	// 	return MULTIPART;
-	// }
+	} while (!_is_end_of_http_request(data));
+	if (pfd.revents & POLLOUT && data.find("Content-Type: multipart/form-data;") != std::string::npos) { // TODO
+		std::string resp = "GET / HTTP/1.1 100 Continue\n\r\n\r";
+		write(pfd.fd, resp.data(), resp.length());
+		return MULTIPART;
+	}
 	return DONE;
 }
 

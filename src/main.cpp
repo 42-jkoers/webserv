@@ -3,6 +3,7 @@
 #include "file_system.hpp"
 #include "poller.hpp"
 #include "request.hpp"
+#include "response.hpp"
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <sstream>
@@ -14,7 +15,10 @@
 
 void on_request(Request& request) {
 	std::cout << request.raw << std::endl;
-	request.send_response(200, "Hello World!");
+	std::cout << request << std::endl;
+
+	Response response(request.get_fd());
+	response.send_response(200, "Hello World!\n");
 }
 
 int main(int argc, char** argv) {

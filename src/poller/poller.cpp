@@ -1,5 +1,6 @@
 #include "poller.hpp"
 #include "main.hpp"
+#include "response.hpp"
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <sstream>
@@ -101,9 +102,11 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
 	if (rs != DONE)
 		return;
 	Request request(pfd, _buffers[pfd.fd]);
-	on_request(request);
+	if (request.get_ret() == 0) {
+		on_request(request);
+	}
 	_buffers[pfd.fd] = "";
-	close(pfd.fd);
+	close(pfd.fd); // TODO: only when keepalive is true
 	pfd.fd = FD_CLOSED;
 }
 

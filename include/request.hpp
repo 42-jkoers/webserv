@@ -1,11 +1,10 @@
 #pragma once
 #include "main.hpp"
-#include <map>
+#include <netinet/in.h>
 
 class Request {
   public:
 	Request(const pollfd& pfd, const std::string& raw);
-	void		send_response(uint32_t response_code, const std::string& message);
 	std::string raw;
 	~Request();
 	// getters
@@ -13,12 +12,17 @@ class Request {
 	std::map<std::string, std::string> get_request_line() const;
 	std::map<std::string, std::string> get_request_headers() const;
 	std::map<std::string, std::string> get_body() const;
+	int								   get_ret() const;
+	fd_t							   get_fd() const;
 
   private:
 	fd_t							   _fd;
 	bool							   _is_end_of_http_request(const std::string& s);
 	void							   _parse_request();
-	void							   _parse_request_line();
+	int								   _parse_request_line();
+	int								   _is_valid_request_line();
+	int								   _set_ret_and_return(int ret);
+	int								   _ret;
 	std::map<std::string, std::string> _request_line;
 	std::map<std::string, std::string> _request_headers;
 	std::map<std::string, std::string> _body;

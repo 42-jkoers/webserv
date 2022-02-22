@@ -1,11 +1,9 @@
 #include "request.hpp"
-#include "main.hpp"
-#include <map>
-#include <netinet/in.h>
 
 Request::Request(const pollfd& pfd, const std::string& raw) : raw(raw), _fd(pfd.fd) {
 	if (pfd.revents != POLLIN)
 		exit_with::message("Unexpected revents value");
+	_ret = 0;
 	_parse_request();
 }
 
@@ -18,33 +16,44 @@ bool Request::_is_end_of_http_request(const std::string& s) {
 	return 1;
 }
 
+int Request::_is_valid_request_line() { // TO DO: invalid reqeust line: 400 bad request/301 moved permanently
+	std::array<std::string, 3> methods = {"GET", "POST", "DELETE"};
+
+	if (std::find(methods.begin(), methods.end(), _request_line["method"]) == methods.end())
+		return 0;
+	if (_request_line["HTTP_version"].compare("HTTP/1.1") != 0)
+		return 0;
+	return 1;
+}
+
+int Request::_set_ret_and_return(int ret) {
+	_ret = ret;
+	return 1;
+}
+
 // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
-void Request::_parse_request_line() { // to do: check method (1/3) and http version(1/0/1.1)
-	size_t		end;
-	size_t		sp;
-	std::string keys[] = {"method", "URI", "HTTP_version"};
+int Request::_parse_request_line() {
+	size_t					   end;
+	size_t					   sp;
+	std::array<std::string, 3> components = {"method", "URI", "HTTP_version"};
 
 	end = raw.find("\r\n");
 	if (end == std::string::npos)
-		exit_with::message("[CRLF]invalid request-line: 400 bad request/301 moved permanently");
+		return _set_ret_and_return(301);
 	std::string line = raw.substr(0, end);
 
-	sp = line.find_first_of(' ');
-	if (sp == std::string::npos)
-		exit_with::message("[method]invalid request-line: 400 bad request/301 moved permanently");
-	_request_line["method"] = line.substr(0, sp);
-	line.erase(0, sp + 1);
-
-	sp = line.find_first_of(' ');
-	if (sp == std::string::npos)
-		exit_with::message("[URI]invalid request-line: 400 bad request/301 moved permanently");
-	_request_line["URI"] = line.substr(0, sp);
-	line.erase(0, sp + 1);
-
-	sp = line.find_first_of(' ');
-	if (sp != std::string::npos)
-		exit_with::message("[HTTP_versison]invalid request-line: 400 bad request/301 moved permanently");
-	_request_line["HTTP_version"] = line;
+	for (size_t i = 0; i < components.size(); i++) {
+		sp = line.find_first_of(' ');
+		if (components[i] != "HTTP_version" && sp == std::string::npos)
+			return _set_ret_and_return(301);
+		else if (components[i] == "HTTP_version" && sp != std::string::npos)
+			return _set_ret_and_return(301);
+		_request_line[components[i]] = line.substr(0, sp);
+		line.erase(0, sp + 1);
+	}
+	if (!_is_valid_request_line())
+		return _set_ret_and_return(301);
+	return 0;
 }
 
 void Request::_parse_request() {
@@ -58,9 +67,12 @@ void Request::_parse_request() {
 	// while (ss >> key >> value) {
 	// 	_request_headers[key] = value;
 	// }
-	_parse_request_line();
+	if (_parse_request_line() == 1)
+		return;
+	// _parse_header_fields();
 }
 
+// getters
 std::map<std::string, std::string> Request::get_request_line() const {
 	return _request_line;
 }
@@ -71,6 +83,14 @@ std::map<std::string, std::string> Request::get_request_headers() const {
 
 std::map<std::string, std::string> Request::get_body() const {
 	return _body;
+}
+
+int Request::get_ret() const {
+	return _ret;
+}
+
+fd_t Request::get_fd() const {
+	return _fd;
 }
 
 std::ostream& operator<<(std::ostream& output, Request const& rhs) {
@@ -91,32 +111,4 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
 	return output;
-}
-
-// TODO: optimize
-void Request::send_response(uint32_t response_code, const std::string& message) {
-	std::map<uint32_t, std::string> m; // TODO: make this static
-	m[200] = "OK";
-	m[201] = "Created";
-	m[202] = "Accepted";
-	m[204] = "No Content";
-	m[301] = "Moved Permanently";
-	m[302] = "Moved Temporarily";
-	m[304] = "Not Modified";
-	m[400] = "Bad Request";
-	m[401] = "Unauthorized";
-	m[403] = "Forbidden";
-	m[404] = "Not Found";
-	m[500] = "Internal Server Error";
-	m[501] = "Not Implemented";
-	m[502] = "Bad Gateway";
-	m[503] = "Service Unavailable";
-
-	std::string response = "HTTP/1.1 ";
-	response += cpp11::to_string(response_code);
-	response += " ";
-	response += m[response_code];
-	response += "\r\n\r\n";
-	response += message;
-	write(_fd, response.c_str(), response.length()); // TODO: error handling
 }

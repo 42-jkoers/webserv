@@ -1,13 +1,13 @@
 #include "response.hpp"
 
-Response::Response(fd_t fd) : _fd(fd) {
+Response::Response(fd_t fd, int ret) : _fd(fd), _response_code(ret) {
 }
 
 Response::~Response() {
 }
 
 // TODO: optimize
-void Response::send_response(uint32_t response_code, const std::string& message) {
+void Response::send_response(const std::string& message) {
 	std::map<uint32_t, std::string> m; // TODO: make this static
 	m[200] = "OK";
 	m[201] = "Created";
@@ -26,10 +26,22 @@ void Response::send_response(uint32_t response_code, const std::string& message)
 	m[503] = "Service Unavailable";
 
 	std::string response = "HTTP/1.1 ";
-	response += cpp11::to_string(response_code);
+	response += cpp11::to_string(_response_code);
 	response += " ";
-	response += m[response_code];
+	response += m[_response_code];
 	response += "\r\n\r\n";
 	response += message;
 	write(_fd, response.c_str(), response.length()); // TODO: error handling
+}
+
+std::string Response::get_index(Config& config) {
+	std::ifstream html_file;
+	std::string	  line;
+	std::string	  html;
+	html_file.open(config.get_root().c_str());
+	while (getline(html_file, line)) {
+		html += line;
+	}
+	html_file.close();
+	return html;
 }

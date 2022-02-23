@@ -12,7 +12,7 @@ class Request {
 	std::map<std::string, std::string> get_request_line() const;
 	std::map<std::string, std::string> get_request_headers() const;
 	std::map<std::string, std::string> get_body() const;
-	int								   get_ret() const;
+	uint32_t						   get_response_code() const;
 	fd_t							   get_fd() const;
 
   private:
@@ -20,9 +20,10 @@ class Request {
 	bool							   _is_end_of_http_request(const std::string& s);
 	void							   _parse_request();
 	int								   _parse_request_line();
+	int								   _parse_header_fields();
 	int								   _is_valid_request_line();
-	int								   _set_ret_and_return(int ret);
-	int								   _ret;
+	int								   _set_code_and_return(int ret);
+	uint32_t						   _response_code;
 	std::map<std::string, std::string> _request_line;
 	std::map<std::string, std::string> _request_headers;
 	std::map<std::string, std::string> _body;

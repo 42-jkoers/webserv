@@ -102,8 +102,11 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
 	if (rs != DONE)
 		return;
 	Request request(pfd, _buffers[pfd.fd]);
-	if (request.get_ret() == 0) {
+	if (request.get_response_code() == 200) {
 		on_request(request);
+	} else {
+		Response response(request.get_fd(), request.get_response_code());
+		response.send_response("");
 	}
 	_buffers[pfd.fd] = "";
 	close(pfd.fd); // TODO: only when keepalive is true

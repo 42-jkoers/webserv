@@ -17,8 +17,8 @@ void on_request(Request& request) {
 	std::cout << request.raw << std::endl;
 	std::cout << request << std::endl;
 
-	Response response(request.get_fd());
-	response.send_response(200, "Hello World!\n");
+	Response response(request.get_fd(), request.get_response_code());
+	response.send_response("Hello World!\n");
 }
 
 int main(int argc, char** argv) {

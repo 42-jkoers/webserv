@@ -63,6 +63,7 @@ Poller::Poller(IP_mode ip_mode, uint32_t port, int timeout) : _timeout(timeout) 
 void Poller::_accept_clients() {
 	while (true) {
 		int newfd = accept(_server_socket, NULL, NULL);
+		std::cout << "newfd: " << newfd << std::endl;
 		if (newfd < 0 && errno != EWOULDBLOCK) // TODO errno is not allowed
 			exit_with::e_perror("accept() failed");
 		if (newfd < 0)

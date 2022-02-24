@@ -2,6 +2,11 @@
 #include "main.hpp"
 #include <sstream>
 
+/*To do 
+a way to safe more locations
+saving multiple ports
+*/
+
 // true on success
 bool parse_int(unsigned int& output, const std::string& str) {
 	char			  c;

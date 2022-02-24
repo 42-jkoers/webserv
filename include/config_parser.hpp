@@ -4,6 +4,17 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <vector> //why doesn't it include <vector> from main.hpp?
+
+class Location {
+  public:
+	Location(const std::string location);
+	~Location();
+	std::string getLocation() const;
+
+  private:
+	std::string _location;
+};
 
 class Config {
   public:
@@ -21,31 +32,33 @@ class Config {
 	std::string	 get_root() const;
 
   private:
-	void						  _parseServerName(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void						  _parseListen(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void						  _parseErrorPage(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void						  _parseClientMaxBodySize(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void						  _parseAllowedMethods(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void						  _parseRoot(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void						  _parseIndex(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void						  _parseAutoIndex(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void						  _parseServer(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void						  _parseLocation(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void		 _parseServerName(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void		 _parseListen(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void		 _parseErrorPage(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void		 _parseClientMaxBodySize(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void		 _parseAllowedMethods(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void		 _parseRoot(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void		 _parseIndex(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void		 _parseAutoIndex(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void		 _parseServer(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void		 _parseLocation(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
 
-	void						  _config_parser(int argc, char** argv);
-	void						  safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);
-	unsigned int				  _port;
-	std::string					  _ip;
-	std::string					  _serverName;
-	std::string					  _serverUrl;
-	std::string					  _root;
-	std::map<size_t, std::string> _location;
+	void		 _config_parser(int argc, char** argv);
+	void		 safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);
+	unsigned int _port;
+	std::string	 _ip;
+	std::string	 _serverName;
+	std::string	 _serverUrl;
+	std::string	 _root;
+	// std::map<size_t, std::string> _location;
 	std::string					  _autoIndex;
 	std::string					  _client_max_body_size;
 	std::map<size_t, std::string> _error_pages;
 	bool						  _location_check;
 	size_t						  _current_location;
-	// std::vector<std::string>	  _methods; // Why can I not declare a vector??
+	std::vector<Location>		  _location;
+	std::vector<std::string>	  _methods;
+	size_t						  _number_methods;
 };
 
 bool parse_int(unsigned int& output, const std::string& str);

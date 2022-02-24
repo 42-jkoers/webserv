@@ -1,6 +1,6 @@
 #include "request.hpp"
 
-Request::Request(const pollfd& pfd, const std::string& raw) : raw(raw), _fd(pfd.fd) {
+Request::Request(const pollfd& pfd, const std::string& raw) : _fd(pfd.fd) _raw(raw) {
 	if (pfd.revents != POLLIN)
 		exit_with::message("Unexpected revents value");
 	_response_code = 200;
@@ -34,21 +34,36 @@ int Request::_parse_header_fields() {
 	// while (ss >> key >> value) {
 	// 	_request_headers[key] = value;
 	// }
+	std::stringstream ss;
+	std::string		  key;
+	std::string		  value;
+	int				  semi_colon;
+	int				  sp;
+
+	semi_colon = 0;
+	sp = 0;
+	ss << _raw;
+	// while (ss >> key >> value) {
+	// 	semi_colon = key.find_first_of(':');
+	// 	if (semi_colon == std::string::npos)
+
+	// 		_request_headers[key] = value;
+	// }
 	return 0;
 }
 
 int Request::_is_valid_request_line() { // TO DO: invalid request line: 400 bad request/301 moved permanently
 	std::array<std::string, 3> methods = {"GET", "POST", "DELETE"};
 
-	if (std::find(methods.begin(), methods.end(), _request_line["method"]) == methods.end())
+	if (std::find(methods.begin(), methods.end(), _request_line["method"]) == methods.end()) // TO DO: check delete
 		return 0;
 	if (_request_line["HTTP_version"].compare("HTTP/1.1") != 0)
 		return 0;
 	return 1;
 }
 
-int Request::_set_code_and_return(int ret) {
-	_response_code = ret;
+int Request::_set_code_and_return(int code) {
+	_response_code = code;
 	return 1;
 }
 
@@ -58,10 +73,10 @@ int Request::_parse_request_line() {
 	size_t					   sp;
 	std::array<std::string, 3> components = {"method", "URI", "HTTP_version"};
 
-	end = raw.find("\r\n");
+	end = _raw.find("\r\n");
 	if (end == std::string::npos)
 		return _set_code_and_return(301);
-	std::string line = raw.substr(0, end);
+	std::string line = _raw.substr(0, end);
 
 	for (size_t i = 0; i < components.size(); i++) {
 		sp = line.find_first_of(' ');

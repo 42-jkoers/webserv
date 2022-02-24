@@ -5,7 +5,6 @@
 class Request {
   public:
 	Request(const pollfd& pfd, const std::string& raw);
-	std::string raw;
 	~Request();
 	// getters
 	std::string						   get_user_agent() const;
@@ -16,6 +15,7 @@ class Request {
 	fd_t							   get_fd() const;
 
   private:
+	std::string						   _raw;
 	fd_t							   _fd;
 	bool							   _is_end_of_http_request(const std::string& s);
 	void							   _parse_request();

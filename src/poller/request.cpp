@@ -34,15 +34,36 @@ int Request::_parse_header_fields() {
 	// while (ss >> key >> value) {
 	// 	_request_headers[key] = value;
 	// }
-	std::stringstream ss;
-	std::string		  key;
-	std::string		  value;
-	int				  semi_colon;
-	int				  sp;
+	// std::stringstream ss;
+	// std::string		  key;
+	// std::string		  value;
+	int semi_colon;
+	int sp;
+	int newline;
+	int i;
 
+	i = 0;
+	// skip request line
+	do {
+		i++;
+	} while (_raw[i] != '\n');
+	i++;
+	while (_raw[i]) {
+		// each whitespace-preceded line -> no processing
+		if (_raw[i] == ' ' || _raw[i] == '\t')
+			continue;
+		// read up to :
+		end = _raw[i].find_first_of(":");
+		_raw[i];
+		.find('\n');
+	}
+	// if ()
+	for (std::string::size_type i = 0; i < _raw.size(); i++) {
+		std::cout << _raw[i] << ' ';
+	}
 	semi_colon = 0;
 	sp = 0;
-	ss << _raw;
+
 	// while (ss >> key >> value) {
 	// 	semi_colon = key.find_first_of(':');
 	// 	if (semi_colon == std::string::npos)

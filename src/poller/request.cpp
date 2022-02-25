@@ -34,19 +34,36 @@ int Request::_parse_header_fields() {
 	// while (ss >> key >> value) {
 	// 	_request_headers[key] = value;
 	// }
-	// std::stringstream ss;
-	// std::string		  key;
-	// std::string		  value;
-	// int				  semi_colon;
-	// int				  sp;
-	// int				  newline;
-	// int				  i;
+	size_t		start;
+	size_t		delimiter;
+	size_t		end;
+	std::string key;
+	std::string value;
 
-	// i = 0;
-	// skip request line
-	int current;
-
-	current = _raw.find("\r\n");
+	delimiter = 0;
+	start = _raw.find("\r\n"); // skip request line
+	start += 2;
+	while (delimiter != std::string::npos) {
+		end = _raw.find("\n", start);
+		if (_raw[start] == ' ' || _raw[start] == '\t') { // skip whitespace-preceded line
+			start = end + 2;
+			continue;
+		}
+		delimiter = _raw.find_first_of(":", start);
+		if (delimiter == std::string::npos) {
+			continue;
+		}
+		key = _raw.substr(start, delimiter - start);
+		// TO DO: skip whitespaces
+		value = _raw.substr(delimiter + 1, end - delimiter - 2);
+		std::cout << "---------------" << std::endl;
+		std::cout << end << " " << start << " " << delimiter << std::endl;
+		std::cout << key << " " << value << std::endl;
+		std::cout << "---------------" << std::endl;
+		_request_headers[key] = value;
+		start = end + 1;
+		// TO DO: skip newline
+	}
 	// each whitespace-preceded line -> no processing
 	return 0;
 }

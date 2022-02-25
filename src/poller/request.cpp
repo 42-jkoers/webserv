@@ -1,6 +1,6 @@
 #include "request.hpp"
 
-Request::Request(const pollfd& pfd, const std::string& raw) : _fd(pfd.fd) _raw(raw) {
+Request::Request(const pollfd& pfd, const std::string& raw) : _fd(pfd.fd), _raw(raw) {
 	if (pfd.revents != POLLIN)
 		exit_with::message("Unexpected revents value");
 	_response_code = 200;
@@ -37,46 +37,24 @@ int Request::_parse_header_fields() {
 	// std::stringstream ss;
 	// std::string		  key;
 	// std::string		  value;
-	int semi_colon;
-	int sp;
-	int newline;
-	int i;
+	// int				  semi_colon;
+	// int				  sp;
+	// int				  newline;
+	// int				  i;
 
-	i = 0;
+	// i = 0;
 	// skip request line
-	do {
-		i++;
-	} while (_raw[i] != '\n');
-	i++;
-	while (_raw[i]) {
-		// each whitespace-preceded line -> no processing
-		if (_raw[i] == ' ' || _raw[i] == '\t')
-			continue;
-		// read up to :
-		end = _raw[i].find_first_of(":");
-		_raw[i];
-		.find('\n');
-	}
-	// if ()
-	for (std::string::size_type i = 0; i < _raw.size(); i++) {
-		std::cout << _raw[i] << ' ';
-	}
-	semi_colon = 0;
-	sp = 0;
+	int current;
 
-	// while (ss >> key >> value) {
-	// 	semi_colon = key.find_first_of(':');
-	// 	if (semi_colon == std::string::npos)
-
-	// 		_request_headers[key] = value;
-	// }
+	current = _raw.find("\r\n");
+	// each whitespace-preceded line -> no processing
 	return 0;
 }
 
-int Request::_is_valid_request_line() { // TO DO: invalid request line: 400 bad request/301 moved permanently
+int Request::_is_valid_request_line() { // TO DO: invalid request line, decide: 400 bad request/301 moved permanently
 	std::array<std::string, 3> methods = {"GET", "POST", "DELETE"};
 
-	if (std::find(methods.begin(), methods.end(), _request_line["method"]) == methods.end()) // TO DO: check delete
+	if (std::find(methods.begin(), methods.end(), _request_line["method"]) == methods.end())
 		return 0;
 	if (_request_line["HTTP_version"].compare("HTTP/1.1") != 0)
 		return 0;
@@ -91,22 +69,24 @@ int Request::_set_code_and_return(int code) {
 // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
 int Request::_parse_request_line() {
 	size_t					   end;
-	size_t					   sp;
+	size_t					   prev;
+	size_t					   delimiter;
+	std::string				   line;
 	std::array<std::string, 3> components = {"method", "URI", "HTTP_version"};
 
+	prev = 0;
 	end = _raw.find("\r\n");
 	if (end == std::string::npos)
 		return _set_code_and_return(301);
-	std::string line = _raw.substr(0, end);
-
 	for (size_t i = 0; i < components.size(); i++) {
-		sp = line.find_first_of(' ');
-		if ((components[i] != "HTTP_version" && sp == std::string::npos) ||
-			(components[i] == "HTTP_version" && sp != std::string::npos))
+		delimiter = _raw.find_first_of(" \r", prev);
+		if (components[i] != "HTTP_version" && delimiter == end)
 			return _set_code_and_return(301);
-		_request_line[components[i]] = line.substr(0, sp);
-		line.erase(0, sp + 1);
+		_request_line[components[i]] = _raw.substr(prev, delimiter - prev);
+		prev = delimiter + 1;
 	}
+	if (delimiter != end)
+		return _set_code_and_return(301);
 	if (!_is_valid_request_line())
 		return _set_code_and_return(301);
 	return 0;

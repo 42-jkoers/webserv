@@ -15,8 +15,8 @@ class Request {
 	fd_t							   get_fd() const;
 
   private:
-	std::string						   _raw;
 	fd_t							   _fd;
+	std::string						   _raw;
 	bool							   _is_end_of_http_request(const std::string& s);
 	void							   _parse_request();
 	int								   _parse_request_line();

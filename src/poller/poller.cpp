@@ -106,7 +106,7 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
 		on_request(request);
 	} else {
 		Response response(request.get_fd(), request.get_response_code());
-		response.send_response("");
+		response.send_response("Error\n");
 	}
 	_buffers[pfd.fd] = "";
 	close(pfd.fd); // TODO: only when keepalive is true
@@ -128,7 +128,6 @@ void Poller::start(void (*on_request)(Request& request), Config& config) {
 				exit_with::message("Unexpected revents value");
 			_on_new_pollfd(*fd, on_request);
 		}
-
 		// removing closed fds from array by shifting them to the left
 		std::vector<struct pollfd>::iterator valid = _pollfds.begin();
 		std::vector<struct pollfd>::iterator current = _pollfds.begin();

@@ -144,13 +144,13 @@ Buffer::Status Buffer::read_pollfd(const pollfd& pfd) {
 		buf[bytes_read] = '\0';
 		data += buf;
 
+		_bytes_to_read -= bytes_read;
 		size_t p;
 		if (_status == UNSET && (p = data.find(cl)) != std::string::npos) {
 			std::string len_str = std::string(data.begin() + p + cl.length(), data.begin() + data.find("\r\n", p));
 			assert(parse_int(_bytes_to_read, len_str));
 			_status = MULTIPART;
 		}
-		_bytes_to_read -= bytes_read;
 		if (_status == MULTIPART && _bytes_to_read <= 0) { // TODO: what the fuck
 			_status = DONE;
 			return _status;

@@ -1,6 +1,7 @@
 #pragma once
 #include "main.hpp"
 #include "request.hpp"
+#include "response.hpp"
 
 class Buffer {
   public:

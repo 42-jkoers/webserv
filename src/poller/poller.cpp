@@ -1,5 +1,6 @@
 #include "poller.hpp"
 #include "main.hpp"
+#include "response.hpp"
 #include <fcntl.h>
 #include <limits>
 #include <netinet/in.h>
@@ -79,10 +80,15 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
 	_buffers.reserve(pfd.fd + 1);
 	if (_buffers[pfd.fd].read_pollfd(pfd) != Buffer::DONE)
 		return;
-	Request r(pfd, _buffers[pfd.fd].data);
-	on_request(r);
-	_buffers[pfd.fd].reset();
-	close(pfd.fd);
+	Request request(pfd, _buffers[pfd.fd]);
+	if (request.get_response_code() == 200) {
+		on_request(request);
+	} else {
+		Response response(request.get_fd(), request.get_response_code());
+		response.send_response("Error\n");
+	}
+	_buffers[pfd.fd] = "";
+	close(pfd.fd); // TODO: only when keepalive is true
 	pfd.fd = FD_CLOSED;
 }
 
@@ -99,7 +105,6 @@ void Poller::start(void (*on_request)(Request& request)) {
 				continue;
 			_on_new_pollfd(*fd, on_request);
 		}
-
 		// removing closed fds from array by shifting them to the left
 		std::vector<struct pollfd>::iterator valid = _pollfds.begin();
 		std::vector<struct pollfd>::iterator current = _pollfds.begin();

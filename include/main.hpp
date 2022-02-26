@@ -1,9 +1,11 @@
 #pragma once
 #include "config_parser.hpp"
 #include <arpa/inet.h>
+#include <array>
 #include <cstdlib>
 #include <errno.h>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <stdio.h>
 #include <string.h>

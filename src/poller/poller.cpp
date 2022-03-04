@@ -8,7 +8,7 @@
 #include <sys/ioctl.h>
 #include <sys/poll.h>
 
-struct sockaddr_in6 get_address6(uint32_t port) {
+struct sockaddr_in6 get_address6(uint16_t port) {
 	struct sockaddr_in6 address;
 	memset(&address, 0, sizeof(address));
 	address.sin6_family = AF_INET6;
@@ -17,7 +17,7 @@ struct sockaddr_in6 get_address6(uint32_t port) {
 	return address;
 }
 
-struct sockaddr_in get_address(uint32_t port) {
+struct sockaddr_in get_address(uint16_t port) {
 	struct sockaddr_in address;
 	bzero(&address, sizeof(address));
 	address.sin_family = AF_INET;
@@ -27,7 +27,7 @@ struct sockaddr_in get_address(uint32_t port) {
 }
 
 // returns fd to socket
-static fd_t create_server_socket(IP_mode ip_mode, uint32_t port) {
+static fd_t create_server_socket(IP_mode ip_mode, uint16_t port) {
 	fd_t fd = socket(ip_mode == mode_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
 		exit_with::e_perror("Cannot create socket");
@@ -56,7 +56,7 @@ static fd_t create_server_socket(IP_mode ip_mode, uint32_t port) {
 	return fd;
 }
 
-Poller::Poller(IP_mode ip_mode, uint32_t port, int timeout) : _timeout(timeout) {
+Poller::Poller(IP_mode ip_mode, uint16_t port, int timeout) : _timeout(timeout) {
 	_server_socket = create_server_socket(ip_mode, port);
 	_pollfds.reserve(1);
 	_pollfds.push_back(_create_pollfd(_server_socket, POLLIN | POLLOUT));

@@ -26,7 +26,7 @@ class Buffer {
 
 class Poller {
   public:
-	Poller(IP_mode ip_mode, uint32_t port, int timeout);
+	Poller(IP_mode ip_mode, uint16_t port, int timeout);
 	void start(void (*on_request)(Request& request));
 	~Poller();
 

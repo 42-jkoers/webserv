@@ -77,19 +77,17 @@ void Poller::_accept_clients() {
 
 #define FD_CLOSED -1
 void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
-	_buffers.reserve(pfd.fd + 1);
-	if (_buffers[pfd.fd].read_pollfd(pfd) != Buffer::DONE)
-		return;
-	Request request(pfd, _buffers[pfd.fd]);
-	if (request.get_response_code() == 200) {
-		on_request(request);
-	} else {
-		Response response(request.get_fd(), request.get_response_code());
-		response.send_response("Error\n");
+	if (_buffers.size() < static_cast<size_t>(pfd.fd + 1))
+		_buffers.resize(pfd.fd + 1); // do not change this to reserve(), that one does not call the constructors of the elements
+	_buffers[pfd.fd].read_pollfd(pfd);
+	if (_buffers[pfd.fd].parse_status() == Buffer::FINISHED) {
+		Response response(pfd.fd, 200);
+		response.send_response("Hello World!\n");
+
+		_buffers[pfd.fd].reset();
+		close(pfd.fd); // TODO: only when keepalive is true
+		pfd.fd = FD_CLOSED;
 	}
-	_buffers[pfd.fd] = "";
-	close(pfd.fd); // TODO: only when keepalive is true
-	pfd.fd = FD_CLOSED;
 }
 
 void Poller::start(void (*on_request)(Request& request)) {
@@ -134,11 +132,12 @@ Buffer::Buffer() { // TODO: disable
 	reset();
 }
 
+Buffer::Parse_status Buffer::parse_status() const { return _parse_status; }
+
 // TODO: fix this horrible unstable abomination of what is not even allowed to be called "code"
-Buffer::Status Buffer::read_pollfd(const pollfd& pfd) {
-	static char		  buf[BUFFER_SIZE + 1];
-	ssize_t			  bytes_read;
-	const std::string cl = "Content-Length: ";
+Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
+	static char buf[BUFFER_SIZE + 1];
+	ssize_t		bytes_read;
 
 	while (true) {
 		bytes_read = read(pfd.fd, buf, BUFFER_SIZE);
@@ -147,34 +146,55 @@ Buffer::Status Buffer::read_pollfd(const pollfd& pfd) {
 		if (bytes_read < 0)
 			return TEMPORALLY_UNIAVAILABLE;
 		buf[bytes_read] = '\0';
-		data += buf;
-
-		_bytes_to_read -= bytes_read;
-		size_t p;
-		if (_status == UNSET && (p = data.find(cl)) != std::string::npos) {
-			std::string len_str = std::string(data.begin() + p + cl.length(), data.begin() + data.find("\r\n", p));
-			assert(parse_int(_bytes_to_read, len_str));
-			_status = MULTIPART;
-		}
-		if (_status == MULTIPART && _bytes_to_read <= 0) { // TODO: what the fuck
-			_status = DONE;
-			return _status;
-		}
-		if (_status == UNSET && _bytes_to_read <= 0 && data.find("\r\n\r\n") != std::string::npos) {
-			_status = DONE;
-			return _status;
-		}
+		_parse(buf, bytes_read);
+		if (_parse_status <= HEADER_DONE)
+			break;
 	}
-	if (_status == MULTIPART && pfd.revents & POLLOUT) { // TODO: do not repeat code
+	if (_parse_status >= HEADER_DONE &&
+		pfd.revents & POLLOUT &&
+		_body_type == MULTIPART) { // TODO: do not repeat code
 		std::string resp = "GET / HTTP/1.1 100 Continue\n\r\n\r";
 		write(pfd.fd, resp.data(), resp.length());
 	}
-	return _status;
+	return _read_status;
+}
+
+void Buffer::_parse(const char* buf, ssize_t bytes_read) {
+	if (_parse_status <= HEADER_IN_PROGRESS) {
+		header += buf;
+		const std::string cl = "\r\nContent-Length: ";
+		size_t			  p;
+		if ((p = header.find(cl)) != std::string::npos) {
+			std::string len_str = std::string(header.begin() + p + cl.length(), header.begin() + header.find("\r\n", p));
+			assert(parse_int(_bytes_to_read, len_str));
+			_body_type = MULTIPART;
+		}
+		if (header.find("\r\n\r\n") != std::string::npos) {
+			if (_body_type == EMPTY)
+				_parse_status = FINISHED;
+			else
+				_parse_status = HEADER_DONE;
+		}
+
+		return;
+	}
+	if (_parse_status == BODY_IN_PROGRESS) {
+		_bytes_to_read -= bytes_read;
+		body += buf;
+		if (_body_type == MULTIPART && _bytes_to_read <= 0) { // TODO: what the fuck
+			_parse_status = FINISHED;
+			return;
+		}
+	}
 }
 
 void Buffer::reset() {
-	_status = UNSET;
+	_read_status = UNSET;
+	_parse_status = INCOMPLETE;
+	_body_type = EMPTY;
 	_bytes_to_read = -1;
-	data = "";
-	data.shrink_to_fit();
+	header = "";
+	body = "";
+	header.shrink_to_fit();
+	body.shrink_to_fit();
 }

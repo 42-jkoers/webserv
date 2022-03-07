@@ -6,22 +6,46 @@
 class Buffer {
   public:
 	Buffer();
-	enum Status {
+	enum Read_status {
 		UNSET,
-		NORMAL,
-		MULTIPART,
 		TEMPORALLY_UNIAVAILABLE,
+		IN_PROGRESS,
 		DONE
 	};
-	Status		read_pollfd(const pollfd& pfd);
-	void		reset();
 
-	std::string data;
+	enum Body_type {
+		EMPTY,
+		MULTIPART,
+		CHUNKED
+	};
+
+	enum Parse_status {
+		INCOMPLETE = 0,
+		HEADER_IN_PROGRESS = 1,
+
+		HEADER_DONE = 2,
+		BODY_IN_PROGRESS = 2,
+
+		BODY_DONE = 3,
+		FINISHED = 3,
+
+		ERROR = 4
+	};
+
+	Read_status	 read_pollfd(const pollfd& pfd);
+	Parse_status parse_status() const;
+	void		 reset();
+
+	std::string	 header;
+	std::string	 body;
 
   private:
-	Status	_status;
-	ssize_t _bytes_to_read;
-	bool	_is_end_of_http_request(const std::string& s);
+	Read_status	 _read_status;
+	Parse_status _parse_status;
+	Body_type	 _body_type;
+	ssize_t		 _bytes_to_read;
+	bool		 _is_end_of_http_request(const std::string& s);
+	void		 _parse(const char* buf, ssize_t bytes_read);
 };
 
 class Poller {

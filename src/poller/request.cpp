@@ -4,9 +4,7 @@
 #include <netinet/in.h>
 
 Request::Request(const pollfd& pfd, const std::string& raw) : raw(raw), _fd(pfd.fd) {
-	if (pfd.revents != POLLIN)
-		exit_with::message("Unexpected revents value");
-	_parse_request();
+	// _parse_request();
 }
 
 Request::~Request() {
@@ -96,6 +94,7 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 // TODO: optimize
 void Request::send_response(uint32_t response_code, const std::string& message) {
 	std::map<uint32_t, std::string> m; // TODO: make this static
+	m[100] = "Continue";
 	m[200] = "OK";
 	m[201] = "Created";
 	m[202] = "Accepted";

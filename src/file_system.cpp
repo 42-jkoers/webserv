@@ -2,13 +2,13 @@
 #include <dirent.h>
 #include <fstream>
 
-static const char* exception_str(const std::string& path) {
+std::string exception_str(const std::string& path) {
 	std::string err;
 	err += "\nCannot open \"";
 	err += path;
 	err += "\": ";
 	err += std::strerror(errno);
-	return err.c_str();
+	return err;
 }
 
 namespace fs {
@@ -19,7 +19,7 @@ std::string read_file(const std::string& path) {
 
 	file.open(path.c_str());
 	if (!file.is_open())
-		throw std::runtime_error(exception_str(path));
+		throw std::runtime_error(exception_str(path).c_str());
 	ss << file.rdbuf();
 	file.close();
 	return ss.str();
@@ -29,7 +29,7 @@ std::vector<std::string> list_dir(const std::string& path) {
 	std::vector<std::string> files;
 	DIR*					 dir = opendir(path.c_str());
 	if (!dir)
-		throw std::runtime_error(exception_str(path));
+		throw std::runtime_error(exception_str(path).c_str());
 
 	while (true) {
 		struct dirent* entry = readdir(dir);

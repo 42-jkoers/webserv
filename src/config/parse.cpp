@@ -91,7 +91,6 @@ void Config::_parseErrorPage(std::string option, std::map<const std::string, std
 	(void)option;
 	(void)config_info;
 	(void)line;
-	std::cout << "--------------------------------------\n";
 }
 
 void Config::_parseClientMaxBodySize(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
@@ -107,16 +106,35 @@ void Config::_parseClientMaxBodySize(std::string option, std::map<const std::str
 }
 
 void Config::_parseAllowedMethods(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
-	// std::string methods = config_info["allowed_methods"];
-	// size_t		space;
-
-	//Make it work for multiple allowed methods
-	// cut_till_collon(methods);
+	std::string methods = config_info["allowed_methods"];
+	// size_t		space = 0;
+	size_t		i = 0;
+	size_t		j = 0;
 	// std::cout << methods << std::endl;
-	// while (methods.find_first_of("\t ") != std::string::npos){
-	// 	space = methods.find_first_of("\t ");
-	// 	_methods.push_back(methods.substr(space));
-	// }
+
+	// Make it work for multiple allowed methods
+	cut_till_collon(methods);
+	// space = methods.find_first_of("\t ");
+	// _methods.push_back(methods.substr(0, space));
+	// space = methods.find_first_not_of("\t ", space);
+	// std::cout << _methods[0] << std::endl;
+	_methods.push_back("");
+	while (i < methods.length()) {
+		if (methods[i] == '\t' || methods[i] == ' ') {
+			_methods.push_back("");
+			if (strncmp(_methods[j].c_str(), "GET", _methods[j].length()) != 0&& strncmp(_methods[j].c_str(), "POST",
+				_methods[j].length()) != 0&& strncmp(_methods[j].c_str(), "SET", _methods[j].length())!= 0)
+				exit_with::e_perror("config error: methods");
+			j++;
+		}
+		else
+			_methods[j].push_back(methods[i]);
+		i++;
+	}
+	if (strncmp(_methods[j].c_str(), "GET", _methods[j].length()) != 0&& strncmp(_methods[j].c_str(), "POST",
+				_methods[j].length()) != 0&& strncmp(_methods[j].c_str(), "SET", _methods[j].length())!= 0)
+				exit_with::e_perror("config error: methods");
+	_number_methods = j + 1;
 	(void)config_info;
 	(void)option;
 	(void)line;
@@ -146,7 +164,8 @@ void Config::_parseLocation(std::string option, std::map<const std::string, std:
 		location.insert(0, ".");
 	if (!IsPathExist(location))
 		exit_with::e_perror("config error: location");
-	_location[_current_location] = location;
+	_location.push_back(Location(location));
+
 	(void)option;
 	(void)config_info;
 	(void)line;
@@ -158,7 +177,7 @@ void Config::_parseIndex(std::string option, std::map<const std::string, std::st
 	std::string	  path_to_file;
 
 	cut_till_collon(index);
-	path_to_file = _location[_current_location] + "/" + index;
+	path_to_file = _location[_location.size() - 1].getLocation() + "/" + index;
 	try_file.open(path_to_file);
 	if (!try_file.is_open())
 		exit_with::e_perror("config error: index");

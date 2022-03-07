@@ -131,9 +131,7 @@ void Config::_parseAllowedMethods(std::string option, std::map<const std::string
 		else
 			_methods[j].push_back(methods[i]);
 		i++;
-		std::cout << _methods[j] << std::endl;
 	}
-	std::cout << _methods[j] << std::endl;
 	if (strncmp(_methods[j].c_str(), "GET", _methods[j].length()) != 0&& strncmp(_methods[j].c_str(), "POST",
 				_methods[j].length()) != 0&& strncmp(_methods[j].c_str(), "SET", _methods[j].length())!= 0)
 				exit_with::e_perror("config error: methods");

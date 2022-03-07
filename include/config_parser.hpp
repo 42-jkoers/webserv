@@ -4,7 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <vector>
+#include <vector> 
 
 class Location {
   public:

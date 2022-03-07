@@ -110,7 +110,6 @@ void Config::_parseAllowedMethods(std::string option, std::map<const std::string
 	// size_t		space = 0;
 	size_t		i = 0;
 	size_t		j = 0;
-	// std::cout << methods << std::endl;
 
 	// Make it work for multiple allowed methods
 	cut_till_collon(methods);

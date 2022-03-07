@@ -16,12 +16,17 @@ bool Request::_is_end_of_http_request(const std::string& s) {
 	return 1;
 }
 
+void Request::_skip_ws(size_t& i) {
+	while (_raw[i] == ' ' || _raw[i] == '\t') {
+		i++;
+	}
+}
+
 // A recipient that receives whitespace between the start-line and the first header field MUST either reject
 // the message as invalid or consume each whitespace-preceded line without further processing of it
 
 // header-field = field-name ":" OWS field-value OWS
 // each header field name is case-insensitive
-// whitespace in between field name and ":": 400 (Bad Request)
 // ows = optional whitespaces = *(SP / HTAB)
 int Request::_parse_header_fields() {
 	// std::stringstream ss; // do not use streams for parsing
@@ -37,34 +42,54 @@ int Request::_parse_header_fields() {
 	size_t		start;
 	size_t		delimiter;
 	size_t		end;
+	size_t		ws;
 	std::string key;
 	std::string value;
+	std::string line;
 
 	delimiter = 0;
-	start = _raw.find("\r\n"); // skip request line
-	start += 2;
+	start = _raw.find("\r\n") + 2; // skip request line
+	std::cout << _raw << std::endl;
 	while (delimiter != std::string::npos) {
-		end = _raw.find("\n", start);
-		if (_raw[start] == ' ' || _raw[start] == '\t') { // skip whitespace-preceded line
+		end = _raw.find("\r\n", start);
+		if (end == std::string::npos) {
+			std::cout << "Empty request" << std::endl;
+			return 0;
+		}
+		line = _raw.substr(start, end - start); // line contains all up to \r\n
+		std::cout << "[" << line << "]" << std::endl;
+		if (line[0] == ' ' || line[0] == '\t') { // skip whitespace-preceded line
 			start = end + 2;
 			continue;
 		}
-		delimiter = _raw.find_first_of(":", start);
+		delimiter = line.find_first_of(":");
 		if (delimiter == std::string::npos) {
+			std::cout << "Error: no delimiter in header field" << std::endl; // TO DO: last line gives error; should no delimiter error?
+			start = end + 2;
 			continue;
 		}
-		key = _raw.substr(start, delimiter - start);
-		// TO DO: skip whitespaces
-		value = _raw.substr(delimiter + 1, end - delimiter - 2);
-		std::cout << "---------------" << std::endl;
-		std::cout << end << " " << start << " " << delimiter << std::endl;
-		std::cout << key << " " << value << std::endl;
-		std::cout << "---------------" << std::endl;
+		ws = line.find_first_of(" \t");
+		if (ws != std::string::npos && ws < delimiter) { // whitespace in between field name and ":": 400 (Bad Request)
+			std::cout << "Error: ws between field name and ':'" << std::endl;
+			return _set_code_and_return(400);
+		}
+		key = line.substr(0, delimiter);
+		start = line.find_first_not_of(" \t", delimiter + 1); // skip optional whitespaces
+		if (start == std::string::npos) {
+			std::cout << "Error: empty header field value" << std::endl;
+			start = end + 2;
+			continue;
+		}
+		ws = line.find_first_of(" \t", start);
+		if (ws == std::string::npos) { // no OWS between : and key
+			value = line.substr(start);
+		} else { // OWS between : and key -> start after OWS
+			value = line.substr(start, start - ws);
+		}
+		std::cout << "[" << key << "] [" << value << "]" << std::endl;
 		_request_headers[key] = value;
-		start = end + 1;
-		// TO DO: skip newline
+		start = end + 2;
 	}
-	// each whitespace-preceded line -> no processing
 	return 0;
 }
 

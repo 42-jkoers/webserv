@@ -23,6 +23,7 @@ class Request {
 	int								   _parse_header_fields();
 	int								   _is_valid_request_line();
 	int								   _set_code_and_return(int ret);
+	void							   _skip_ws(size_t& i);
 	uint32_t						   _response_code;
 	std::map<std::string, std::string> _request_line;
 	std::map<std::string, std::string> _request_headers;

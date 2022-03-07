@@ -2,7 +2,7 @@
 NAME      		= webserv
 
 CC          	= clang++
-CFLAGS      	= -Wall -Wextra -Werror -Wpedantic -std=c++98 -Wshadow -O0 -g
+CFLAGS      	= -Wall -Wextra  -Wpedantic -std=c++98 -Wshadow -O0 -g
 # CFLAGS      	= -Wall -Wextra -Werror -Wuninitialized -O3
 
 SRCEXT      	= cpp

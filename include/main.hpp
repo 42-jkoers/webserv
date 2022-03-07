@@ -60,3 +60,28 @@ bool parse_int(T& output, const std::string& str) { // todo std::is_integral
 	ss >> output;
 	return !(ss.fail() || ss.get(c));
 }
+
+// true on success
+// @param ending is the char that should come after the hex string
+template <typename T>
+bool parse_hex(T& output, const std::string& str, char ending) { // todo std::is_integral
+	char			  c;
+	std::stringstream ss;
+	ss << std::hex << str;
+	ss >> output;
+
+	if (ss.eof())
+		return false;
+	ss.get(c);
+	return !(ss.fail() || c != ending);
+}
+
+// true on success
+template <typename T>
+bool parse_hex(T& output, const std::string& str) { // todo std::is_integral
+	char			  c;
+	std::stringstream ss;
+	ss << std::hex << str;
+	ss >> output;
+	return !(ss.fail() || ss.get(c));
+}

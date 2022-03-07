@@ -147,6 +147,8 @@ Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
 		if (bytes_read < 0)
 			return TEMPORALLY_UNIAVAILABLE;
 		buf[bytes_read] = '\0';
+		// std::cout << buf << std::endl;
+		// std::cout << "=======" << std::endl;
 		_parse(buf, bytes_read);
 		if (_parse_status <= HEADER_DONE)
 			break;
@@ -154,9 +156,8 @@ Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
 			return _read_status;
 	}
 	if (_parse_status == HEADER_DONE &&
-		pfd.revents & POLLOUT &&
-		_body_type == MULTIPART) {
-		std::string resp = "HTTP/1.1 100 Continue\n\rHTTP/1.1 200 OK\r\n\r\n";
+		pfd.revents & POLLOUT) {
+		std::string resp = "HTTP/1.1 100 Continue\r\nHTTP/1.1 200 OK\r\n\r\n";
 		write(pfd.fd, resp.data(), resp.length());
 		_parse_status = WAITING_FOR_BODY;
 	}
@@ -175,6 +176,9 @@ void Buffer::_parse(const char* buf, ssize_t bytes_read) {
 			assert(parse_int(_bytes_to_read, len_str));
 			_body_type = MULTIPART;
 		}
+		if (header.find("transfer-encoding:chunked") != std::string::npos) {
+			_body_type = CHUNKED;
+		}
 		if (header.find("\r\n\r\n") != std::string::npos) {
 			if (_body_type == EMPTY)
 				_parse_status = FINISHED;
@@ -185,11 +189,26 @@ void Buffer::_parse(const char* buf, ssize_t bytes_read) {
 		return;
 	}
 	if (_parse_status >= WAITING_FOR_BODY) {
-		_bytes_to_read -= bytes_read;
-		body += buf;
-		if (_body_type == MULTIPART && _bytes_to_read <= 0) { // TODO: what the fuck
-			_parse_status = FINISHED;
-			return;
+		if (_body_type == MULTIPART) {
+			body += buf;
+			_bytes_to_read -= bytes_read;
+			if (_bytes_to_read <= 0) { // TODO: what the fuck
+				_parse_status = FINISHED;
+				return;
+			}
+		}
+		if (_body_type == MULTIPART) {
+			size_t block_size;
+			assert(parse_hex(block_size, buf, '\r'));
+			std::cout << "bs " << block_size << std::endl;
+			if (block_size == 0) {
+				_parse_status = BODY_DONE;
+				return;
+			}
+			const char* start = strchr(buf, '\r') + 2;
+			assert(start != 0);
+			assert(strlen(start) == block_size);
+			body += start;
 		}
 	}
 }

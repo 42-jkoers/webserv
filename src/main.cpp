@@ -23,7 +23,7 @@ void on_request(Request& request) {
 int main(int argc, char** argv) {
 	Config config(argc, argv);
 
-	Poller poller(mode_ipv6, config.get_port(), 50000);
+	Poller poller(mode_ipv6, config.get_port(), -1);
 	poller.start(on_request);
 	return 0;
 }

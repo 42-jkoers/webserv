@@ -81,6 +81,7 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
 		_buffers.resize(pfd.fd + 1); // do not change this to reserve(), that one does not call the constructors of the elements
 	_buffers[pfd.fd].read_pollfd(pfd);
 	if (_buffers[pfd.fd].parse_status() == Buffer::FINISHED) {
+		_buffers[pfd.fd].print();
 		Response response(pfd.fd, 200);
 		response.send_response("Hello World!\n");
 
@@ -149,12 +150,15 @@ Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
 		_parse(buf, bytes_read);
 		if (_parse_status <= HEADER_DONE)
 			break;
+		if (_parse_status == FINISHED)
+			return _read_status;
 	}
-	if (_parse_status >= HEADER_DONE &&
+	if (_parse_status == HEADER_DONE &&
 		pfd.revents & POLLOUT &&
-		_body_type == MULTIPART) { // TODO: do not repeat code
-		std::string resp = "GET / HTTP/1.1 100 Continue\n\r\n\r";
+		_body_type == MULTIPART) {
+		std::string resp = "HTTP/1.1 100 Continue\n\rHTTP/1.1 200 OK\r\n\r\n";
 		write(pfd.fd, resp.data(), resp.length());
+		_parse_status = WAITING_FOR_BODY;
 	}
 	return _read_status;
 }
@@ -162,10 +166,12 @@ Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
 void Buffer::_parse(const char* buf, ssize_t bytes_read) {
 	if (_parse_status <= HEADER_IN_PROGRESS) {
 		header += buf;
-		const std::string cl = "\r\nContent-Length: ";
+		const std::string cl = "Content-Length: ";
 		size_t			  p;
 		if ((p = header.find(cl)) != std::string::npos) {
-			std::string len_str = std::string(header.begin() + p + cl.length(), header.begin() + header.find("\r\n", p));
+			const size_t line_end = header.find("\r\n", p);
+			assert(line_end != std::string::npos);
+			std::string len_str = std::string(header.begin() + p + cl.length(), header.begin() + line_end);
 			assert(parse_int(_bytes_to_read, len_str));
 			_body_type = MULTIPART;
 		}
@@ -178,7 +184,7 @@ void Buffer::_parse(const char* buf, ssize_t bytes_read) {
 
 		return;
 	}
-	if (_parse_status == BODY_IN_PROGRESS) {
+	if (_parse_status >= WAITING_FOR_BODY) {
 		_bytes_to_read -= bytes_read;
 		body += buf;
 		if (_body_type == MULTIPART && _bytes_to_read <= 0) { // TODO: what the fuck
@@ -186,6 +192,15 @@ void Buffer::_parse(const char* buf, ssize_t bytes_read) {
 			return;
 		}
 	}
+}
+
+void Buffer::print() const {
+	std::cout << "========== Header ==============\n";
+	std::cout << header;
+	std::cout << "========== Body ================\n";
+	std::cout << body;
+	std::cout << "========== End Body ============\n";
+	std::cout << std::endl;
 }
 
 void Buffer::reset() {

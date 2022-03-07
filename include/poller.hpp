@@ -24,17 +24,21 @@ class Buffer {
 		HEADER_IN_PROGRESS = 1,
 
 		HEADER_DONE = 2,
-		BODY_IN_PROGRESS = 2,
+		// send 100-continue
+		WAITING_FOR_BODY = 4,
+		// while (read() > 0)
+		BODY_IN_PROGRESS = 5,
 
-		BODY_DONE = 3,
-		FINISHED = 3,
+		BODY_DONE = 6,
+		FINISHED = 7,
 
-		ERROR = 4
+		ERROR = 8
 	};
 
 	Read_status	 read_pollfd(const pollfd& pfd);
 	Parse_status parse_status() const;
 	void		 reset();
+	void		 print() const;
 
 	std::string	 header;
 	std::string	 body;

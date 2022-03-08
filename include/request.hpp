@@ -17,11 +17,12 @@ class Request {
   private:
 	fd_t							   _fd;
 	std::string						   _raw;
+	std::string						   _whitespaces;
+	std::string						   _CRLF;
 	bool							   _is_end_of_http_request(const std::string& s);
 	void							   _parse_request();
 	int								   _parse_request_line();
 	int								   _parse_header_fields();
-	int								   _is_valid_request_line();
 	int								   _set_code_and_return(int ret);
 	void							   _skip_ws(size_t& i);
 	uint32_t						   _response_code;

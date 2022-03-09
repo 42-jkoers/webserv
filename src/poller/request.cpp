@@ -24,37 +24,24 @@ void Request::_skip_ws(size_t& i) {
 	}
 }
 
-// std::stringstream ss; // do not use streams for parsing
-// std::string		  key;
-// std::string		  value;
-// ss << buf;
-// std::getline(ss, _request_line["method"], ' ');
-// std::getline(ss, _request_line["URI"], ' ');
-// std::getline(ss, _request_line["HTTP_version"]);
-// while (ss >> key >> value) {
-// 	_request_headers[key] = value;
-// }
-
 // A recipient that receives whitespace between the start-line and the first header field MUST either reject
 // the message as invalid or consume each whitespace-preceded line without further processing of it
+
+// TODO: starting with ws and obs-fold difference: maybe difference in key and value (p25)
+// field values are parsed after whole header section has been processed
 
 // header-field = field-name ":" OWS field-value OWS
 // each header field name is case-insensitive
 // ows = optional whitespaces = *(SP / HTAB)
-
-// TODO: starting with ws and obs-fold difference (p25)
-// field values are parsed after whole header section has been processed
 int Request::_parse_header_fields() { // TODO: enum parsing, add functions
 	size_t		start;
-	size_t		delimiter;
+	size_t		colon;
 	size_t		end;
-	size_t		ws;
-	std::string key;
-	std::string value;
 	std::string line;
+	std::string name;
+	std::string value;
 
-	delimiter = 0;
-	end = _raw.find(_CRLF);					// skip request line
+	end = _raw.find(_CRLF);					  // skip request line
 	while (end != _raw.find(_CRLF + _CRLF)) { // until last line
 		// get line
 		start = end + 2;
@@ -63,32 +50,23 @@ int Request::_parse_header_fields() { // TODO: enum parsing, add functions
 		if (line[0] == ' ' || line[0] == '\t') { // skip whitespace-preceded line
 			continue;
 		}
-
-		// get key
-		delimiter = line.find_first_of(":");
-		if (delimiter == std::string::npos) {
-			std::cout << "[" << line << "] Error: no ':' in header field or empty field" << std::endl; // TODO: last line gives error; should no delimiter error?
+		// get name
+		colon = line.find_first_of(":");
+		if (colon == std::string::npos) { // skip line without ':'
 			continue;
 		}
-		ws = line.find_first_of(_whitespaces);
-		if (ws != std::string::npos && ws < delimiter) { // whitespace in between field name and ":": 400 (Bad Request)
-			std::cout << "[" << line << "] Error: ws between field name and ':'" << std::endl;
+		if (line.find_first_of(_whitespaces) < colon) { // check for whitespace in between field name and ":": 400 (Bad Request)
 			return _set_code_and_return(400);
 		}
-		key = line.substr(0, delimiter);
-
-		// find start value
-		start = line.find_first_not_of(_whitespaces, delimiter + 1); // skip optional whitespaces
-		if (start == std::string::npos) {
-			std::cout << "[" << line << "] Error: empty header field value" << std::endl;
+		name = line.substr(0, colon);
+		// get value
+		start = line.find_first_not_of(_whitespaces, colon + 1); // skip optional whitespaces
+		if (start == std::string::npos) {						 // skip line without value
 			continue;
 		}
-
-		// get value
-		// remove trailing whitespaces
-		value = line.substr(start, line.find_last_not_of(_whitespaces) - start + 1);
-		std::cout << "[" << key << "] [" << value << "]" << std::endl;
-		_request_headers[key] = value;
+		value = line.substr(start, line.find_last_not_of(_whitespaces) - start + 1); // remove trailing whitespaces
+		// save name and value
+		_request_headers[name] = value;
 	}
 	return 0;
 }
@@ -104,12 +82,11 @@ int Request::_parse_request_line() {
 	size_t					   prev;
 	size_t					   delimiter;
 	std::string				   line;
-	std::string				   CRLF = "\r\n";
 	std::array<std::string, 3> components = {"method", "URI", "HTTP_version"};
 	std::array<std::string, 3> methods = {"GET", "POST", "DELETE"};
 
 	prev = 0;
-	end = _raw.find(CRLF);
+	end = _raw.find(_CRLF);
 	if (end == std::string::npos)
 		return _set_code_and_return(301);
 	for (size_t i = 0; i < components.size(); i++) {
@@ -175,3 +152,59 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 	}
 	return output;
 }
+
+// int Request::_parse_header_fields() { // TODO: enum parsing, add functions
+// 	size_t		start;
+// 	size_t		delimiter;
+// 	size_t		end;
+// 	size_t		ws;
+// 	std::string key;
+// 	std::string value;
+// 	std::string line;
+
+// 	end = _raw.find(_CRLF);					// skip request line
+// 	while (end != _raw.find(_CRLF + _CRLF)) { // until last line
+// 		// get line
+// 		start = end + 2;
+// 		end = _raw.find(_CRLF, start);
+// 		line = _raw.substr(start, end - start);	 // line contains all up to \r\n
+// 		if (line[0] == ' ' || line[0] == '\t') { // skip whitespace-preceded line
+// 			continue;
+// 		}
+
+// 		// get key
+// 		delimiter = line.find_first_of(":");
+// 		if (delimiter == std::string::npos) {
+// 			std::cout << "[" << line << "] Error: no ':' in header field or empty field" << std::endl; // TODO: last line gives error; should no delimiter error?
+// 			continue;
+// 		}
+// 		ws = line.find_first_of(_whitespaces); // check for whitespace in between field name and ":": 400 (Bad Request)
+// 		if (ws != std::string::npos && ws < delimiter) {
+// 			std::cout << "[" << line << "] Error: ws between field name and ':'" << std::endl;
+// 			return _set_code_and_return(400);
+// 		}
+// 		key = line.substr(0, delimiter);
+
+// 		// get value
+// 		start = line.find_first_not_of(_whitespaces, delimiter + 1); // skip optional whitespaces
+// 		if (start == std::string::npos) {
+// 			std::cout << "[" << line << "] Error: empty header field value" << std::endl;
+// 			continue;
+// 		}
+// 		value = line.substr(start, line.find_last_not_of(_whitespaces) - start + 1); // remove trailing whitespaces
+// 		std::cout << "[" << key << "] [" << value << "]" << std::endl;
+// 		_request_headers[key] = value;
+// 	}
+// 	return 0;
+// }
+
+// std::stringstream ss; // do not use streams for parsing
+// std::string		  key;
+// std::string		  value;
+// ss << buf;
+// std::getline(ss, _request_line["method"], ' ');
+// std::getline(ss, _request_line["URI"], ' ');
+// std::getline(ss, _request_line["HTTP_version"]);
+// while (ss >> key >> value) {
+// 	_request_headers[key] = value;
+// }

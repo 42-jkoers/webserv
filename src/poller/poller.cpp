@@ -59,6 +59,7 @@ Poller::Poller(IP_mode ip_mode, uint32_t port, int timeout) : _timeout(timeout) 
 	_server_socket = create_server_socket(ip_mode, port);
 	_pollfds.reserve(1);
 	_pollfds.push_back(_create_pollfd(_server_socket, POLLIN /* | POLLOUT */));
+	log_pollfd(_pollfds[0]); // log server socket
 }
 
 void Poller::_accept_clients() {
@@ -124,6 +125,7 @@ void Poller::start(void (*on_request)(Request& request), Config& config) {
 		for (std::vector<struct pollfd>::iterator fd = _pollfds.begin() + 1; fd != _pollfds.end(); ++fd) {
 			if (fd->revents == 0)
 				continue;
+			log_pollfd(*fd); // log the event on the poll fd
 			if (fd->revents != POLLIN)
 				exit_with::message("Unexpected revents value");
 			_on_new_pollfd(*fd, on_request);
@@ -147,7 +149,6 @@ struct pollfd Poller::_create_pollfd(int fd, short events) {
 	struct pollfd pfd;
 	pfd.fd = fd;
 	pfd.events = events;
-	log_pollfd(pfd);
 	return pfd;
 }
 

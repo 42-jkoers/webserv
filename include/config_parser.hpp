@@ -35,5 +35,3 @@ class Config {
 	std::string	 _serverUrl;
 	std::string	 _root;
 };
-
-bool		parse_int(unsigned int& output, const std::string& str);

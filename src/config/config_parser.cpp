@@ -2,14 +2,6 @@
 #include "main.hpp"
 #include <sstream>
 
-// true on success
-bool parse_int(unsigned int& output, const std::string& str) {
-	char			  c;
-	std::stringstream ss(str);
-	ss >> output;
-	return !(ss.fail() || ss.get(c));
-}
-
 Config::Config(int argc, char** argv) {
 	_config_parser(argv);
 	(void)argc;
@@ -27,7 +19,7 @@ void tokenizer(std::string option, std::map<const std::string, std::string>& con
 	config_info[option] = &line[pos_not];
 }
 
-//Don't allow invalid lines in configuration file
+// Don't allow invalid lines in configuration file
 void Config::safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options) {
 	typedef void (Config::*Jump_table)(std::string, std::map<const std::string, std::string>&, std::string);
 	const static Jump_table jump_table[] = {

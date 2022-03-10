@@ -147,9 +147,8 @@ Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
 		if (bytes_read < 0)
 			return TEMPORALLY_UNIAVAILABLE;
 		buf[bytes_read] = '\0';
-		std::cout << "=======" << std::endl;
-		std::cout << buf;
-		std::cout << "=======" << std::endl;
+		// std::cout << buf << std::endl;
+		// std::cout << "=======" << std::endl;
 		_parse(buf, bytes_read);
 		if (_parse_status <= HEADER_DONE)
 			break;

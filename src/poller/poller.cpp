@@ -147,6 +147,9 @@ Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
 		if (bytes_read < 0)
 			return TEMPORALLY_UNIAVAILABLE;
 		buf[bytes_read] = '\0';
+		std::cout << "=======" << std::endl;
+		std::cout << buf;
+		std::cout << "=======" << std::endl;
 		_parse(buf, bytes_read);
 		if (_parse_status <= HEADER_DONE)
 			break;
@@ -154,16 +157,43 @@ Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
 			return _read_status;
 	}
 	if (_parse_status == HEADER_DONE &&
-		pfd.revents & POLLOUT &&
-		_body_type == MULTIPART) {
-		std::string resp = "HTTP/1.1 100 Continue\n\rHTTP/1.1 200 OK\r\n\r\n";
+		pfd.revents & POLLOUT) {
+		std::string resp = "HTTP/1.1 100 Continue\r\nHTTP/1.1 200 OK\r\n\r\n";
 		write(pfd.fd, resp.data(), resp.length());
 		_parse_status = WAITING_FOR_BODY;
 	}
 	return _read_status;
 }
+enum Chunk_status {
+	CS_NO_NULL_BLOCK,
+	CS_NULL_BLOCK_REACHED,
+	CS_ERROR
+};
 
-void Buffer::_parse(const char* buf, ssize_t bytes_read) {
+Chunk_status append_chunk(std::string& body, char* buf) {
+	size_t block_size;
+	assert(parse_hex(block_size, buf, '\r'));
+	if (block_size == 0)
+		return CS_NULL_BLOCK_REACHED;
+
+	char* start = strchr(buf, '\r') + 2;
+	assert(start != NULL);
+	std::cout << "bs: " << block_size << " actual: " << strlen(start) << std::endl;
+	size_t	actual_size = strlen(start);
+	ssize_t leftover = block_size + 2 - actual_size;
+	if (leftover == 0) {
+		body += start;
+		return CS_NO_NULL_BLOCK;
+	}
+	if (leftover && !strcmp(&start[actual_size - 5], "0\r\n\r\n")) { // cutting of null chunk
+		start[block_size + 2] = 0;
+		body += start;
+		return CS_NULL_BLOCK_REACHED;
+	}
+	return CS_ERROR;
+}
+
+void Buffer::_parse(char* buf, ssize_t bytes_read) {
 	if (_parse_status <= HEADER_IN_PROGRESS) {
 		header += buf;
 		const std::string cl = "Content-Length: ";
@@ -175,6 +205,9 @@ void Buffer::_parse(const char* buf, ssize_t bytes_read) {
 			assert(parse_int(_bytes_to_read, len_str));
 			_body_type = MULTIPART;
 		}
+		if (header.find("transfer-encoding:chunked") != std::string::npos) {
+			_body_type = CHUNKED;
+		}
 		if (header.find("\r\n\r\n") != std::string::npos) {
 			if (_body_type == EMPTY)
 				_parse_status = FINISHED;
@@ -185,11 +218,19 @@ void Buffer::_parse(const char* buf, ssize_t bytes_read) {
 		return;
 	}
 	if (_parse_status >= WAITING_FOR_BODY) {
-		_bytes_to_read -= bytes_read;
-		body += buf;
-		if (_body_type == MULTIPART && _bytes_to_read <= 0) { // TODO: what the fuck
-			_parse_status = FINISHED;
-			return;
+		if (_body_type == MULTIPART) {
+			body += buf;
+			_bytes_to_read -= bytes_read;
+			if (_bytes_to_read <= 0) { // TODO: what the fuck
+				_parse_status = FINISHED;
+				return;
+			}
+		}
+		if (_body_type == CHUNKED) {
+			Chunk_status cs = append_chunk(body, buf);
+			assert(cs != CS_ERROR);
+			if (cs == CS_NULL_BLOCK_REACHED)
+				_parse_status = FINISHED;
 		}
 	}
 }

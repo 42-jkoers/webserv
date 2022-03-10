@@ -49,7 +49,7 @@ class Buffer {
 	Body_type	 _body_type;
 	ssize_t		 _bytes_to_read;
 	bool		 _is_end_of_http_request(const std::string& s);
-	void		 _parse(const char* buf, ssize_t bytes_read);
+	void		 _parse(char* buf, ssize_t bytes_read);
 };
 
 class Poller {

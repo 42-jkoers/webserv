@@ -170,27 +170,27 @@ enum Chunk_status {
 	CS_ERROR
 };
 
-Chunk_status append_chunk(std::string& body, char* buf) {
-	size_t block_size;
-	assert(parse_hex(block_size, buf, '\r'));
-	if (block_size == 0)
+Chunk_status append_chunk(std::vector<char>& body, char* buf, size_t buffer_size) {
+	assert(buffer_size >= 5);
+	if (!strcmp(buf, "0\r\n\r\n"))
 		return CS_NULL_BLOCK_REACHED;
 
+	size_t block_size;
+	assert(parse_hex(block_size, buf, '\r'));
+	assert(block_size < buffer_size);
+
+	// remove length definition of block
 	char* start = strchr(buf, '\r') + 2;
-	assert(start != NULL);
-	std::cout << "bs: " << block_size << " actual: " << strlen(start) << std::endl;
-	size_t	actual_size = strlen(start);
-	ssize_t leftover = block_size + 2 - actual_size;
-	if (leftover == 0) {
-		body += start;
-		return CS_NO_NULL_BLOCK;
-	}
-	if (leftover && !strcmp(&start[actual_size - 5], "0\r\n\r\n")) { // cutting of null chunk
-		start[block_size + 2] = 0;
-		body += start;
-		return CS_NULL_BLOCK_REACHED;
-	}
-	return CS_ERROR;
+	buffer_size -= static_cast<size_t>(start - buf);
+	buf = start;
+
+	for (size_t i = 0; i < block_size; i++) // TODO
+		body.push_back(buf[i]);
+	buf += block_size + 2;
+	buffer_size -= block_size + 2; // ignore last 2 bytes
+	if (buffer_size)
+		return append_chunk(body, buf, buffer_size);
+	return CS_NO_NULL_BLOCK;
 }
 
 void Buffer::_parse(char* buf, ssize_t bytes_read) {
@@ -219,7 +219,8 @@ void Buffer::_parse(char* buf, ssize_t bytes_read) {
 	}
 	if (_parse_status >= WAITING_FOR_BODY) {
 		if (_body_type == MULTIPART) {
-			body += buf;
+			for (ssize_t i = 0; i < bytes_read; i++) // TODO
+				body.push_back(buf[i]);
 			_bytes_to_read -= bytes_read;
 			if (_bytes_to_read <= 0) { // TODO: what the fuck
 				_parse_status = FINISHED;
@@ -227,7 +228,7 @@ void Buffer::_parse(char* buf, ssize_t bytes_read) {
 			}
 		}
 		if (_body_type == CHUNKED) {
-			Chunk_status cs = append_chunk(body, buf);
+			Chunk_status cs = append_chunk(body, buf, bytes_read);
 			assert(cs != CS_ERROR);
 			if (cs == CS_NULL_BLOCK_REACHED)
 				_parse_status = FINISHED;
@@ -238,8 +239,8 @@ void Buffer::_parse(char* buf, ssize_t bytes_read) {
 void Buffer::print() const {
 	std::cout << "========== Header ==============\n";
 	std::cout << header;
-	std::cout << "========== Body ================\n";
-	std::cout << body;
+	std::cout << "========== Body ================\n " << std::endl;
+	write(1, body.data(), body.size());
 	std::cout << "========== End Body ============\n";
 	std::cout << std::endl;
 }
@@ -250,7 +251,7 @@ void Buffer::reset() {
 	_body_type = EMPTY;
 	_bytes_to_read = -1;
 	header = "";
-	body = "";
+	body.clear();
 	header.shrink_to_fit();
 	body.shrink_to_fit();
 }

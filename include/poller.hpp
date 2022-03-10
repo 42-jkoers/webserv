@@ -35,13 +35,13 @@ class Buffer {
 		ERROR = 8
 	};
 
-	Read_status	 read_pollfd(const pollfd& pfd);
-	Parse_status parse_status() const;
-	void		 reset();
-	void		 print() const;
+	Read_status		  read_pollfd(const pollfd& pfd);
+	Parse_status	  parse_status() const;
+	void			  reset();
+	void			  print() const;
 
-	std::string	 header;
-	std::string	 body;
+	std::string		  header;
+	std::vector<char> body;
 
   private:
 	Read_status	 _read_status;

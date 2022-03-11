@@ -3,41 +3,26 @@
 #include "request.hpp"
 #include "response.hpp"
 
-class Buffer {
-  public:
-	Buffer();
-	enum Status {
-		UNSET,
-		NORMAL,
-		MULTIPART,
-		TEMPORALLY_UNIAVAILABLE,
-		DONE
-	};
-	Status		read_pollfd(const pollfd& pfd);
-	void		reset();
-
-	std::string data;
-
-  private:
-	Status	_status;
-	ssize_t _bytes_to_read;
-	bool	_is_end_of_http_request(const std::string& s);
-};
-
 class Poller {
   public:
 	Poller(IP_mode ip_mode, uint32_t port, int timeout);
-	void start(void (*on_request)(Request& request));
+	void start(void (*on_request)(Request& request), Config& config);
 	~Poller();
 
   private:
-	struct pollfd			   _create_pollfd(int fd, short events);
-	void					   _accept_clients();
+	struct pollfd _create_pollfd(int fd, short events);
+	void		  _accept_clients();
 
+	enum Read_status {
+		NOT_DONE,
+		DONE
+	};
+	Read_status				   _read_request(const pollfd& pfd, std::string& buffer);
 	void					   _on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request));
+	bool					   _is_end_of_http_request(const std::string& s);
 	fd_t					   _server_socket;
 	std::vector<struct pollfd> _pollfds;
-	std::vector<Buffer>		   _buffers;
+	std::vector<std::string>   _buffers;
 	int						   _timeout;
 
 	// disabled

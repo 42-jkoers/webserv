@@ -2,7 +2,6 @@
 #include "main.hpp"
 #include "response.hpp"
 #include <fcntl.h>
-#include <limits>
 #include <netinet/in.h>
 #include <sstream>
 #include <sys/ioctl.h>
@@ -59,8 +58,8 @@ static fd_t create_server_socket(IP_mode ip_mode, uint32_t port) {
 Poller::Poller(IP_mode ip_mode, uint32_t port, int timeout) : _timeout(timeout) {
 	_server_socket = create_server_socket(ip_mode, port);
 	_pollfds.reserve(1);
+	_pollfds.push_back(_create_pollfd(_server_socket, POLLIN /* | POLLOUT */));
 	log_pollfd(_pollfds[0]); // log server socket
-	_pollfds.push_back(_create_pollfd(_server_socket, POLLIN | POLLOUT));
 }
 
 void Poller::_accept_clients() {
@@ -72,23 +71,50 @@ void Poller::_accept_clients() {
 			break;
 
 		// New incoming connection
-		_pollfds.push_back(_create_pollfd(newfd, POLLIN | POLLOUT));
+		_pollfds.push_back(_create_pollfd(newfd, POLLIN));
 	}
+}
+
+bool Poller::_is_end_of_http_request(const std::string& s) { // TODO: better?
+	if (s.size() < 4)
+		return false;
+	return strncmp(s.data() + (s.size() - 4), "\r\n\r\n", 4) == 0;
+}
+
+Poller::Read_status Poller::_read_request(const pollfd& pfd, std::string& buffer) {
+	static char buf[BUFFER_SIZE + 1];
+	ssize_t		bytes_read;
+	do {
+		bytes_read = read(pfd.fd, buf, BUFFER_SIZE);
+		if (bytes_read == 0)
+			return DONE;
+		if (bytes_read < 0) // TODO: this might not be accurate enough
+			return NOT_DONE;
+		buf[bytes_read] = '\0';
+		buffer += buf;
+	} while (!_is_end_of_http_request(buffer));
+	return DONE;
 }
 
 #define FD_CLOSED -1
 void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
 	_buffers.reserve(pfd.fd + 1);
-	if (_buffers[pfd.fd].read_pollfd(pfd) != Buffer::DONE)
+	Poller::Read_status rs = _read_request(pfd, _buffers[pfd.fd]);
+	if (rs != DONE)
 		return;
-	Request r(pfd, _buffers[pfd.fd].data);
-	on_request(r);
-	_buffers[pfd.fd].reset();
-	close(pfd.fd);
+	Request request(pfd, _buffers[pfd.fd]);
+	if (request.get_response_code() == 200) {
+		on_request(request);
+	} else {
+		Response response(request.get_fd(), request.get_response_code());
+		response.send_response("Error\n");
+	}
+	_buffers[pfd.fd] = "";
+	close(pfd.fd); // TODO: only when keepalive is true
 	pfd.fd = FD_CLOSED;
 }
 
-void Poller::start(void (*on_request)(Request& request)) {
+void Poller::start(void (*on_request)(Request& request), Config& config) {
 	while (true) {
 		int rc = poll(_pollfds.data(), _pollfds.size(), _timeout);
 		if (rc < 0)
@@ -100,6 +126,8 @@ void Poller::start(void (*on_request)(Request& request)) {
 			if (fd->revents == 0)
 				continue;
 			log_pollfd(*fd); // log the event on the poll fd
+			if (fd->revents != POLLIN)
+				exit_with::message("Unexpected revents value");
 			_on_new_pollfd(*fd, on_request);
 		}
 		// removing closed fds from array by shifting them to the left
@@ -114,6 +142,7 @@ void Poller::start(void (*on_request)(Request& request)) {
 		}
 		_pollfds.erase(valid, _pollfds.end());
 	}
+	(void)config;
 }
 
 struct pollfd Poller::_create_pollfd(int fd, short events) {
@@ -124,54 +153,3 @@ struct pollfd Poller::_create_pollfd(int fd, short events) {
 }
 
 Poller::~Poller() {} // TODO: close fds etc.
-
-// Buffer
-
-Buffer::Buffer() { // TODO: disable
-	reset();
-}
-
-// TODO: fix this horrible unstable abomination of what is not even allowed to be called "code"
-Buffer::Status Buffer::read_pollfd(const pollfd& pfd) {
-	static char		  buf[BUFFER_SIZE + 1];
-	ssize_t			  bytes_read;
-	const std::string cl = "Content-Length: ";
-
-	while (true) {
-		bytes_read = read(pfd.fd, buf, BUFFER_SIZE);
-		if (bytes_read == 0)
-			break;
-		if (bytes_read < 0)
-			return TEMPORALLY_UNIAVAILABLE;
-		buf[bytes_read] = '\0';
-		data += buf;
-
-		_bytes_to_read -= bytes_read;
-		size_t p;
-		if (_status == UNSET && (p = data.find(cl)) != std::string::npos) {
-			std::string len_str = std::string(data.begin() + p + cl.length(), data.begin() + data.find("\r\n", p));
-			assert(parse_int(_bytes_to_read, len_str));
-			_status = MULTIPART;
-		}
-		if (_status == MULTIPART && _bytes_to_read <= 0) { // TODO: what the fuck
-			_status = DONE;
-			return _status;
-		}
-		if (_status == UNSET && _bytes_to_read <= 0 && data.find("\r\n\r\n") != std::string::npos) {
-			_status = DONE;
-			return _status;
-		}
-	}
-	if (_status == MULTIPART && pfd.revents & POLLOUT) { // TODO: do not repeat code
-		std::string resp = "GET / HTTP/1.1 100 Continue\n\r\n\r";
-		write(pfd.fd, resp.data(), resp.length());
-	}
-	return _status;
-}
-
-void Buffer::reset() {
-	_status = UNSET;
-	_bytes_to_read = -1;
-	data = "";
-	data.shrink_to_fit();
-}

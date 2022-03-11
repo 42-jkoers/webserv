@@ -24,6 +24,6 @@ int main(int argc, char** argv) {
 	Config config(argc, argv);
 
 	Poller poller(mode_ipv6, config.get_port(), 50000);
-	poller.start(on_request);
+	poller.start(on_request, config);
 	return 0;
 }

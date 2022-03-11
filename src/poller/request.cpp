@@ -78,13 +78,19 @@ int Request::_set_code_and_return(int code) {
 
 // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
 int Request::_parse_request_line() {
-	size_t					   end;
-	size_t					   prev;
-	size_t					   delimiter;
-	std::string				   line;
-	std::array<std::string, 3> components = {"method", "URI", "HTTP_version"};
-	std::array<std::string, 3> methods = {"GET", "POST", "DELETE"};
+	size_t					 end;
+	size_t					 prev;
+	size_t					 delimiter;
+	std::string				 line;
+	std::vector<std::string> components;
+	std::vector<std::string> methods;
 
+	components.push_back("method");
+	components.push_back("URI");
+	components.push_back("HTTP_version");
+	methods.push_back("GET");
+	methods.push_back("POST");
+	methods.push_back("DELETE");
 	prev = 0;
 	end = _raw.find(_CRLF);
 	if (end == std::string::npos)

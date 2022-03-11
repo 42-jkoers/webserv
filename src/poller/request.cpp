@@ -2,7 +2,7 @@
 
 Request::Request(const pollfd& pfd, const std::string& raw) : _fd(pfd.fd), _raw(raw) {
 	if (pfd.revents != POLLIN)
-		exit_with::message("Unexpected revents value");
+		exit_with::message("Unexpected revents value ");
 	_response_code = 200;
 	_CRLF = "\r\n";
 	_whitespaces = " \t";

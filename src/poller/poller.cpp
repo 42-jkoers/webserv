@@ -81,7 +81,6 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
 		_buffers.resize(pfd.fd + 1); // do not change this to reserve(), that one does not call the constructors of the elements
 	_buffers[pfd.fd].read_pollfd(pfd);
 	if (_buffers[pfd.fd].parse_status() == Buffer::FINISHED) {
-		_buffers[pfd.fd].print();
 		Response response(pfd.fd, 200);
 		response.send_response("Hello World!\n");
 
@@ -137,19 +136,15 @@ Buffer::Parse_status Buffer::parse_status() const { return _parse_status; }
 
 // TODO: fix this horrible unstable abomination of what is not even allowed to be called "code"
 Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
-	static char buf[BUFFER_SIZE + 1];
-	ssize_t		bytes_read;
+	ssize_t bytes_read;
 
 	while (true) {
-		bytes_read = read(pfd.fd, buf, BUFFER_SIZE);
+		bytes_read = _read_buffer.append(pfd.fd);
 		if (bytes_read == 0)
 			break;
 		if (bytes_read < 0)
 			return TEMPORALLY_UNIAVAILABLE;
-		buf[bytes_read] = '\0';
-		// std::cout << buf << std::endl;
-		// std::cout << "=======" << std::endl;
-		_parse(buf, bytes_read);
+		_parse(bytes_read);
 		if (_parse_status <= HEADER_DONE)
 			break;
 		if (_parse_status == FINISHED)
@@ -163,38 +158,29 @@ Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
 	}
 	return _read_status;
 }
-enum Chunk_status {
-	CS_NO_NULL_BLOCK,
-	CS_NULL_BLOCK_REACHED,
-	CS_ERROR
-};
 
-Chunk_status append_chunk(std::vector<char>& body, char* buf, size_t buffer_size) {
-	assert(buffer_size >= 5);
-	if (!strcmp(buf, "0\r\n\r\n"))
+Buffer::Chunk_status Buffer::_append_chunk(size_t bytes_read) {
+	size_t	block_size;
+	ssize_t hex_len = parse_hex(block_size, _read_buffer.data(), '\r');
+	assert(hex_len > 0); // if parse_hex is successful
+	if (block_size == 0) {
+		_read_buffer.reset(); // TODO: end values
 		return CS_NULL_BLOCK_REACHED;
-
-	size_t block_size;
-	assert(parse_hex(block_size, buf, '\r'));
-	assert(block_size < buffer_size);
-
-	// remove length definition of block
-	char* start = strchr(buf, '\r') + 2;
-	buffer_size -= static_cast<size_t>(start - buf);
-	buf = start;
-
-	for (size_t i = 0; i < block_size; i++) // TODO
-		body.push_back(buf[i]);
-	buf += block_size + 2;
-	buffer_size -= block_size + 2; // ignore last 2 bytes
-	if (buffer_size)
-		return append_chunk(body, buf, buffer_size);
-	return CS_NO_NULL_BLOCK;
+	}
+	_read_buffer.free_n(hex_len + 2);
+	if (block_size <= _read_buffer.size()) {
+		_read_buffer.copy_to_vector(body, block_size);
+		_read_buffer.free_n(block_size + 2);
+	}
+	if (_read_buffer.size())
+		return _append_chunk(bytes_read);
+	return CS_IN_PROGRESS;
 }
 
-void Buffer::_parse(char* buf, ssize_t bytes_read) {
+void Buffer::_parse(size_t bytes_read) {
 	if (_parse_status <= HEADER_IN_PROGRESS) {
-		header += buf;
+		header += _read_buffer.data();
+		_read_buffer.reset();
 		const std::string cl = "Content-Length: ";
 		size_t			  p;
 		if ((p = header.find(cl)) != std::string::npos) {
@@ -218,8 +204,8 @@ void Buffer::_parse(char* buf, ssize_t bytes_read) {
 	}
 	if (_parse_status >= WAITING_FOR_BODY) {
 		if (_body_type == MULTIPART) {
-			for (ssize_t i = 0; i < bytes_read; i++) // TODO
-				body.push_back(buf[i]);
+			_read_buffer.copy_to_vector(body, _read_buffer.size());
+			_read_buffer.free_n(_read_buffer.size());
 			_bytes_to_read -= bytes_read;
 			if (_bytes_to_read <= 0) { // TODO: what the fuck
 				_parse_status = FINISHED;
@@ -227,7 +213,7 @@ void Buffer::_parse(char* buf, ssize_t bytes_read) {
 			}
 		}
 		if (_body_type == CHUNKED) {
-			Chunk_status cs = append_chunk(body, buf, bytes_read);
+			Chunk_status cs = _append_chunk(bytes_read);
 			assert(cs != CS_ERROR);
 			if (cs == CS_NULL_BLOCK_REACHED)
 				_parse_status = FINISHED;
@@ -249,6 +235,7 @@ void Buffer::reset() {
 	_parse_status = INCOMPLETE;
 	_body_type = EMPTY;
 	_bytes_to_read = -1;
+	_read_buffer.reset();
 	header = "";
 	body.clear();
 	header.shrink_to_fit();

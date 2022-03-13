@@ -2,7 +2,7 @@
 #include "main.hpp"
 #include <sstream>
 
-/*To do 
+/*To do
 a way to safe more locations
 saving multiple ports
 */
@@ -46,20 +46,26 @@ void Config::safe_info(std::string line, std::map<const std::string, std::string
 		&Config::_parseAutoIndex,
 		&Config::_parseIndex,
 		&Config::_parseServer};
-
 	for (size_t i = 0; i < options.size(); i++) {
+		// std::cout << line << " | " << options[i] << std::endl;
+		if (line.find("server") != std::string::npos && line.find("{") != std::string::npos) {
+			_server.push_back(Server());
+			_current_server = _server.size() - 1;
+			_server_check = false;
+			return;
+		}
 		if (line.find(options[i]) != std::string::npos) {
-			// std::cout << options[i] << std::endl;
-			// std::cout << line << i << std::endl;
 			tokenizer(options[i], config_info, line);
 			(this->*jump_table[i])(options[i], config_info, line);
 			return;
 		} else if (line.find_first_not_of("\t ") == std::string::npos)
 			return;
 		else if (line.find_first_of("}") != std::string::npos) {
-			if (_location_check == true){
+			if (_location_check == true) {
 				_current_location++;
 				_location_check = false;
+			} else if (_server_check == true) {
+				_server_check = false;
 			}
 			return;
 		}
@@ -82,9 +88,8 @@ void Config::_config_parser(int argc, char** argv) {
 	options.push_back("location");
 	options.push_back("autoindex");
 	options.push_back("index");
-	options.push_back("server");
-	_current_location = 0;
-	_location_check = false;
+	_server.push_back(Server());
+	_current_server = _server.size() - 1;
 	if (argc == 2)
 		config_file.open(argv[1]);
 	else

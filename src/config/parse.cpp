@@ -30,14 +30,15 @@ void Config::_parseServerName(std::string option, std::map<const std::string, st
 
 	cut_till_collon(serverName);
 	split = serverName.find_first_of(" \t");
-	_serverName = serverName.substr(0, split);
+	_server[_current_server]._serverName = serverName.substr(0, split);
 	split = serverName.find_last_of("\t ");
-	_serverUrl = serverName.substr(split + 1, serverName.size());
+	_server[_current_server]._serverUrl = serverName.substr(split + 1, serverName.size());
 	// std::cout << config.get_serverName() << "\\" << config.get_serverUrl() << std::endl;
 	(void)option;
 	(void)line;
 }
 
+// a block with 0.0.0.0; should listen to port 8080 and a block with no IP address should work on 0.0.0.0
 void Config::_parseListen(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
 	std::string listen = config_info["listen"];
 	size_t		i = 0;
@@ -45,7 +46,7 @@ void Config::_parseListen(std::string option, std::map<const std::string, std::s
 	size_t		check_ip = 0;
 
 	cut_till_collon(listen);
-	if (strchr(listen.c_str(), ':')) {
+	if (strchr(listen.c_str(), '.') || strchr(listen.c_str(), ':')) {
 		while (i < listen.size()) {
 			if (listen[i] != '.' && !isdigit(listen[i]) && listen[i] != ':' && listen[i] != ';')
 				exit_with::e_perror("config error: listen");
@@ -61,17 +62,33 @@ void Config::_parseListen(std::string option, std::map<const std::string, std::s
 				check_ip++;
 			i++;
 		}
-		unsigned int port;
-		size_t		 pos = config_info["listen"].find_first_of(":");
-		_ip = listen.substr(0, pos);
-		parse_int(port, &config_info["listen"][pos + 1]);
-		_port = port;
-	} else {
-		unsigned int port;
-		if (parse_int(port, listen) == false)
-			exit_with::e_perror("config error: listen");
-		_port = port;
 	}
+	uint32_t port;
+	size_t	 pos;
+	if (strchr(listen.c_str(), ':'))
+		pos = config_info["listen"].find_first_of(":");
+	else
+		pos = listen.size();
+	if (check_ip != 0) {
+		if (_location_check == true)
+			_server[_current_server]._location[_current_location]._ip.push_back(listen.substr(0, pos));
+		else
+			_server[_current_server]._ip.push_back(listen.substr(0, pos));
+		parse_int(port, &config_info["listen"][pos + 1]);
+		if (!strchr(listen.c_str(), ':'))
+			port = 8080;
+	} else {
+		parse_int(port, &config_info["listen"][0]);
+		if (_location_check == true)
+			_server[_current_server]._location[_current_location]._ip.push_back("0.0.0.0");
+		else
+			_server[_current_server]._ip.push_back("0.0.0.0");
+	}
+	if (_location_check == true)
+		_server[_current_server]._location[_current_location]._port.push_back(port);
+	else
+		_server[_current_server]._port.push_back(port);
+	(void)config_info;
 	(void)line;
 	(void)option;
 }
@@ -86,7 +103,10 @@ void Config::_parseErrorPage(std::string option, std::map<const std::string, std
 	if (space == std::string::npos)
 		exit_with::e_perror("config error: error_page");
 	error_code = atoi(error.substr(0, space).c_str());
-	_error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
+	if (_location_check == true)
+		_server[_current_server]._location[_current_location]._error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
+	else
+		_server[_current_server]._error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
 
 	(void)option;
 	(void)config_info;
@@ -98,7 +118,7 @@ void Config::_parseClientMaxBodySize(std::string option, std::map<const std::str
 	cut_till_collon(body_size);
 	if (body_size[body_size.size() - 1] != 'M' && body_size[body_size.size() - 1] != 'm')
 		exit_with::e_perror("config error: client_max_body_size");
-	_client_max_body_size = body_size;
+	_server[_current_server]._client_max_body_size = body_size;
 
 	(void)option;
 	(void)config_info;
@@ -108,8 +128,8 @@ void Config::_parseClientMaxBodySize(std::string option, std::map<const std::str
 void Config::_parseAllowedMethods(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
 	std::string methods = config_info["allowed_methods"];
 	// size_t		space = 0;
-	size_t		i = 0;
-	size_t		j = 0;
+	size_t i = 0;
+	size_t j = 0;
 
 	// Make it work for multiple allowed methods
 	cut_till_collon(methods);
@@ -117,23 +137,20 @@ void Config::_parseAllowedMethods(std::string option, std::map<const std::string
 	// _methods.push_back(methods.substr(0, space));
 	// space = methods.find_first_not_of("\t ", space);
 	// std::cout << _methods[0] << std::endl;
-	_methods.push_back("");
+	_server[_current_server]._methods.push_back("");
 	while (i < methods.length()) {
 		if (methods[i] == '\t' || methods[i] == ' ') {
-			_methods.push_back("");
-			if (strncmp(_methods[j].c_str(), "GET", _methods[j].length()) != 0&& strncmp(_methods[j].c_str(), "POST",
-				_methods[j].length()) != 0&& strncmp(_methods[j].c_str(), "SET", _methods[j].length())!= 0)
+			_server[_current_server]._methods.push_back("");
+			if (strncmp(_server[_current_server]._methods[j].c_str(), "GET", _server[_current_server]._methods[j].length()) != 0 && strncmp(_server[_current_server]._methods[j].c_str(), "POST", _server[_current_server]._methods[j].length()) != 0 && strncmp(_server[_current_server]._methods[j].c_str(), "SET", _server[_current_server]._methods[j].length()) != 0)
 				exit_with::e_perror("config error: methods");
 			j++;
-		}
-		else
-			_methods[j].push_back(methods[i]);
+		} else
+			_server[_current_server]._methods[j].push_back(methods[i]);
 		i++;
 	}
-	if (strncmp(_methods[j].c_str(), "GET", _methods[j].length()) != 0&& strncmp(_methods[j].c_str(), "POST",
-				_methods[j].length()) != 0&& strncmp(_methods[j].c_str(), "SET", _methods[j].length())!= 0)
-				exit_with::e_perror("config error: methods");
-	_number_methods = j + 1;
+	if (strncmp(_server[_current_server]._methods[j].c_str(), "GET", _server[_current_server]._methods[j].length()) != 0 && strncmp(_server[_current_server]._methods[j].c_str(), "POST", _server[_current_server]._methods[j].length()) != 0 && strncmp(_server[_current_server]._methods[j].c_str(), "SET", _server[_current_server]._methods[j].length()) != 0)
+		exit_with::e_perror("config error: methods");
+	_server[_current_server]._number_methods = j + 1;
 	(void)config_info;
 	(void)option;
 	(void)line;
@@ -143,7 +160,7 @@ void Config::_parseRoot(std::string option, std::map<const std::string, std::str
 	std::string root = config_info["root"];
 
 	cut_till_collon(root);
-	_root = root;
+	_server[_current_server]._root = root;
 	(void)option;
 	(void)config_info;
 	(void)line;
@@ -161,9 +178,15 @@ void Config::_parseLocation(std::string option, std::map<const std::string, std:
 	cut_till_bracket(location);
 	if (location[0] == '/')
 		location.insert(0, ".");
+	else
+		location.insert(0, "./");
 	if (!IsPathExist(location))
 		exit_with::e_perror("config error: location");
-	_location.push_back(Location(location));
+	_server[_current_server]._location.push_back(Location());
+	_current_location = _server[_current_server]._location.size() - 1;
+	_server[_current_server]._location[_current_location] = (Location());
+	_server[_current_server]._location[_current_location]._path = location;
+	// std::cout << _server[_current_server]._location[location]._location << std::endl;
 
 	(void)option;
 	(void)config_info;
@@ -171,16 +194,16 @@ void Config::_parseLocation(std::string option, std::map<const std::string, std:
 }
 
 void Config::_parseIndex(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
-	std::string	  index = config_info["index"];
-	std::ifstream try_file;
-	std::string	  path_to_file;
+	// std::string	  index = config_info["index"];
+	// std::ifstream try_file;
+	// std::string	  path_to_file;
 
-	cut_till_collon(index);
-	path_to_file = _location[_location.size() - 1].getLocation() + "/" + index;
-	try_file.open(path_to_file);
-	if (!try_file.is_open())
-		exit_with::e_perror("config error: index");
-	try_file.close();
+	// cut_till_collon(index);
+	// path_to_file = _location[_location.size() - 1].getLocation() + "/" + index;
+	// try_file.open(path_to_file);
+	// if (!try_file.is_open())
+	// 	exit_with::e_perror("config error: index");
+	// try_file.close();
 	(void)option;
 	(void)config_info;
 	(void)line;
@@ -198,7 +221,10 @@ void Config::_parseAutoIndex(std::string option, std::map<const std::string, std
 	cut_till_collon(autoIndex);
 	if (autoIndex.compare("on") != 0 && autoIndex.compare("off") != 0)
 		exit_with::e_perror("config error: autoindex");
-	_autoIndex = autoIndex;
+	if (_location_check == true)
+		_server[_current_server]._location[_current_location]._autoIndex = autoIndex;
+	else
+		_server[_current_server]._autoIndex = autoIndex;
 	(void)option;
 	(void)line;
 }

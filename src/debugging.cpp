@@ -29,6 +29,6 @@ void log_pollfd(const struct pollfd& pfd) {
 			  << " events: ";
 	log_event(pfd.events);
 	std::cout << "\nrevents: ";
-	log_event(pfd.events);
+	log_event(pfd.revents);
 	std::cout << "\n " << std::endl;
 }

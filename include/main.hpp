@@ -1,9 +1,11 @@
 #pragma once
 #include "config_parser.hpp"
 #include <arpa/inet.h>
+#include <array>
 #include <cstdlib>
 #include <errno.h>
 #include <iostream>
+#include <map>
 #include <sstream>
 #include <stdio.h>
 #include <string.h>
@@ -14,7 +16,7 @@
 #include <unistd.h>
 #include <vector>
 
-#define BUFFER_SIZE 4096
+#define BUFFER_SIZE 16384
 #define SERVER_BACKLOG 100
 #define MAX_CLIENTS 5
 
@@ -42,6 +44,16 @@ std::string to_string(T value) {
 	return ss.str();
 }
 
+template <class T>
+const T& max(const T& a, const T& b) {
+	return a > b ? a : b;
+}
+
+template <class T>
+const T& min(const T& a, const T& b) {
+	return a < b ? a : b;
+}
+
 } // namespace cpp11
 
 std::string readFile(const std::string& path);
@@ -56,6 +68,33 @@ template <typename T>
 bool parse_int(T& output, const std::string& str) { // todo std::is_integral
 	char			  c;
 	std::stringstream ss(str);
+	ss >> output;
+	return !(ss.fail() || ss.get(c));
+}
+
+// true on success
+// @param ending is the char that should come after the hex string
+template <typename T>
+ssize_t parse_hex(T& output, const std::string& str, char ending) { // todo std::is_integral
+	char			  c;
+	std::stringstream ss;
+	ss << std::hex << str;
+	ss >> output;
+
+	if (ss.eof())
+		return false;
+	ss.get(c);
+	if (ss.fail() || c != ending)
+		return -1;
+	return str.find(ending);
+}
+
+// true on success
+template <typename T>
+bool parse_hex(T& output, const std::string& str) { // todo std::is_integral
+	char			  c;
+	std::stringstream ss;
+	ss << std::hex << str;
 	ss >> output;
 	return !(ss.fail() || ss.get(c));
 }

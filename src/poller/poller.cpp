@@ -167,8 +167,8 @@ Buffer::Chunk_status Buffer::_append_chunk(size_t bytes_read) {
 		_read_buffer.reset(); // TODO: end values
 		return CS_NULL_BLOCK_REACHED;
 	}
-	_read_buffer.free_n(hex_len + 2);
-	if (block_size <= _read_buffer.size()) {
+	if (block_size <= _read_buffer.size() - (hex_len + 2)) {
+		_read_buffer.free_n(hex_len + 2);
 		_read_buffer.copy_to_vector(body, block_size);
 		_read_buffer.free_n(block_size + 2);
 	}

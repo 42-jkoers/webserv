@@ -178,16 +178,19 @@ Buffer::Chunk_status Buffer::_append_chunk(size_t bytes_read) {
 }
 
 void Buffer::_parse(size_t bytes_read, const pollfd& pfd) {
-	if (_parse_status <= HEADER_IN_PROGRESS) {
+	if (_parse_status <= HEADER_IN_PROGRESS &&
+		_read_buffer.size() > 4 &&
+		!strcmp(&_read_buffer.data()[_read_buffer.size() - 4], "\r\n\r\n")) {
 		request.parse_header(pfd, _read_buffer.data());
 		_read_buffer.reset();
 		_parse_status = HEADER_DONE;
 		if (request.has_key("Content-Length")) {
 			_body_type = MULTIPART;
 			_bytes_to_read = request.get_content_length();
-		}
-		if (request.has_key("transfer-encoding") && request.get_transfer_encoding() == "chunked")
+		} else if (request.has_key("transfer-encoding") && request.get_transfer_encoding() == "chunked")
 			_body_type = CHUNKED;
+		else
+			_parse_status = FINISHED;
 		return;
 	}
 	if (_parse_status >= WAITING_FOR_BODY) {

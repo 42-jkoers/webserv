@@ -26,7 +26,7 @@ void Response::send_response(const std::string& message) {
 	m[503] = "Service Unavailable";
 
 	std::string response = "HTTP/1.1 ";
-	response += cpp11::to_string(_response_code);
+	response += std_ft::to_string(_response_code);
 	response += " ";
 	response += m[_response_code];
 	response += "\r\n\r\n";

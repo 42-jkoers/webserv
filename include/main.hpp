@@ -34,7 +34,7 @@ void message(const std::string& msg);
 
 } // namespace exit_with
 
-namespace cpp11 {
+namespace std_ft {
 
 template <typename T>
 std::string to_string(T value) {
@@ -53,7 +53,7 @@ const T& min(const T& a, const T& b) {
 	return a < b ? a : b;
 }
 
-} // namespace cpp11
+} // namespace std_ft
 
 std::string readFile(const std::string& path);
 

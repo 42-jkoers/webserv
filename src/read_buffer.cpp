@@ -8,7 +8,7 @@ ssize_t Read_buffer::append(fd_t fd) {
 	ssize_t bytes_read = read(fd, _data + _size, sizeof(_data) - _size);
 	if (bytes_read > 0) {
 		_size += bytes_read;
-		// _data[_size] = '\0';
+		_data[_size] = '\0';
 	}
 	return bytes_read;
 }

@@ -144,7 +144,7 @@ Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
 			break;
 		if (bytes_read < 0)
 			return TEMPORALLY_UNIAVAILABLE;
-		_parse(bytes_read);
+		_parse(bytes_read, pfd);
 		if (_parse_status <= HEADER_DONE)
 			break;
 		if (_parse_status == FINISHED)
@@ -177,29 +177,17 @@ Buffer::Chunk_status Buffer::_append_chunk(size_t bytes_read) {
 	return CS_IN_PROGRESS;
 }
 
-void Buffer::_parse(size_t bytes_read) {
+void Buffer::_parse(size_t bytes_read, const pollfd& pfd) {
 	if (_parse_status <= HEADER_IN_PROGRESS) {
-		_read_buffer.copy_to_string(header);
+		request.parse_header(pfd, _read_buffer.data());
 		_read_buffer.reset();
-		const std::string cl = "Content-Length: ";
-		size_t			  p;
-		if ((p = header.find(cl)) != std::string::npos) {
-			const size_t line_end = header.find("\r\n", p);
-			assert(line_end != std::string::npos);
-			std::string len_str = std::string(header.begin() + p + cl.length(), header.begin() + line_end);
-			assert(parse_int(_bytes_to_read, len_str));
+		_parse_status = HEADER_DONE;
+		if (request.has_key("Content-Length")) {
 			_body_type = MULTIPART;
+			_bytes_to_read = request.get_content_length();
 		}
-		if (header.find("transfer-encoding:chunked") != std::string::npos) {
+		if (request.has_key("transfer-encoding") && request.get_transfer_encoding() == "chunked")
 			_body_type = CHUNKED;
-		}
-		if (header.find("\r\n\r\n") != std::string::npos) {
-			if (_body_type == EMPTY)
-				_parse_status = FINISHED;
-			else
-				_parse_status = HEADER_DONE;
-		}
-
 		return;
 	}
 	if (_parse_status >= WAITING_FOR_BODY) {
@@ -223,7 +211,7 @@ void Buffer::_parse(size_t bytes_read) {
 
 void Buffer::print() const {
 	std::cout << "========== Header ==============\n";
-	std::cout << header;
+	std::cout << request;
 	std::cout << "========== Body ================\n " << std::endl;
 	write(1, body.data(), body.size());
 	std::cout << "========== End Body ============\n";
@@ -236,8 +224,6 @@ void Buffer::reset() {
 	_body_type = EMPTY;
 	_bytes_to_read = -1;
 	_read_buffer.reset();
-	header = "";
 	body.clear();
-	header.shrink_to_fit();
 	body.shrink_to_fit();
 }

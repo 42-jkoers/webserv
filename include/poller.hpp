@@ -70,7 +70,7 @@ class Buffer {
 	void			  reset();
 	void			  print() const;
 
-	std::string		  header;
+	Request			  request;
 	std::vector<char> body;
 
   private:
@@ -81,7 +81,7 @@ class Buffer {
 	Read_buffer	 _read_buffer;
 
 	bool		 _is_end_of_http_request(const std::string& s);
-	void		 _parse(size_t bytes_read);
+	void		 _parse(size_t bytes_read, const pollfd& pfd);
 	Chunk_status _append_chunk(size_t bytes_read);
 
 	// disabled

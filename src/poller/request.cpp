@@ -1,11 +1,14 @@
 #include "request.hpp"
 
-Request::Request(const pollfd& pfd, const std::string& raw) : _fd(pfd.fd), _raw(raw) {
-	if (pfd.revents != POLLIN)
-		exit_with::message("Unexpected revents value");
+Request::Request() {
 	_response_code = 200;
 	_CRLF = "\r\n";
 	_whitespaces = " \t";
+}
+
+void Request::parse_header(const pollfd& pfd, const std::string& raw) {
+	_fd = pfd.fd;
+	_raw = raw;
 	_parse_request();
 }
 
@@ -130,7 +133,6 @@ std::map<std::string, std::string> Request::get_request_headers() const {
 std::map<std::string, std::string> Request::get_body() const {
 	return _body;
 }
-
 uint32_t Request::get_response_code() const {
 	return _response_code;
 }
@@ -157,6 +159,26 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
 	return output;
+}
+
+size_t Request::get_content_length() const {
+	std::map<std::string, std::string>::const_iterator it = _request_headers.find("Content-Length");
+	assert(it != _request_headers.end());
+
+	size_t content_length;
+	assert(parse_int(content_length, it->second));
+	return content_length;
+}
+
+std::string Request::get_transfer_encoding() const {
+	std::map<std::string, std::string>::const_iterator it = _request_headers.find("transfer-encoding");
+	assert(it != _request_headers.end());
+	return it->second;
+}
+
+bool Request::has_key(const std::string& key) const {
+	std::map<std::string, std::string>::const_iterator it = _request_headers.find(key);
+	return it != _request_headers.end();
 }
 
 // int Request::_parse_header_fields() { // TODO: enum parsing, add functions

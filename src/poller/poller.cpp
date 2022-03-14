@@ -77,8 +77,8 @@ void Poller::_accept_clients() {
 
 #define FD_CLOSED -1
 void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
-	if (_buffers.size() < static_cast<size_t>(pfd.fd + 1))
-		_buffers.resize(pfd.fd + 1); // do not change this to reserve(), that one does not call the constructors of the elements
+	if (_buffers.find(pfd.fd) == _buffers.end())
+		_buffers[pfd.fd] = Buffer();
 	_buffers[pfd.fd].read_pollfd(pfd);
 	if (_buffers[pfd.fd].parse_status() == Buffer::FINISHED) {
 		Response response(pfd.fd, 200);
@@ -136,14 +136,17 @@ Buffer::Parse_status Buffer::parse_status() const { return _parse_status; }
 
 // TODO: fix this horrible unstable abomination of what is not even allowed to be called "code"
 Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
-	ssize_t bytes_read;
+	ssize_t		bytes_read;
+	static char buf[4096];
 
 	while (true) {
-		bytes_read = _read_buffer.append(pfd.fd);
+		bytes_read = read(pfd.fd, buf, sizeof(buf));
 		if (bytes_read == 0)
 			break;
 		if (bytes_read < 0)
 			return TEMPORALLY_UNIAVAILABLE;
+		for (ssize_t i = 0; i < bytes_read; i++)
+			_read_buffer.push_back(buf[i]);
 		_parse(bytes_read, pfd);
 		if (_parse_status <= HEADER_DONE)
 			break;
@@ -164,13 +167,13 @@ Buffer::Chunk_status Buffer::_append_chunk(size_t bytes_read) {
 	size_t hex_len = parse_hex(block_size, _read_buffer.data(), '\r');
 	assert(hex_len > 0); // if parse_hex is successful
 	if (block_size == 0) {
-		_read_buffer.reset(); // TODO: end values
+		_read_buffer.clear(); // TODO: end values
 		return CS_NULL_BLOCK_REACHED;
 	}
 	if (block_size <= _read_buffer.size() - (hex_len + 2)) {
-		_read_buffer.free_n(hex_len + 2);
-		_read_buffer.copy_to_vector(body, block_size);
-		_read_buffer.free_n(block_size + 2);
+		_read_buffer.erase(_read_buffer.begin(), _read_buffer.begin() + hex_len + 2);
+		body.insert(body.end(), _read_buffer.begin(), _read_buffer.begin() + block_size);
+		_read_buffer.erase(_read_buffer.begin(), _read_buffer.begin() + block_size + 2);
 	}
 	if (_read_buffer.size())
 		return _append_chunk(bytes_read);
@@ -182,7 +185,7 @@ void Buffer::_parse(size_t bytes_read, const pollfd& pfd) {
 		_read_buffer.size() > 4 &&
 		!strcmp(&_read_buffer.data()[_read_buffer.size() - 4], "\r\n\r\n")) {
 		request.parse_header(pfd, _read_buffer.data());
-		_read_buffer.reset();
+		_read_buffer.clear();
 		_parse_status = HEADER_DONE;
 		if (request.has_key("Content-Length")) {
 			_body_type = MULTIPART;
@@ -195,8 +198,8 @@ void Buffer::_parse(size_t bytes_read, const pollfd& pfd) {
 	}
 	if (_parse_status >= WAITING_FOR_BODY) {
 		if (_body_type == MULTIPART) {
-			_read_buffer.copy_to_vector(body, _read_buffer.size());
-			_read_buffer.free_n(_read_buffer.size());
+			body.insert(body.end(), _read_buffer.begin(), _read_buffer.end());
+			_read_buffer.clear();
 			_bytes_to_read -= bytes_read;
 			if (_bytes_to_read <= 0) { // TODO: what the fuck
 				_parse_status = FINISHED;
@@ -226,7 +229,7 @@ void Buffer::reset() {
 	_parse_status = INCOMPLETE;
 	_body_type = EMPTY;
 	_bytes_to_read = -1;
-	_read_buffer.reset();
+	_read_buffer.clear();
 	body.clear();
 	body.shrink_to_fit();
 }

@@ -3,30 +3,6 @@
 #include "request.hpp"
 #include "response.hpp"
 
-class Read_buffer {
-  public:
-	Read_buffer();
-	ssize_t		append(fd_t fd);
-	void		free_n(size_t n);
-	void		reset();
-	void		copy_to_vector(std::vector<char>& v, size_t n);
-	void		copy_to_string(std::string& s);
-	void		copy_to_string(std::string& s, size_t n);
-
-	void		print(size_t max = 999999999);
-
-	size_t		size() const { return _size; };
-	const char* data() const { return _data; };
-
-  private:
-	size_t _size;
-	char   _data[BUFFER_SIZE * 2 + 1];
-
-	// disabled
-	// Read_buffer(const Read_buffer& cp);
-	// Read_buffer& operator=(const Read_buffer& cp);
-};
-
 class Buffer {
   public:
 	Buffer();
@@ -74,19 +50,15 @@ class Buffer {
 	std::vector<char> body;
 
   private:
-	Read_status	 _read_status;
-	Parse_status _parse_status;
-	Body_type	 _body_type;
-	ssize_t		 _bytes_to_read;
-	Read_buffer	 _read_buffer;
+	Read_status		  _read_status;
+	Parse_status	  _parse_status;
+	Body_type		  _body_type;
+	ssize_t			  _bytes_to_read;
+	std::vector<char> _read_buffer;
 
-	bool		 _is_end_of_http_request(const std::string& s);
-	void		 _parse(size_t bytes_read, const pollfd& pfd);
-	Chunk_status _append_chunk(size_t bytes_read);
-
-	// disabled
-	// Buffer(const Buffer& cp);
-	// Buffer& operator=(const Buffer& cp);
+	bool			  _is_end_of_http_request(const std::string& s);
+	void			  _parse(size_t bytes_read, const pollfd& pfd);
+	Chunk_status	  _append_chunk(size_t bytes_read);
 };
 
 class Poller {
@@ -102,7 +74,7 @@ class Poller {
 	void					   _on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request));
 	fd_t					   _server_socket;
 	std::vector<struct pollfd> _pollfds;
-	std::vector<Buffer>		   _buffers;
+	std::map<fd_t, Buffer>	   _buffers;
 	int						   _timeout;
 
 	// disabled

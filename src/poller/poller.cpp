@@ -146,7 +146,7 @@ Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
 		if (bytes_read < 0)
 			return TEMPORALLY_UNIAVAILABLE;
 		for (ssize_t i = 0; i < bytes_read; i++)
-			_read_buffer.push_back(buf[i]);
+			_buf.push_back(buf[i]);
 		_parse(static_cast<size_t>(bytes_read), pfd);
 		if (_parse_status <= HEADER_DONE)
 			break;
@@ -164,28 +164,28 @@ Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
 
 Buffer::Chunk_status Buffer::_append_chunk(size_t bytes_read) {
 	size_t block_size;
-	size_t hex_len = parse_hex(block_size, _read_buffer.data(), '\r');
+	size_t hex_len = parse_hex(block_size, _buf.data(), '\r');
 	assert(hex_len > 0); // if parse_hex is successful
 	if (block_size == 0) {
-		_read_buffer.clear(); // TODO: end values
+		_buf.clear(); // TODO: end values
 		return CS_NULL_BLOCK_REACHED;
 	}
-	if (block_size <= _read_buffer.size() - (hex_len + 2)) {
-		_read_buffer.erase(_read_buffer.begin(), _read_buffer.begin() + static_cast<ssize_t>(hex_len + 2));
-		body.insert(body.end(), _read_buffer.begin(), _read_buffer.begin() + static_cast<ssize_t>(block_size));
-		_read_buffer.erase(_read_buffer.begin(), _read_buffer.begin() + static_cast<ssize_t>(block_size + 2));
+	if (block_size <= _buf.size() - (hex_len + 2)) {
+		_buf.erase(_buf.begin(), _buf.begin() + static_cast<ssize_t>(hex_len + 2));
+		body.insert(body.end(), _buf.begin(), _buf.begin() + static_cast<ssize_t>(block_size));
+		_buf.erase(_buf.begin(), _buf.begin() + static_cast<ssize_t>(block_size + 2));
 	}
-	if (_read_buffer.size())
+	if (_buf.size())
 		return _append_chunk(bytes_read);
 	return CS_IN_PROGRESS;
 }
 
 void Buffer::_parse(size_t bytes_read, const pollfd& pfd) {
 	if (_parse_status <= HEADER_IN_PROGRESS &&
-		_read_buffer.size() > 4 &&
-		!strcmp(&_read_buffer.data()[_read_buffer.size() - 4], "\r\n\r\n")) {
-		request.parse_header(pfd, _read_buffer.data());
-		_read_buffer.clear();
+		_buf.size() > 4 &&
+		!strcmp(&_buf.data()[_buf.size() - 4], "\r\n\r\n")) {
+		request.parse_header(pfd, _buf.data());
+		_buf.clear();
 		_parse_status = HEADER_DONE;
 		if (request.has_key("Content-Length")) {
 			_body_type = MULTIPART;
@@ -198,8 +198,8 @@ void Buffer::_parse(size_t bytes_read, const pollfd& pfd) {
 	}
 	if (_parse_status >= WAITING_FOR_BODY) {
 		if (_body_type == MULTIPART) {
-			body.insert(body.end(), _read_buffer.begin(), _read_buffer.end());
-			_read_buffer.clear();
+			body.insert(body.end(), _buf.begin(), _buf.end());
+			_buf.clear();
 			_bytes_to_read -= bytes_read;
 			if (_bytes_to_read <= 0) { // TODO: what the fuck
 				_parse_status = FINISHED;
@@ -229,7 +229,7 @@ void Buffer::reset() {
 	_parse_status = INCOMPLETE;
 	_body_type = EMPTY;
 	_bytes_to_read = -1;
-	_read_buffer.clear();
+	_buf.clear();
 	body.clear();
 	body.shrink_to_fit();
 }

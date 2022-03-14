@@ -54,7 +54,7 @@ class Buffer {
 	Parse_status	  _parse_status;
 	Body_type		  _body_type;
 	ssize_t			  _bytes_to_read;
-	std::vector<char> _read_buffer;
+	std::vector<char> _buf;
 
 	bool			  _is_end_of_http_request(const std::string& s);
 	void			  _parse(size_t bytes_read, const pollfd& pfd);

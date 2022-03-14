@@ -10,6 +10,9 @@ class Read_buffer {
 	void		free_n(size_t n);
 	void		reset();
 	void		copy_to_vector(std::vector<char>& v, size_t n);
+	void		copy_to_string(std::string& s);
+	void		copy_to_string(std::string& s, size_t n);
+
 	void		print(size_t max = 999999999);
 
 	size_t		size() const { return _size; };

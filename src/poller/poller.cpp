@@ -179,7 +179,7 @@ Buffer::Chunk_status Buffer::_append_chunk(size_t bytes_read) {
 
 void Buffer::_parse(size_t bytes_read) {
 	if (_parse_status <= HEADER_IN_PROGRESS) {
-		header += _read_buffer.data();
+		_read_buffer.copy_to_string(header);
 		_read_buffer.reset();
 		const std::string cl = "Content-Length: ";
 		size_t			  p;

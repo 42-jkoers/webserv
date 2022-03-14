@@ -22,9 +22,20 @@ void Read_buffer::free_n(size_t n) { // TODO: cursor
 
 void Read_buffer::copy_to_vector(std::vector<char>& v, size_t n) {
 	v.reserve(v.size() + n);
-
-	for (size_t i = 0; i < _size; i++)
+	size_t _n = cpp11::min(n, _size);
+	for (size_t i = 0; i < _n; i++)
 		v.push_back(data()[i]);
+}
+
+void Read_buffer::copy_to_string(std::string& s, size_t n) {
+	s.reserve(s.size() + n);
+	size_t _n = cpp11::min(n, _size);
+	for (size_t i = 0; i < _n; i++)
+		s.push_back(data()[i]);
+}
+
+void Read_buffer::copy_to_string(std::string& s) {
+	copy_to_string(s, _size);
 }
 
 void Read_buffer::print(size_t max) {

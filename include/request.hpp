@@ -31,7 +31,7 @@ class Request {
 	void							   _parse_request();
 	int								   _parse_request_line();
 	int								   _parse_header_fields();
-	int								   _set_code_and_return(int ret);
+	int								   _set_code_and_return(uint32_t ret);
 	void							   _skip_ws(size_t& i);
 	uint32_t						   _response_code;
 	std::map<std::string, std::string> _request_line;

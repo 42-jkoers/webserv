@@ -1,6 +1,6 @@
 #include "response.hpp"
 
-Response::Response(fd_t fd, int ret) : _fd(fd), _response_code(ret) {
+Response::Response(fd_t fd, uint32_t ret) : _fd(fd), _response_code(ret) {
 }
 
 Response::~Response() {

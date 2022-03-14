@@ -147,7 +147,7 @@ Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
 			return TEMPORALLY_UNIAVAILABLE;
 		for (ssize_t i = 0; i < bytes_read; i++)
 			_read_buffer.push_back(buf[i]);
-		_parse(bytes_read, pfd);
+		_parse(static_cast<size_t>(bytes_read), pfd);
 		if (_parse_status <= HEADER_DONE)
 			break;
 		if (_parse_status == FINISHED)
@@ -171,9 +171,9 @@ Buffer::Chunk_status Buffer::_append_chunk(size_t bytes_read) {
 		return CS_NULL_BLOCK_REACHED;
 	}
 	if (block_size <= _read_buffer.size() - (hex_len + 2)) {
-		_read_buffer.erase(_read_buffer.begin(), _read_buffer.begin() + hex_len + 2);
-		body.insert(body.end(), _read_buffer.begin(), _read_buffer.begin() + block_size);
-		_read_buffer.erase(_read_buffer.begin(), _read_buffer.begin() + block_size + 2);
+		_read_buffer.erase(_read_buffer.begin(), _read_buffer.begin() + static_cast<ssize_t>(hex_len + 2));
+		body.insert(body.end(), _read_buffer.begin(), _read_buffer.begin() + static_cast<ssize_t>(block_size));
+		_read_buffer.erase(_read_buffer.begin(), _read_buffer.begin() + static_cast<ssize_t>(block_size + 2));
 	}
 	if (_read_buffer.size())
 		return _append_chunk(bytes_read);
@@ -189,7 +189,7 @@ void Buffer::_parse(size_t bytes_read, const pollfd& pfd) {
 		_parse_status = HEADER_DONE;
 		if (request.has_key("Content-Length")) {
 			_body_type = MULTIPART;
-			_bytes_to_read = request.get_content_length();
+			_bytes_to_read = static_cast<ssize_t>(request.get_content_length());
 		} else if (request.has_key("transfer-encoding") && request.get_transfer_encoding() == "chunked")
 			_body_type = CHUNKED;
 		else

@@ -74,7 +74,7 @@ int Request::_parse_header_fields() { // TODO: enum parsing, add functions
 	return 0;
 }
 
-int Request::_set_code_and_return(int code) {
+int Request::_set_code_and_return(uint32_t code) {
 	_response_code = code;
 	return 1;
 }

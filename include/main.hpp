@@ -71,20 +71,20 @@ bool parse_int(T& output, const std::string& str) { // todo std::is_integral
 	return !(ss.fail() || ss.get(c));
 }
 
-// true on success
+// @return length of parsed string, 0 on error
 // @param ending is the char that should come after the hex string
 template <typename T>
-ssize_t parse_hex(T& output, const std::string& str, char ending) { // todo std::is_integral
+size_t parse_hex(T& output, const std::string& str, char ending) { // todo std::is_integral
 	char			  c;
 	std::stringstream ss;
 	ss << std::hex << str;
 	ss >> output;
 
 	if (ss.eof())
-		return false;
+		return 0;
 	ss.get(c);
 	if (ss.fail() || c != ending)
-		return -1;
+		return 0;
 	return str.find(ending);
 }
 

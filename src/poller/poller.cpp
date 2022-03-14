@@ -160,8 +160,8 @@ Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
 }
 
 Buffer::Chunk_status Buffer::_append_chunk(size_t bytes_read) {
-	size_t	block_size;
-	ssize_t hex_len = parse_hex(block_size, _read_buffer.data(), '\r');
+	size_t block_size;
+	size_t hex_len = parse_hex(block_size, _read_buffer.data(), '\r');
 	assert(hex_len > 0); // if parse_hex is successful
 	if (block_size == 0) {
 		_read_buffer.reset(); // TODO: end values

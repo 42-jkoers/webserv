@@ -27,12 +27,14 @@ class Request {
 	std::string						   _raw;
 	std::string						   _whitespaces;
 	std::string						   _CRLF;
+	std::string						   _vchar_no_delimiter;
 	bool							   _is_end_of_http_request(const std::string& s);
 	void							   _parse_request();
 	int								   _parse_request_line();
 	int								   _parse_header_fields();
+	int								   _parse_field_values();
 	int								   _set_code_and_return(int ret);
-	void							   _skip_ws(size_t& i);
+	std::string						   _str_tolower(std::string& str);
 	uint32_t						   _response_code;
 	std::map<std::string, std::string> _request_line;
 	std::map<std::string, std::string> _request_headers;

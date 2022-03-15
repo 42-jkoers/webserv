@@ -48,7 +48,7 @@ static fd_t create_server_socket(IP_mode ip_mode, uint16_t port) {
 	if (rc < 0)
 		exit_with::e_perror("Cannot bind to port");
 
-	if (fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | O_NONBLOCK) == -1)
+	if (fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | O_NONBLOCK) == -1) // TODO: only O_NONBLOCK is allowed
 		exit_with::e_perror("Cannot set non blocking");
 	if (listen(fd, 128) < 0) // TODO: what should this number be? 128 is maximum
 		exit_with::e_perror("Cannot listen on port");
@@ -88,6 +88,7 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
 		close(pfd.fd); // TODO: only when keepalive is true
 		pfd.fd = FD_CLOSED;
 	}
+	(void)on_request;
 }
 
 void Poller::start(void (*on_request)(Request& request)) {
@@ -184,13 +185,15 @@ void Buffer::_parse(size_t bytes_read, const pollfd& pfd) {
 		request.parse_header(pfd, _read_buffer.data());
 		_read_buffer.reset();
 		_parse_status = HEADER_DONE;
-		if (request.has_key("Content-Length")) {
+		if (request.has_key("content-length")) {
 			_body_type = MULTIPART;
 			_bytes_to_read = request.get_content_length();
 		} else if (request.has_key("transfer-encoding") && request.get_transfer_encoding() == "chunked")
 			_body_type = CHUNKED;
-		else
+		else {
 			_parse_status = FINISHED;
+			print();
+		}
 		return;
 	}
 	if (_parse_status >= WAITING_FOR_BODY) {
@@ -214,7 +217,7 @@ void Buffer::_parse(size_t bytes_read, const pollfd& pfd) {
 
 void Buffer::print() const {
 	std::cout << "========== Header ==============\n";
-	std::cout << request;
+	std::cout << request << std::endl;
 	std::cout << "========== Body ================\n " << std::endl;
 	write(1, body.data(), body.size());
 	std::cout << "========== End Body ============\n";

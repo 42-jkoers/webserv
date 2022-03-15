@@ -4,6 +4,7 @@ Request::Request() {
 	_response_code = 200;
 	_CRLF = "\r\n";
 	_whitespaces = " \t";
+	_vchar_no_delimiter = "abcdefghijklmnopqrstuvwxyz0123456789!#$%&’*+-.^_‘| ̃";
 }
 
 void Request::parse_header(const pollfd& pfd, const std::string& raw) {
@@ -21,10 +22,23 @@ bool Request::_is_end_of_http_request(const std::string& s) {
 	return 1;
 }
 
-void Request::_skip_ws(size_t& i) {
-	while (_raw[i] == ' ' || _raw[i] == '\t') {
+std::string Request::_str_tolower(std::string& str) {
+	char		c;
+	int			i;
+	std::string new_str;
+
+	i = 0;
+	while (str[i]) {
+		c = str[i];
+		c = std::tolower(c);
+		new_str += c;
 		i++;
 	}
+	return new_str;
+}
+
+int Request::_parse_field_values() {
+	return 0;
 }
 
 // A recipient that receives whitespace between the start-line and the first header field MUST either reject
@@ -36,7 +50,7 @@ void Request::_skip_ws(size_t& i) {
 // header-field = field-name ":" OWS field-value OWS
 // each header field name is case-insensitive
 // ows = optional whitespaces = *(SP / HTAB)
-int Request::_parse_header_fields() { // TODO: enum parsing, add functions
+int Request::_parse_header_fields() { // TODO: set return code and return in case of error
 	size_t		start;
 	size_t		colon;
 	size_t		end;
@@ -56,18 +70,20 @@ int Request::_parse_header_fields() { // TODO: enum parsing, add functions
 		// get name
 		colon = line.find_first_of(":");
 		if (colon == std::string::npos) { // skip line without ':'
-			continue;
+			return _set_code_and_return(400);
 		}
 		if (line.find_first_of(_whitespaces) < colon) { // check for whitespace in between field name and ":": 400 (Bad Request)
 			return _set_code_and_return(400);
 		}
 		name = line.substr(0, colon);
+		name = _str_tolower(name);
 		// get value
 		start = line.find_first_not_of(_whitespaces, colon + 1); // skip optional whitespaces
 		if (start == std::string::npos) {						 // skip line without value
 			continue;
 		}
 		value = line.substr(start, line.find_last_not_of(_whitespaces) - start + 1); // remove trailing whitespaces
+		// value = _str_tolower(value); // values may be case-sensitive?
 		// save name and value
 		_request_headers[name] = value;
 	}
@@ -118,6 +134,8 @@ void Request::_parse_request() {
 	if (_parse_request_line() == 1)
 		return;
 	if (_parse_header_fields() == 1)
+		return;
+	if (_parse_field_values() == 1)
 		return;
 }
 

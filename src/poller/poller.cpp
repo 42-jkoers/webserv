@@ -76,21 +76,23 @@ void Poller::_accept_clients() {
 }
 
 #define FD_CLOSED -1
-void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
-	if (_buffers.find(pfd.fd) == _buffers.end())
-		_buffers[pfd.fd] = Client();
-	_buffers[pfd.fd].read_pollfd(pfd);
-	if (_buffers[pfd.fd].parse_status() == Client::FINISHED) {
-		Response response(pfd.fd, 200);
-		response.send_response("Hello World!\n");
-
-		_buffers[pfd.fd].reset();
+void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client)) {
+	if (_clients.find(pfd.fd) == _clients.end())
+		_clients[pfd.fd] = Client();
+	_clients[pfd.fd].read_pollfd(pfd);
+	if (_clients[pfd.fd].parse_status() == Client::FINISHED) {
+		if (_clients[pfd.fd].request.get_response_code() >= 400) {
+			Response response(pfd.fd, _clients[pfd.fd].request.get_response_code());
+			response.send_response("Error!\n"); // TODO
+		}
+		on_request(_clients[pfd.fd]);
+		_clients[pfd.fd].reset();
 		close(pfd.fd); // TODO: only when keepalive is true
 		pfd.fd = FD_CLOSED;
 	}
 }
 
-void Poller::start(void (*on_request)(Request& request)) {
+void Poller::start(void (*on_request)(Client& client)) {
 	while (true) {
 		int rc = poll(_pollfds.data(), _pollfds.size(), _timeout);
 		if (rc < 0)
@@ -179,6 +181,9 @@ Client::Chunk_status Client::_append_chunk(size_t bytes_read) {
 		return _append_chunk(bytes_read);
 	return CS_IN_PROGRESS;
 }
+
+// void write_body_to_file(const std::string& root, const std::vector<char>& data) {
+// }
 
 void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 	if (_parse_status <= HEADER_IN_PROGRESS &&

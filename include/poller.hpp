@@ -64,17 +64,17 @@ class Client {
 class Poller {
   public:
 	Poller(IP_mode ip_mode, uint16_t port, int timeout);
-	void start(void (*on_request)(Request& request));
+	void start(void (*on_request)(Client& client));
 	~Poller();
 
   private:
 	struct pollfd			   _create_pollfd(int fd, short events);
 	void					   _accept_clients();
 
-	void					   _on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request));
+	void					   _on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client));
 	fd_t					   _server_socket;
 	std::vector<struct pollfd> _pollfds;
-	std::map<fd_t, Client>	   _buffers;
+	std::map<fd_t, Client>	   _clients;
 	int						   _timeout;
 
 	// disabled

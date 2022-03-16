@@ -13,10 +13,10 @@
 
 #define PORT 8080
 
-void on_request(Request& request) {
-	std::cout << request << std::endl;
+void on_request(Client& client) {
+	client.print();
 
-	Response response(request.get_fd(), request.get_response_code());
+	Response response(client.request.get_fd(), 200);
 	response.send_response("Hello World!\n");
 }
 

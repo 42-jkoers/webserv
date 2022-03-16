@@ -3,9 +3,9 @@
 #include "request.hpp"
 #include "response.hpp"
 
-class Buffer {
+class Client {
   public:
-	Buffer();
+	Client();
 	enum Read_status {
 		UNSET,
 		TEMPORALLY_UNIAVAILABLE,
@@ -74,7 +74,7 @@ class Poller {
 	void					   _on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request));
 	fd_t					   _server_socket;
 	std::vector<struct pollfd> _pollfds;
-	std::map<fd_t, Buffer>	   _buffers;
+	std::map<fd_t, Client>	   _buffers;
 	int						   _timeout;
 
 	// disabled

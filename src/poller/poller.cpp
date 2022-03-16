@@ -78,9 +78,9 @@ void Poller::_accept_clients() {
 #define FD_CLOSED -1
 void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
 	if (_buffers.find(pfd.fd) == _buffers.end())
-		_buffers[pfd.fd] = Buffer();
+		_buffers[pfd.fd] = Client();
 	_buffers[pfd.fd].read_pollfd(pfd);
-	if (_buffers[pfd.fd].parse_status() == Buffer::FINISHED) {
+	if (_buffers[pfd.fd].parse_status() == Client::FINISHED) {
 		Response response(pfd.fd, 200);
 		response.send_response("Hello World!\n");
 
@@ -128,14 +128,14 @@ Poller::~Poller() {} // TODO: close fds etc.
 
 // Buffer
 
-Buffer::Buffer() { // TODO: disable
+Client::Client() { // TODO: disable
 	reset();
 }
 
-Buffer::Parse_status Buffer::parse_status() const { return _parse_status; }
+Client::Parse_status Client::parse_status() const { return _parse_status; }
 
 // TODO: fix this horrible unstable abomination of what is not even allowed to be called "code"
-Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
+Client::Read_status Client::read_pollfd(const pollfd& pfd) {
 	ssize_t		bytes_read;
 	static char buf[4096];
 
@@ -162,7 +162,7 @@ Buffer::Read_status Buffer::read_pollfd(const pollfd& pfd) {
 	return _read_status;
 }
 
-Buffer::Chunk_status Buffer::_append_chunk(size_t bytes_read) {
+Client::Chunk_status Client::_append_chunk(size_t bytes_read) {
 	size_t block_size;
 	size_t hex_len = parse_hex(block_size, _buf.data(), '\r');
 	assert(hex_len > 0); // if parse_hex is successful
@@ -180,7 +180,7 @@ Buffer::Chunk_status Buffer::_append_chunk(size_t bytes_read) {
 	return CS_IN_PROGRESS;
 }
 
-void Buffer::_parse(size_t bytes_read, const pollfd& pfd) {
+void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 	if (_parse_status <= HEADER_IN_PROGRESS &&
 		_buf.size() > 4 &&
 		!strcmp(&_buf.data()[_buf.size() - 4], "\r\n\r\n")) {
@@ -215,7 +215,7 @@ void Buffer::_parse(size_t bytes_read, const pollfd& pfd) {
 	}
 }
 
-void Buffer::print() const {
+void Client::print() const {
 	std::cout << "========== Header ==============\n";
 	std::cout << request;
 	std::cout << "========== Body ================\n " << std::endl;
@@ -224,7 +224,7 @@ void Buffer::print() const {
 	std::cout << std::endl;
 }
 
-void Buffer::reset() {
+void Client::reset() {
 	_read_status = UNSET;
 	_parse_status = INCOMPLETE;
 	_body_type = EMPTY;

@@ -1,6 +1,14 @@
 #include "request.hpp"
 
 Request::Request() {
+	std::cout << "Request constructor called" << std::endl;
+	_reset();
+}
+
+Request::~Request() {
+}
+
+void Request::_reset() {
 	_response_code = 200;
 	_CRLF = "\r\n";
 	_whitespaces = " \t";
@@ -8,48 +16,40 @@ Request::Request() {
 }
 
 void Request::parse_header(const pollfd& pfd, const std::string& raw) {
+	_reset();
 	_fd = pfd.fd;
 	_raw = raw;
-	_parse_request();
-}
-
-Request::~Request() {
-}
-
-bool Request::_is_end_of_http_request(const std::string& s) {
-	if (s.find("\r\n\r\n") == std::string::npos)
-		return 0;
-	return 1;
-}
-
-std::string Request::_str_tolower(std::string& str) {
-	char		c;
-	int			i;
-	std::string new_str;
-
-	i = 0;
-	while (str[i]) {
-		c = str[i];
-		c = std::tolower(c);
-		new_str += c;
-		i++;
-	}
-	return new_str;
+	if (_parse_request_line() == 1)
+		return;
+	if (_parse_header_fields() == 1)
+		return;
+	if (_parse_field_values() == 1)
+		return;
 }
 
 int Request::_parse_field_values() {
 	return 0;
 }
 
-// A recipient that receives whitespace between the start-line and the first header field MUST either reject
-// the message as invalid or consume each whitespace-preceded line without further processing of it
+int Request::_duplicate_name(std::string name) {
+	for (std::vector<Header_field>::const_iterator it = _header_fields.begin(); it != _header_fields.end(); ++it) {
+		if (it->_name == name)
+			return 1;
+	}
+	return 0;
+}
 
-// TODO: starting with ws and obs-fold difference: maybe difference in key and value (p25)
-// field values are parsed after whole header section has been processed
+/*
+A recipient that receives whitespace between the start-line and the first header field MUST either reject
+the message as invalid or consume each whitespace-preceded line without further processing of it
 
-// header-field = field-name ":" OWS field-value OWS
-// each header field name is case-insensitive
-// ows = optional whitespaces = *(SP / HTAB)
+TODO: starting with ws and obs-fold difference: maybe difference in key and value (p25)
+field values are parsed after whole header section has been processed
+
+header-field = field-name ":" OWS field-value OWS
+each header field name is case-insensitive
+ows = optional whitespaces = *(SP / HTAB)
+*/
 int Request::_parse_header_fields() { // TODO: set return code and return in case of error
 	size_t		start;
 	size_t		colon;
@@ -61,6 +61,7 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 	end = _raw.find(_CRLF);					  // skip request line
 	while (end != _raw.find(_CRLF + _CRLF)) { // until last line
 		// get line
+		_whitespaces = " \t";
 		start = end + 2;
 		end = _raw.find(_CRLF, start);
 		line = _raw.substr(start, end - start);	 // line contains all up to \r\n
@@ -69,14 +70,18 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 		}
 		// get name
 		colon = line.find_first_of(":");
+		name = line.substr(0, colon); // if colon is string::npos, all characters until the end of the string
+		name = _str_tolower(name);
+		if (name.compare("host") == 0) {
+			if (_duplicate_name(name)) // if there is already a host in the header class, error
+				return _set_code_and_return(400);
+		}
 		if (colon == std::string::npos) { // skip line without ':'
-			return _set_code_and_return(400);
+			continue;
 		}
 		if (line.find_first_of(_whitespaces) < colon) { // check for whitespace in between field name and ":": 400 (Bad Request)
 			return _set_code_and_return(400);
 		}
-		name = line.substr(0, colon);
-		name = _str_tolower(name);
 		// get value
 		start = line.find_first_not_of(_whitespaces, colon + 1); // skip optional whitespaces
 		if (start == std::string::npos) {						 // skip line without value
@@ -85,7 +90,8 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 		value = line.substr(start, line.find_last_not_of(_whitespaces) - start + 1); // remove trailing whitespaces
 		// value = _str_tolower(value); // values may be case-sensitive?
 		// save name and value
-		_request_headers[name] = value;
+		Header_field new_header_field(name, value);
+		_header_fields.push_back(new_header_field);
 	}
 	return 0;
 }
@@ -130,13 +136,28 @@ int Request::_parse_request_line() {
 	return 0;
 }
 
-void Request::_parse_request() {
-	if (_parse_request_line() == 1)
-		return;
-	if (_parse_header_fields() == 1)
-		return;
-	if (_parse_field_values() == 1)
-		return;
+bool Request::has_name(const std::string& name) const { // is the key in one of the Header_fields
+	// iterate over Header_fields and get names.
+	for (std::vector<Header_field>::const_iterator it = _header_fields.begin(); it != _header_fields.end(); ++it) {
+		if (it->_name == name)
+			return 1;
+	}
+	return 0;
+}
+
+std::string Request::_str_tolower(std::string& str) {
+	char		c;
+	int			i;
+	std::string new_str;
+
+	i = 0;
+	while (str[i]) {
+		c = str[i];
+		c = std::tolower(c);
+		new_str += c;
+		i++;
+	}
+	return new_str;
 }
 
 // getters
@@ -144,11 +165,7 @@ std::map<std::string, std::string> Request::get_request_line() const {
 	return _request_line;
 }
 
-std::map<std::string, std::string> Request::get_request_headers() const {
-	return _request_headers;
-}
-
-std::map<std::string, std::string> Request::get_body() const {
+std::vector<char> Request::get_body() const {
 	return _body;
 }
 uint32_t Request::get_response_code() const {
@@ -159,98 +176,63 @@ fd_t Request::get_fd() const {
 	return _fd;
 }
 
-std::ostream& operator<<(std::ostream& output, Request const& rhs) {
-	std::map<std::string, std::string> request_line = rhs.get_request_line();
-	std::map<std::string, std::string> request_headers = rhs.get_request_headers();
-	std::map<std::string, std::string> body = rhs.get_body();
-
-	output << "Request line-------------" << std::endl;
-	for (std::map<std::string, std::string>::const_iterator it = request_line.begin(); it != request_line.end(); ++it) {
-		std::cout << it->first << ": " << it->second << std::endl;
-	}
-	output << "Request header fields----" << std::endl;
-	for (std::map<std::string, std::string>::const_iterator it = request_headers.begin(); it != request_headers.end(); ++it) {
-		std::cout << it->first << ": " << it->second << std::endl;
-	}
-	output << "Request body-------------" << std::endl;
-	for (std::map<std::string, std::string>::const_iterator it = body.begin(); it != body.end(); ++it) {
-		std::cout << it->first << ": " << it->second << std::endl;
-	}
-	return output;
-}
-
 size_t Request::get_content_length() const {
-	std::map<std::string, std::string>::const_iterator it = _request_headers.find("Content-Length");
-	assert(it != _request_headers.end());
-
 	size_t content_length;
-	assert(parse_int(content_length, it->second));
+	content_length = 0;
+	for (std::vector<Header_field>::const_iterator it = _header_fields.begin(); it != _header_fields.end(); ++it) {
+		if (it->_name == "content-length") {
+			assert(parse_int(content_length, it->_name));
+			break;
+		}
+		assert(it != _header_fields.end()); // if statement is false, assert
+	}
 	return content_length;
 }
 
-std::string Request::get_transfer_encoding() const {
-	std::map<std::string, std::string>::const_iterator it = _request_headers.find("transfer-encoding");
-	assert(it != _request_headers.end());
-	return it->second;
+std::string Request::get_value(const std::string& name) const {
+	std::string value;
+	for (std::vector<Header_field>::const_iterator it = _header_fields.begin(); it != _header_fields.end(); ++it) {
+		if (it->_name == name) {
+			value = it->_values[0];
+			break;
+		}
+		assert(it != _header_fields.end()); // if statement is false, assert
+	}
+	return value;
 }
 
-bool Request::has_key(const std::string& key) const {
-	std::map<std::string, std::string>::const_iterator it = _request_headers.find(key);
-	return it != _request_headers.end();
+std::string Request::get_value(const std::string& name, size_t index) const {
+	std::string value;
+	for (std::vector<Header_field>::const_iterator it = _header_fields.begin(); it != _header_fields.end(); ++it) {
+		if (it->_name == name) {
+			value = it->_values[index];
+			break;
+		}
+		assert(it != _header_fields.end()); // if statement is false, assert
+	}
+	return value;
 }
 
-// int Request::_parse_header_fields() { // TODO: enum parsing, add functions
-// 	size_t		start;
-// 	size_t		delimiter;
-// 	size_t		end;
-// 	size_t		ws;
-// 	std::string key;
-// 	std::string value;
-// 	std::string line;
+std::ostream& operator<<(std::ostream& output, Request const& rhs) {
+	std::map<std::string, std::string> request_line = rhs.get_request_line();
+	std::vector<char>				   body = rhs.get_body();
 
-// 	end = _raw.find(_CRLF);					// skip request line
-// 	while (end != _raw.find(_CRLF + _CRLF)) { // until last line
-// 		// get line
-// 		start = end + 2;
-// 		end = _raw.find(_CRLF, start);
-// 		line = _raw.substr(start, end - start);	 // line contains all up to \r\n
-// 		if (line[0] == ' ' || line[0] == '\t') { // skip whitespace-preceded line
-// 			continue;
-// 		}
-
-// 		// get key
-// 		delimiter = line.find_first_of(":");
-// 		if (delimiter == std::string::npos) {
-// 			std::cout << "[" << line << "] Error: no ':' in header field or empty field" << std::endl; // TODO: last line gives error; should no delimiter error?
-// 			continue;
-// 		}
-// 		ws = line.find_first_of(_whitespaces); // check for whitespace in between field name and ":": 400 (Bad Request)
-// 		if (ws != std::string::npos && ws < delimiter) {
-// 			std::cout << "[" << line << "] Error: ws between field name and ':'" << std::endl;
-// 			return _set_code_and_return(400);
-// 		}
-// 		key = line.substr(0, delimiter);
-
-// 		// get value
-// 		start = line.find_first_not_of(_whitespaces, delimiter + 1); // skip optional whitespaces
-// 		if (start == std::string::npos) {
-// 			std::cout << "[" << line << "] Error: empty header field value" << std::endl;
-// 			continue;
-// 		}
-// 		value = line.substr(start, line.find_last_not_of(_whitespaces) - start + 1); // remove trailing whitespaces
-// 		std::cout << "[" << key << "] [" << value << "]" << std::endl;
-// 		_request_headers[key] = value;
-// 	}
-// 	return 0;
-// }
-
-// std::stringstream ss; // do not use streams for parsing
-// std::string		  key;
-// std::string		  value;
-// ss << buf;
-// std::getline(ss, _request_line["method"], ' ');
-// std::getline(ss, _request_line["URI"], ' ');
-// std::getline(ss, _request_line["HTTP_version"]);
-// while (ss >> key >> value) {
-// 	_request_headers[key] = value;
-// }
+	output << "Request line-------------" << std::endl;
+	for (std::map<std::string, std::string>::const_iterator it = request_line.begin(); it != request_line.end(); ++it) {
+		output << it->first << ": " << it->second << std::endl;
+	}
+	output << "Request header fields----" << std::endl;
+	for (std::vector<Header_field>::const_iterator it = rhs._header_fields.begin(); it != rhs._header_fields.end(); ++it) {
+		output << it->_name << ":";
+		output << " " << it->_raw_value;
+		for (size_t i = 0; i < it->_size_values; i++) {
+			output << " [" << it->_values[i] << "]";
+		}
+		output << std::endl;
+	}
+	output << "Request body-------------" << std::endl;
+	for (std::vector<char>::const_iterator it = body.begin(); it != body.end(); ++it) {
+		output << *it << std::endl;
+	}
+	return output;
+}

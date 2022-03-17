@@ -37,14 +37,16 @@ void Poller::_accept_clients() {
 void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client)) {
 	if (_clients.find(pfd.fd) == _clients.end())
 		_clients[pfd.fd] = Client();
-	_clients[pfd.fd].read_pollfd(pfd);
-	if (_clients[pfd.fd].parse_status() == Client::FINISHED) {
-		if (_clients[pfd.fd].request.get_response_code() >= 400) {
-			Response response(pfd.fd, _clients[pfd.fd].request.get_response_code());
+	Client& client = _clients[pfd.fd];
+
+	client.read_pollfd(pfd);
+	if (client.parse_status() == Client::FINISHED) {
+		if (client.request.get_response_code() >= 400) {
+			Response response(pfd.fd, client.request.get_response_code());
 			response.send_response("Error!\n"); // TODO
 		}
-		on_request(_clients[pfd.fd]);
-		_clients[pfd.fd].reset();
+		on_request(client);
+		client.reset();
 		close(pfd.fd); // TODO: only when keepalive is true
 		pfd.fd = FD_CLOSED;
 	}

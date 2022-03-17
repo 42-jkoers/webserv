@@ -56,22 +56,28 @@ static fd_t create_server_socket(IP_mode ip_mode, uint16_t port) {
 	return fd;
 }
 
-Poller::Poller(IP_mode ip_mode, uint16_t port, int timeout) : _timeout(timeout) {
-	_server_socket = create_server_socket(ip_mode, port);
-	_pollfds.reserve(1);
-	_pollfds.push_back(_create_pollfd(_server_socket, POLLIN | POLLOUT));
+Poller::Poller() {
+	_n_servers = 0;
+}
+
+void Poller::add_server(IP_mode ip_mode, uint16_t port) {
+	fd_t server_socket = create_server_socket(ip_mode, port);
+	_pollfds.push_back(_create_pollfd(server_socket, POLLIN | POLLOUT));
+	_n_servers++;
 }
 
 void Poller::_accept_clients() {
-	while (true) {
-		int newfd = accept(_server_socket, NULL, NULL);
-		if (newfd < 0 && errno != EWOULDBLOCK) // TODO errno is not allowed
-			exit_with::e_perror("accept() failed");
-		if (newfd < 0)
-			break;
+	for (size_t i = 0; i < _n_servers; i++) {
+		while (true) {
+			int newfd = accept(_pollfds[i].fd, NULL, NULL);
+			if (newfd < 0 && errno != EWOULDBLOCK) // TODO errno is not allowed
+				exit_with::e_perror("accept() failed");
+			if (newfd < 0)
+				break;
 
-		// New incoming connection
-		_pollfds.push_back(_create_pollfd(newfd, POLLIN | POLLOUT));
+			// New incoming connection
+			_pollfds.push_back(_create_pollfd(newfd, POLLIN | POLLOUT));
+		}
 	}
 }
 
@@ -93,17 +99,18 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client)) {
 }
 
 void Poller::start(void (*on_request)(Client& client)) {
+	assert(_n_servers > 0);
 	while (true) {
-		int rc = poll(_pollfds.data(), _pollfds.size(), _timeout);
+		int rc = poll(_pollfds.data(), _pollfds.size(), -1);
 		if (rc < 0)
 			exit_with::e_perror("poll() failed");
 		if (rc == 0)
 			exit_with::e_perror("poll() timeout");
 		_accept_clients();
-		for (std::vector<struct pollfd>::iterator fd = _pollfds.begin() + 1; fd != _pollfds.end(); ++fd) {
-			if (fd->revents == 0)
+		for (size_t i = _n_servers; i < _pollfds.size(); i++) {
+			if (_pollfds[i].revents == 0)
 				continue;
-			_on_new_pollfd(*fd, on_request);
+			_on_new_pollfd(_pollfds[i], on_request);
 		}
 		// removing closed fds from array by shifting them to the left
 		std::vector<struct pollfd>::iterator valid = _pollfds.begin();

@@ -63,7 +63,8 @@ class Client {
 
 class Poller {
   public:
-	Poller(IP_mode ip_mode, uint16_t port, int timeout);
+	Poller();
+	void add_server(IP_mode ip_mode, uint16_t port);
 	void start(void (*on_request)(Client& client));
 	~Poller();
 
@@ -72,10 +73,9 @@ class Poller {
 	void					   _accept_clients();
 
 	void					   _on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client));
-	fd_t					   _server_socket;
+	size_t					   _n_servers;
 	std::vector<struct pollfd> _pollfds;
 	std::map<fd_t, Client>	   _clients;
-	int						   _timeout;
 
 	// disabled
 	Poller(const Poller& cp);

@@ -61,6 +61,15 @@ class Client {
 	Chunk_status	  _append_chunk(size_t bytes_read);
 };
 
+namespace constructors {
+
+struct sockaddr_in6 sockaddr6(uint16_t port);
+struct sockaddr_in	sockaddr(uint16_t port);
+fd_t				server_socket(IP_mode ip_mode, uint16_t port);
+struct pollfd		pollfd(int fd, short events);
+
+} // namespace constructors
+
 class Poller {
   public:
 	Poller();
@@ -69,7 +78,6 @@ class Poller {
 	~Poller();
 
   private:
-	struct pollfd			   _create_pollfd(int fd, short events);
 	void					   _accept_clients();
 
 	void					   _on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client));

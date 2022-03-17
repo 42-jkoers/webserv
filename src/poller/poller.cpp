@@ -8,61 +8,13 @@
 #include <sys/ioctl.h>
 #include <sys/poll.h>
 
-struct sockaddr_in6 get_address6(uint16_t port) {
-	struct sockaddr_in6 address;
-	memset(&address, 0, sizeof(address));
-	address.sin6_family = AF_INET6;
-	memcpy(&address.sin6_addr, &in6addr_any, sizeof(in6addr_any));
-	address.sin6_port = htons(port);
-	return address;
-}
-
-struct sockaddr_in get_address(uint16_t port) {
-	struct sockaddr_in address;
-	bzero(&address, sizeof(address));
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = INADDR_ANY;
-	address.sin_port = htons(port);
-	return address;
-}
-
-// returns fd to socket
-static fd_t create_server_socket(IP_mode ip_mode, uint16_t port) {
-	fd_t fd = socket(ip_mode == mode_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
-	if (fd < 0)
-		exit_with::e_perror("Cannot create socket");
-	int on = 1;
-	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-		exit_with::e_perror("setsockopt() failed");
-	if (ioctl(fd, FIONBIO, (char*)&on) < 0)
-		exit_with::e_perror("ioctl() failed");
-
-	int rc;
-	if (ip_mode == mode_ipv6) {
-		struct sockaddr_in6 address = get_address6(port);
-		rc = bind(fd, (struct sockaddr*)&address, sizeof(address));
-	} else {
-		struct sockaddr_in address = get_address(port);
-		rc = bind(fd, (struct sockaddr*)&address, sizeof(address));
-	}
-	if (rc < 0)
-		exit_with::e_perror("Cannot bind to port");
-
-	if (fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | O_NONBLOCK) == -1)
-		exit_with::e_perror("Cannot set non blocking");
-	if (listen(fd, 128) < 0) // TODO: what should this number be? 128 is maximum
-		exit_with::e_perror("Cannot listen on port");
-
-	return fd;
-}
-
 Poller::Poller() {
 	_n_servers = 0;
 }
 
 void Poller::add_server(IP_mode ip_mode, uint16_t port) {
-	fd_t server_socket = create_server_socket(ip_mode, port);
-	_pollfds.push_back(_create_pollfd(server_socket, POLLIN | POLLOUT));
+	fd_t server_socket = constructors::server_socket(ip_mode, port);
+	_pollfds.push_back(constructors::pollfd(server_socket, POLLIN | POLLOUT));
 	_n_servers++;
 }
 
@@ -76,7 +28,7 @@ void Poller::_accept_clients() {
 				break;
 
 			// New incoming connection
-			_pollfds.push_back(_create_pollfd(newfd, POLLIN | POLLOUT));
+			_pollfds.push_back(constructors::pollfd(newfd, POLLIN | POLLOUT));
 		}
 	}
 }
@@ -124,13 +76,6 @@ void Poller::start(void (*on_request)(Client& client)) {
 		}
 		_pollfds.erase(valid, _pollfds.end());
 	}
-}
-
-struct pollfd Poller::_create_pollfd(int fd, short events) {
-	struct pollfd pfd;
-	pfd.fd = fd;
-	pfd.events = events;
-	return pfd;
 }
 
 Poller::~Poller() {} // TODO: close fds etc.

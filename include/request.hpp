@@ -19,8 +19,9 @@ class Request {
 	std::vector<char>				   get_body() const;
 	std::string						   get_value(const std::string& name) const;
 	std::string						   get_value(const std::string& name, size_t index) const;
+	void							   reset();
 	// read-only variables
-	std::vector<Header_field> _header_fields;
+	std::vector<Header_field> header_fields;
 	// template <typename T, typename V>
 	// V get_value(T name, size_t index) {
 	// 	for (std::vector<Header_field>::const_iterator it = _header_fields.begin(); it != _header_fields.end(); ++it) {
@@ -45,7 +46,6 @@ class Request {
 	int								   _parse_request_line();
 	int								   _parse_header_fields();
 	int								   _parse_field_values();
-	void							   _reset();
 	int								   _duplicate_name(std::string name);
 	std::string						   _str_tolower(std::string& str);
 	int								   _set_code_and_return(int ret);

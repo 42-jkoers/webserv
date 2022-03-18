@@ -8,10 +8,10 @@ class Header_field {
 	~Header_field();
 	void add_value(std::string value);
 	// read-only variables
-	size_t					 _size_values;
-	std::vector<std::string> _values;
-	std::string				 _name;
-	std::string				 _raw_value; // TODO: make private after parsing values
+	size_t					 size_values;
+	std::vector<std::string> values;
+	std::string				 name;
+	std::string				 raw_value; // TODO: make private after parsing values
 
   private:
 	// disabled

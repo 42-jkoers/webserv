@@ -81,7 +81,7 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
 		_buffers.resize(pfd.fd + 1); // do not change this to reserve(), that one does not call the constructors of the elements
 	_buffers[pfd.fd].read_pollfd(pfd);
 	if (_buffers[pfd.fd].parse_status() == Buffer::FINISHED) {
-		Response response(pfd.fd, 200);
+		Response response(pfd.fd, _buffers[pfd.fd].request.get_response_code());
 		response.send_response("Hello World!\n");
 
 		_buffers[pfd.fd].reset();
@@ -130,6 +130,7 @@ Poller::~Poller() {} // TODO: close fds etc.
 // Buffer
 
 Buffer::Buffer() { // TODO: disable
+	// std::cout << "Buffer constructor called" << std::endl;
 	reset();
 }
 
@@ -185,10 +186,10 @@ void Buffer::_parse(size_t bytes_read, const pollfd& pfd) {
 		request.parse_header(pfd, _read_buffer.data());
 		_read_buffer.reset();
 		_parse_status = HEADER_DONE;
-		if (request.has_key("content-length")) {
+		if (request.has_name("content-length")) {
 			_body_type = MULTIPART;
 			_bytes_to_read = request.get_content_length();
-		} else if (request.has_key("transfer-encoding") && request.get_transfer_encoding() == "chunked")
+		} else if (request.has_name("transfer-encoding") && request.get_value("transfer-encoding") == "chunked")
 			_body_type = CHUNKED;
 		else {
 			_parse_status = FINISHED;

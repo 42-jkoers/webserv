@@ -7,47 +7,6 @@ a way to safe more locations
 saving multiple ports
 */
 
-// void Config::_print_class() {
-// 	for (size_t i = 0; i < _server.size(); i++) {
-// 		std::cout << "SERVER INFORMATION FROM SERVER " << i << std::endl;
-// 		for (size_t j = 0; j < _server[i]._port.size(); j++) {
-// 			std::cout << "PORTS = " << _server[i]._port[j] << std::endl;
-// 		}
-// 		for (size_t k = 0; k < _server[i]._port.size(); k++) {
-// 			std::cout << "IP = " << _server[i]._ip[k] << std::endl;
-// 		}
-// 		std::cout << "SERVERNAME = " << _server[i]._serverName << std::endl;
-// 		std::cout << "SEVERURL = " << _server[i]._serverUrl << std::endl;
-// 		std::cout << "ROOT = " << _server[i]._autoIndex << std::endl;
-// 		std::cout << "CLIENT_MAX_BODY_SIZE = " << _server[i]._client_max_body_size << std::endl;
-// 		for (size_t l = 0; l < _server[i]._port.size(); l++) {
-// 			// std::cout << "ERROR_PAGES = " << _server[i]._error_pages[l] << std::endl;
-// 		}
-// 		for (size_t m = 0; m < _server[i]._port.size(); m++) {
-// 			std::cout << "METHODS = " << _server[i]._methods[m] << std::endl;
-// 		}
-// 		for (size_t a = 0; a < _server[i]._location.size(); a++) {
-// 			std::cout << "ALL LOCATION INFO FROM LOCATION " << a << std::endl;
-// 			std::cout << "PATH = " << _server[i]._location[a]._path << std::endl;
-// 			for (size_t m = 0; m < _server[i]._location[a]._methods.size(); m++) {
-// 				std::cout << "METHODS = " << _server[i]._location[a]._methods[m] << std::endl;
-// 			}
-// 			std::cout << "AUTOINDEX = " << _server[i]._location[a]._autoIndex << std::endl;
-// 			std::cout << "DEFAULT = " << _server[i]._location[a]._defaultfile << std::endl;
-// 			std::cout << "CGI = " << _server[i]._location[a]._cgi << std::endl;
-// 			for (size_t j = 0; j < _server[i]._location[a]._port.size(); j++) {
-// 				std::cout << "PORTS = " << _server[i]._location[a]._port[j] << std::endl;
-// 			}
-// 			for (size_t k = 0; k < _server[i]._location[a]._port.size(); k++) {
-// 				std::cout << "IP = " << _server[i]._location[a]._ip[k] << std::endl;
-// 			}
-// 			for (size_t l = 0; l < _server[i]._location[a]._port.size(); l++) {
-// 				// std::cout << "ERROR_PAGES = " << _server[i]._location[a]._error_pages[l] << std::endl;
-// 			}
-// 		}
-// 	}
-// }
-
 // true on success
 bool parse_int(unsigned int& output, const std::string& str) {
 	char			  c;

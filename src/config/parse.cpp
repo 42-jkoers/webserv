@@ -112,7 +112,8 @@ void Config::_parseErrorPage(std::string option, std::map<const std::string, std
 	space = error.find_first_of(" \t");
 	if (space == std::string::npos)
 		exit_with::e_perror("config error: error_page");
-	error_code = atoi(error.substr(0, space).c_str());
+	std::stringstream sstream(error.substr(0, space).c_str());
+	sstream >> error_code;
 	if (_location_check == true)
 		_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
 	else

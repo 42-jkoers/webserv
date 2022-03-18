@@ -1,9 +1,14 @@
 #include "request.hpp"
 
-Request::Request(const pollfd& pfd, const std::string& raw) : _fd(pfd.fd), _raw(raw) {
-	if (pfd.revents != POLLIN)
-		exit_with::message("Unexpected revents value");
+Request::Request() {
 	_response_code = 200;
+	_CRLF = "\r\n";
+	_whitespaces = " \t";
+}
+
+void Request::parse_header(const pollfd& pfd, const std::string& raw) {
+	_fd = pfd.fd;
+	_raw = raw;
 	_parse_request();
 }
 
@@ -16,83 +21,81 @@ bool Request::_is_end_of_http_request(const std::string& s) {
 	return 1;
 }
 
+void Request::_skip_ws(size_t& i) {
+	while (_raw[i] == ' ' || _raw[i] == '\t') {
+		i++;
+	}
+}
+
 // A recipient that receives whitespace between the start-line and the first header field MUST either reject
 // the message as invalid or consume each whitespace-preceded line without further processing of it
 
+// TODO: starting with ws and obs-fold difference: maybe difference in key and value (p25)
+// field values are parsed after whole header section has been processed
+
 // header-field = field-name ":" OWS field-value OWS
 // each header field name is case-insensitive
-// whitespace in between field name and ":": 400 (Bad Request)
 // ows = optional whitespaces = *(SP / HTAB)
-int Request::_parse_header_fields() {
-	// std::stringstream ss; // do not use streams for parsing
-	// std::string		  key;
-	// std::string		  value;
-	// ss << buf;
-	// std::getline(ss, _request_line["method"], ' ');
-	// std::getline(ss, _request_line["URI"], ' ');
-	// std::getline(ss, _request_line["HTTP_version"]);
-	// while (ss >> key >> value) {
-	// 	_request_headers[key] = value;
-	// }
+int Request::_parse_header_fields() { // TODO: enum parsing, add functions
 	size_t		start;
-	size_t		delimiter;
+	size_t		colon;
 	size_t		end;
-	std::string key;
+	std::string line;
+	std::string name;
 	std::string value;
 
-	delimiter = 0;
-	start = _raw.find("\r\n"); // skip request line
-	start += 2;
-	while (delimiter != std::string::npos) {
-		end = _raw.find("\n", start);
-		if (_raw[start] == ' ' || _raw[start] == '\t') { // skip whitespace-preceded line
-			start = end + 2;
+	end = _raw.find(_CRLF);					  // skip request line
+	while (end != _raw.find(_CRLF + _CRLF)) { // until last line
+		// get line
+		start = end + 2;
+		end = _raw.find(_CRLF, start);
+		line = _raw.substr(start, end - start);	 // line contains all up to \r\n
+		if (line[0] == ' ' || line[0] == '\t') { // skip whitespace-preceded line
 			continue;
 		}
-		delimiter = _raw.find_first_of(":", start);
-		if (delimiter == std::string::npos) {
+		// get name
+		colon = line.find_first_of(":");
+		if (colon == std::string::npos) { // skip line without ':'
 			continue;
 		}
-		key = _raw.substr(start, delimiter - start);
-		// TO DO: skip whitespaces
-		value = _raw.substr(delimiter + 1, end - delimiter - 2);
-		std::cout << "---------------" << std::endl;
-		std::cout << end << " " << start << " " << delimiter << std::endl;
-		std::cout << key << " " << value << std::endl;
-		std::cout << "---------------" << std::endl;
-		_request_headers[key] = value;
-		start = end + 1;
-		// TO DO: skip newline
+		if (line.find_first_of(_whitespaces) < colon) { // check for whitespace in between field name and ":": 400 (Bad Request)
+			return _set_code_and_return(400);
+		}
+		name = line.substr(0, colon);
+		// get value
+		start = line.find_first_not_of(_whitespaces, colon + 1); // skip optional whitespaces
+		if (start == std::string::npos) {						 // skip line without value
+			continue;
+		}
+		value = line.substr(start, line.find_last_not_of(_whitespaces) - start + 1); // remove trailing whitespaces
+		// save name and value
+		_request_headers[name] = value;
 	}
-	// each whitespace-preceded line -> no processing
 	return 0;
 }
 
-int Request::_is_valid_request_line() { // TO DO: invalid request line, decide: 400 bad request/301 moved permanently
-	std::array<std::string, 3> methods = {"GET", "POST", "DELETE"};
-
-	if (std::find(methods.begin(), methods.end(), _request_line["method"]) == methods.end())
-		return 0;
-	if (_request_line["HTTP_version"].compare("HTTP/1.1") != 0)
-		return 0;
-	return 1;
-}
-
-int Request::_set_code_and_return(int code) {
+int Request::_set_code_and_return(uint32_t code) {
 	_response_code = code;
 	return 1;
 }
 
 // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
 int Request::_parse_request_line() {
-	size_t					   end;
-	size_t					   prev;
-	size_t					   delimiter;
-	std::string				   line;
-	std::array<std::string, 3> components = {"method", "URI", "HTTP_version"};
+	size_t					 end;
+	size_t					 prev;
+	size_t					 delimiter;
+	std::string				 line;
+	std::vector<std::string> components;
+	std::vector<std::string> methods;
 
+	components.push_back("method");
+	components.push_back("URI");
+	components.push_back("HTTP_version");
+	methods.push_back("GET");
+	methods.push_back("POST");
+	methods.push_back("DELETE");
 	prev = 0;
-	end = _raw.find("\r\n");
+	end = _raw.find(_CRLF);
 	if (end == std::string::npos)
 		return _set_code_and_return(301);
 	for (size_t i = 0; i < components.size(); i++) {
@@ -104,8 +107,10 @@ int Request::_parse_request_line() {
 	}
 	if (delimiter != end)
 		return _set_code_and_return(301);
-	if (!_is_valid_request_line())
+	if (std::find(methods.begin(), methods.end(), _request_line["method"]) == methods.end()) // TODO: invalid request line, decide: 400 bad request/301 moved permanently
 		return _set_code_and_return(301);
+	if (_request_line["HTTP_version"].compare("HTTP/1.1") != 0)
+		return _set_code_and_return(505); // TODO: generate representation why version is not supported & what is supported [RFC7231; 6.6.6]
 	return 0;
 }
 
@@ -128,7 +133,6 @@ std::map<std::string, std::string> Request::get_request_headers() const {
 std::map<std::string, std::string> Request::get_body() const {
 	return _body;
 }
-
 uint32_t Request::get_response_code() const {
 	return _response_code;
 }
@@ -156,3 +160,79 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 	}
 	return output;
 }
+
+size_t Request::get_content_length() const {
+	std::map<std::string, std::string>::const_iterator it = _request_headers.find("Content-Length");
+	assert(it != _request_headers.end());
+
+	size_t content_length;
+	assert(parse_int(content_length, it->second));
+	return content_length;
+}
+
+std::string Request::get_transfer_encoding() const {
+	std::map<std::string, std::string>::const_iterator it = _request_headers.find("transfer-encoding");
+	assert(it != _request_headers.end());
+	return it->second;
+}
+
+bool Request::has_key(const std::string& key) const {
+	std::map<std::string, std::string>::const_iterator it = _request_headers.find(key);
+	return it != _request_headers.end();
+}
+
+// int Request::_parse_header_fields() { // TODO: enum parsing, add functions
+// 	size_t		start;
+// 	size_t		delimiter;
+// 	size_t		end;
+// 	size_t		ws;
+// 	std::string key;
+// 	std::string value;
+// 	std::string line;
+
+// 	end = _raw.find(_CRLF);					// skip request line
+// 	while (end != _raw.find(_CRLF + _CRLF)) { // until last line
+// 		// get line
+// 		start = end + 2;
+// 		end = _raw.find(_CRLF, start);
+// 		line = _raw.substr(start, end - start);	 // line contains all up to \r\n
+// 		if (line[0] == ' ' || line[0] == '\t') { // skip whitespace-preceded line
+// 			continue;
+// 		}
+
+// 		// get key
+// 		delimiter = line.find_first_of(":");
+// 		if (delimiter == std::string::npos) {
+// 			std::cout << "[" << line << "] Error: no ':' in header field or empty field" << std::endl; // TODO: last line gives error; should no delimiter error?
+// 			continue;
+// 		}
+// 		ws = line.find_first_of(_whitespaces); // check for whitespace in between field name and ":": 400 (Bad Request)
+// 		if (ws != std::string::npos && ws < delimiter) {
+// 			std::cout << "[" << line << "] Error: ws between field name and ':'" << std::endl;
+// 			return _set_code_and_return(400);
+// 		}
+// 		key = line.substr(0, delimiter);
+
+// 		// get value
+// 		start = line.find_first_not_of(_whitespaces, delimiter + 1); // skip optional whitespaces
+// 		if (start == std::string::npos) {
+// 			std::cout << "[" << line << "] Error: empty header field value" << std::endl;
+// 			continue;
+// 		}
+// 		value = line.substr(start, line.find_last_not_of(_whitespaces) - start + 1); // remove trailing whitespaces
+// 		std::cout << "[" << key << "] [" << value << "]" << std::endl;
+// 		_request_headers[key] = value;
+// 	}
+// 	return 0;
+// }
+
+// std::stringstream ss; // do not use streams for parsing
+// std::string		  key;
+// std::string		  value;
+// ss << buf;
+// std::getline(ss, _request_line["method"], ' ');
+// std::getline(ss, _request_line["URI"], ' ');
+// std::getline(ss, _request_line["HTTP_version"]);
+// while (ss >> key >> value) {
+// 	_request_headers[key] = value;
+// }

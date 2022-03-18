@@ -96,7 +96,7 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 	return 0;
 }
 
-int Request::_set_code_and_return(uint32_t code) {
+int Request::_set_code_and_return(int code) {
 	_response_code = code;
 	return 1;
 }
@@ -193,7 +193,8 @@ std::string Request::get_value(const std::string& name) const {
 	std::string value;
 	for (std::vector<Header_field>::const_iterator it = _header_fields.begin(); it != _header_fields.end(); ++it) {
 		if (it->_name == name) {
-			value = it->_values[0];
+			// value = it->_values[0];
+			value = it->_raw_value;
 			break;
 		}
 		assert(it != _header_fields.end()); // if statement is false, assert

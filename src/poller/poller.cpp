@@ -147,10 +147,10 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 		request.parse_header(pfd, _buf.data());
 		_buf.clear();
 		_parse_status = HEADER_DONE;
-		if (request.has_key("content-length")) {
+		if (request.has_name("content-length")) {
 			_body_type = MULTIPART;
 			_bytes_to_read = static_cast<ssize_t>(request.get_content_length());
-		} else if (request.has_key("transfer-encoding") && request.get_transfer_encoding() == "chunked")
+		} else if (request.has_name("transfer-encoding") && request.get_value("transfer-encoding") == "chunked")
 			_body_type = CHUNKED;
 		else {
 			_parse_status = FINISHED;

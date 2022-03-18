@@ -176,6 +176,12 @@ std::string Request::get_transfer_encoding() const {
 	return it->second;
 }
 
+std::string Request::get_user_agent() const {
+	std::map<std::string, std::string>::const_iterator it = _request_headers.find("User-Agent");
+	assert(it != _request_headers.end());
+	return it->second;
+}
+
 bool Request::has_key(const std::string& key) const {
 	std::map<std::string, std::string>::const_iterator it = _request_headers.find(key);
 	return it != _request_headers.end();

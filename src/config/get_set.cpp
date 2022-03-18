@@ -1,7 +1,7 @@
 #include "config_parser.hpp"
 
 unsigned int Config::get_port() const {
-	return _server[_current_server]._port[0];
+	return _server[_server.size() - 1]._port[0];
 }
 
 // void Server::set_ip(std::string ip_adres) {
@@ -32,9 +32,9 @@ unsigned int Config::get_port() const {
 // 	_root = set;
 // }
 
-// std::string Server::get_root() const {
-// 	return _root;
-// }
+std::string Config::get_root() const {
+	return _server[_server.size() - 1]._root;
+}
 
 // void Server::set_errorPages(size_t error_code, std::string error) {
 // 	_error_pages[error_code] = error;

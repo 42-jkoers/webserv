@@ -1,11 +1,11 @@
 #include "header_field.hpp"
 
-// Header_field::Header_field() {
-// 	_size = 0;
-// }
-
 Header_field::Header_field(std::string name, std::string raw_value) : name(name), raw_value(raw_value) {
 	size_values = 0;
+	if (name == "content-length")
+		type = integer;
+	else
+		type = string;
 	// std::cout << "Header_field constructor called" << std::endl;
 }
 

@@ -28,6 +28,18 @@ void Request::parse_header(const pollfd& pfd, const std::string& raw) {
 		return;
 }
 
+/*
+Header field parsing:
+
+header-field	= field-name ":" OWS field-value OWS
+field-name		= token
+field-value		= *( field-content / obs-fold )
+field-content	= field-vchar [ 1*( SP / HTAB ) field-vchar ]
+field-vchar		= VCHAR / obs-text
+obs-fold		= CRLF 1*( SP / HTAB ) field
+				; obsolete line folding
+				; see Section 3.2.4
+*/
 int Request::_parse_field_values() {
 	size_t		comma;
 	size_t		start;
@@ -41,7 +53,8 @@ int Request::_parse_field_values() {
 				start++;
 			comma = it->raw_value.find_first_of(",", start);			  // if comma is string::npos, all characters until the end of the string
 			start = it->raw_value.find_first_not_of(_whitespaces, start); // skip optional whitespaces
-			// TODO: remove trailing whitespaces?
+			if (start == std::string::npos || start == comma)			  // if field value ends with only ',' or empty field value -> continue
+				continue;
 			value = it->raw_value.substr(start, comma - start);
 			it->add_value(value);
 		}
@@ -67,6 +80,11 @@ field values are parsed after whole header section has been processed
 header-field = field-name ":" OWS field-value OWS
 each header field name is case-insensitive
 ows = optional whitespaces = *(SP / HTAB)
+
+A server MUST respond with a 400 (Bad Request) status code to any
+HTTP/1.1 request message that lacks a Host header field and to any
+request message that contains more than one Host header field or a
+Host header field with an invalid field-value
 */
 int Request::_parse_header_fields() { // TODO: set return code and return in case of error
 	size_t		start;
@@ -105,8 +123,7 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 		if (start == std::string::npos) {						 // skip line without value
 			continue;
 		}
-		value = line.substr(start, line.find_last_not_of(_whitespaces) - start + 1); // remove trailing whitespaces
-		// value = _str_tolower(value); // values may be case-sensitive?
+		value = line.substr(start, line.find_last_not_of(_whitespaces) - start + 1); // remove trailing whitespaces, values can be case-sensitive
 		// save name and value
 		Header_field new_header_field(name, value);
 		header_fields.push_back(new_header_field);
@@ -186,6 +203,7 @@ std::map<std::string, std::string> Request::get_request_line() const {
 std::vector<char> Request::get_body() const {
 	return _body;
 }
+
 uint32_t Request::get_response_code() const {
 	return _response_code;
 }
@@ -237,12 +255,12 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 
 	output << "Request line-------------" << std::endl;
 	for (std::map<std::string, std::string>::const_iterator it = request_line.begin(); it != request_line.end(); ++it) {
-		output << it->first << ": "
+		output << "[" << it->first << "]: "
 			   << "[" << it->second << "]" << std::endl;
 	}
 	output << "Request header fields----" << std::endl;
 	for (std::vector<Header_field>::const_iterator it = rhs.header_fields.begin(); it != rhs.header_fields.end(); ++it) {
-		output << it->name << ":";
+		output << "[" << it->name << "]:";
 		for (size_t i = 0; i < it->size_values; i++) {
 			output << " [" << it->values[i] << "]";
 		}

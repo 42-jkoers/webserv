@@ -22,16 +22,21 @@ class Request {
 	void							   reset();
 	// read-only variables
 	std::vector<Header_field> header_fields;
-	// template <typename T, typename V>
-	// V get_value(T name, size_t index) {
-	// 	for (std::vector<Header_field>::const_iterator it = _header_fields.begin(); it != _header_fields.end(); ++it) {
-	// 		if (it->get_name() == name)
-	// 			return 1;
+	// template <typename T>
+	// T Request::get_value(const std::string& name) const {
+	// 	T value;
+
+	// 	for (std::vector<Header_field>::const_iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
+	// 		if (it->name == name) {
+	// 			if (it->type == integer)
+	// 				assert(parse_int(content_length, it->values[0]));
+	// 			else
+	// 				value = it->values[0];
+	// 			break;
+	// 		}
+	// 		assert(it != header_fields.end()); // if statement is false, assert
 	// 	}
-	// }
-	// template <typename T, typename V>
-	// V get_value(T name) {
-	// }
+	// 	return value;
 	// }
 
   private:

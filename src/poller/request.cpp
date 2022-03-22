@@ -171,11 +171,25 @@ int Request::_parse_request_line() {
 	return 0;
 }
 
-bool Request::has_name(const std::string& name) const { // is the key in one of the Header_fields
-	// iterate over Header_fields and get names.
+bool Request::has_name(const std::string& name) const { // is the name in one of the Header_fields
+	// iterate over Header_fields and get names
 	for (std::vector<Header_field>::const_iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
 		if (it->name == name)
 			return 1;
+	}
+	return 0;
+}
+
+bool Request::has_value(const std::string& name, const std::string& value) const { // is the value in one of the values of the Header_field's name
+	// iterate over Header_fields and get names
+	for (std::vector<Header_field>::const_iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
+		if (it->name == name) {
+			// iterate over values
+			for (std::vector<std::string>::const_iterator it2 = (it->values).begin(); it2 != (it->values).end(); ++it2) {
+				if (*it2 == value)
+					return 1;
+			}
+		}
 	}
 	return 0;
 }

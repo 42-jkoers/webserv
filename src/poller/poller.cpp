@@ -189,7 +189,7 @@ void Buffer::_parse(size_t bytes_read, const pollfd& pfd) {
 		if (request.has_name("content-length")) {
 			_body_type = MULTIPART;
 			_bytes_to_read = request.get_content_length();
-		} else if (request.has_name("transfer-encoding") && request.get_value("transfer-encoding") == "chunked")
+		} else if (request.has_name("transfer-encoding") && request.has_value("transfer-encoding", "chunked"))
 			_body_type = CHUNKED;
 		else {
 			_parse_status = FINISHED;

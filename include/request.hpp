@@ -19,6 +19,7 @@ class Request {
 	std::vector<char>				   get_body() const;
 	std::string						   get_value(const std::string& name) const;
 	std::string						   get_value(const std::string& name, size_t index) const;
+	bool							   has_value(const std::string& name, const std::string& value) const;
 	void							   reset();
 	// read-only variables
 	std::vector<Header_field> header_fields;

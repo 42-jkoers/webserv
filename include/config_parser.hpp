@@ -97,7 +97,6 @@ class Config {
 	void _parseServer(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
 	void _parseLocation(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
 	void _print_class();
-
 	void _config_parser(int argc, char** argv);
 	void _safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);
 };

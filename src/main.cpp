@@ -13,18 +13,20 @@
 
 #define PORT 8080
 
-void on_request(Client& client) {
-	client.print();
+Config* g_config;
+void	on_request(Client& client) {
+	   client.print();
 
-	Response response(client.request.get_fd(), 200);
-	response.send_response("Hello World!\n");
+	   Response response(client.request.get_fd(), 200);
+	   response.send_response("Hello World!\n");
 }
 
 int main(int argc, char** argv) {
 	Config config(argc, argv);
 
+	g_config = &config;
 	Poller poller;
-	poller.add_server(mode_ipv6, config.get_port());
+	poller.add_server(mode_ipv6, g_config->get_port());
 	// poller.add_server(mode_ipv6, config.get_port() + 1);
 
 	poller.start(on_request);

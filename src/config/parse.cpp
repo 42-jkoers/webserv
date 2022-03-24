@@ -118,7 +118,7 @@ void Config::_parseErrorPage(std::string option, std::map<const std::string, std
 		_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
 	else
 		_server[_server.size() - 1]._error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
-
+	// std::cout << _server[_server.size() - 1]._error_pages[error_code] << std::endl;
 	(void)option;
 	(void)config_info;
 	(void)line;

@@ -15,6 +15,20 @@
 #define ANSI_CYAN "\x1b[36m"
 #define ANSI_BLACK "\x1b[0m"
 
+class Config;
+
+extern Config *g_config;
+
+/*
+How to get to the variable you want you asked?
+Here is a small explaination:
+first: you need to know in which server block you want to search so you can enter the serverblock with:
+config._server[x]
+second: you want to know if you're dealing with a Location block within a server block or just a serverblock variable
+so it will be either:
+* config._server[x]._location[y]
+* config._server[x]._variable_name
+*/
 class Config {
   public:
 	Config(int argc, char** argv);
@@ -69,7 +83,6 @@ class Config {
 		std::string				 _serverName;
 		std::string				 _serverUrl;
 		std::string				 _root;
-		// std::map<size_t, std::string> _location;
 		std::string					  _autoIndex;
 		std::string					  _client_max_body_size;
 		std::map<size_t, std::string> _error_pages;
@@ -97,10 +110,9 @@ class Config {
 	void _parseServer(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
 	void _parseLocation(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
 	void _print_class();
-
 	void _config_parser(int argc, char** argv);
 	void _safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);
 };
 
 bool		  parse_int(unsigned int& output, const std::string& str);
-std::ostream& operator<<(std::ostream& stream, Config const& config);
+std::ostream& operator<<(std::ostream& stream, Config const *config);

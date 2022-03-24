@@ -96,42 +96,42 @@ void Config::_config_parser(int argc, char** argv) {
 	config_file.close();
 }
 
-std::ostream& operator<<(std::ostream& stream, Config const& config) {
-	for (size_t i = 0; i < config._server.size(); i++) {
+std::ostream& operator<<(std::ostream& stream, Config const* config) {
+	for (size_t i = 0; i < config->_server.size(); i++) {
 		stream << "SERVER INFORMATION FROM SERVER " << i << std::endl;
-		for (size_t j = 0; j < config._server[i]._port.size(); j++) {
-			stream << "PORTS = " << config._server[i]._port[j] << std::endl;
+		for (size_t j = 0; j < config->_server[i]._port.size(); j++) {
+			stream << "PORTS = " << config->_server[i]._port[j] << std::endl;
 		}
-		for (size_t k = 0; k < config._server[i]._port.size(); k++) {
-			stream << "IP = " << config._server[i]._ip[k] << std::endl;
+		for (size_t k = 0; k < config->_server[i]._port.size(); k++) {
+			stream << "IP = " << config->_server[i]._ip[k] << std::endl;
 		}
-		stream << "SERVERNAME = " << config._server[i]._serverName << std::endl;
-		stream << "SEVERURL = " << config._server[i]._serverUrl << std::endl;
-		stream << "ROOT = " << config._server[i]._autoIndex << std::endl;
-		stream << "CLIENT_MAX_BODY_SIZE = " << config._server[i]._client_max_body_size << std::endl;
-		for (size_t l = 0; l < config._server[i]._port.size(); l++) {
-			// stream << "ERROR_PAGES = " << config._server[i]._error_pages[l] << std::endl;
+		stream << "SERVERNAME = " << config->_server[i]._serverName << std::endl;
+		stream << "SEVERURL = " << config->_server[i]._serverUrl << std::endl;
+		stream << "ROOT = " << config->_server[i]._autoIndex << std::endl;
+		stream << "CLIENT_MAX_BODY_SIZE = " << config->_server[i]._client_max_body_size << std::endl;
+		for (std::map<size_t, std::string>::const_iterator it = config->_server[i]._error_pages.begin(); it != config->_server[i]._error_pages.end(); it++) {
+			stream << "ERROR_PAGES = " << it->first << " | " << it->second << std::endl;
 		}
-		for (size_t m = 0; m < config._server[i]._port.size(); m++) {
-			stream << "METHODS = " << config._server[i]._methods[m] << std::endl;
+		for (size_t m = 0; m < config->_server[i]._port.size(); m++) {
+			stream << "METHODS = " << config->_server[i]._methods[m] << std::endl;
 		}
-		for (size_t a = 0; a < config._server[i]._location.size(); a++) {
+		for (size_t a = 0; a < config->_server[i]._location.size(); a++) {
 			stream << "ALL LOCATION INFO FROM LOCATION " << a << std::endl;
-			stream << "PATH = " << config._server[i]._location[a]._path << std::endl;
-			for (size_t m = 0; m < config._server[i]._location[a]._methods.size(); m++) {
-				stream << "METHODS = " << config._server[i]._location[a]._methods[m] << std::endl;
+			stream << "PATH = " << config->_server[i]._location[a]._path << std::endl;
+			for (size_t m = 0; m < config->_server[i]._location[a]._methods.size(); m++) {
+				stream << "METHODS = " << config->_server[i]._location[a]._methods[m] << std::endl;
 			}
-			stream << "AUTOINDEX = " << config._server[i]._location[a]._autoIndex << std::endl;
-			stream << "DEFAULT = " << config._server[i]._location[a]._defaultfile << std::endl;
-			stream << "CGI = " << config._server[i]._location[a]._cgi << std::endl;
-			for (size_t j = 0; j < config._server[i]._location[a]._port.size(); j++) {
-				stream << "PORTS = " << config._server[i]._location[a]._port[j] << std::endl;
+			stream << "AUTOINDEX = " << config->_server[i]._location[a]._autoIndex << std::endl;
+			stream << "DEFAULT = " << config->_server[i]._location[a]._defaultfile << std::endl;
+			stream << "CGI = " << config->_server[i]._location[a]._cgi << std::endl;
+			for (size_t j = 0; j < config->_server[i]._location[a]._port.size(); j++) {
+				stream << "PORTS = " << config->_server[i]._location[a]._port[j] << std::endl;
 			}
-			for (size_t k = 0; k < config._server[i]._location[a]._port.size(); k++) {
-				stream << "IP = " << config._server[i]._location[a]._ip[k] << std::endl;
+			for (size_t k = 0; k < config->_server[i]._location[a]._port.size(); k++) {
+				stream << "IP = " << config->_server[i]._location[a]._ip[k] << std::endl;
 			}
-			for (size_t l = 0; l < config._server[i]._location[a]._port.size(); l++) {
-				// stream << "ERROR_PAGES = " << config._server[i]._location[a]._error_pages[l] << std::endl;
+			for (std::map<size_t, std::string>::const_iterator it = config->_server[i]._location[a]._error_pages.begin(); it != config->_server[i]._location[a]._error_pages.end(); it++) {
+				stream << "ERROR_PAGES = " <<  it->first <<  " | " << it->second << std::endl;
 			}
 		}
 	}

@@ -9,7 +9,8 @@ Request::~Request() {
 }
 
 void Request::reset() {
-	_response_code = 200;
+	response_code = 200;
+	port = 80; // default if no port is specified in host header field
 	_CRLF = "\r\n";
 	_whitespaces = " \t";
 	_vchar_no_delimiter = "abcdefghijklmnopqrstuvwxyz0123456789!#$%&’*+-.^_‘| ̃";
@@ -18,13 +19,19 @@ void Request::reset() {
 
 void Request::parse_header(const pollfd& pfd, const std::string& raw) {
 	reset();
-	_fd = pfd.fd;
+	fd = pfd.fd;
 	_raw = raw;
 	if (_parse_request_line() == 1)
 		return;
 	if (_parse_header_fields() == 1)
 		return;
 	if (_parse_field_values() == 1)
+		return;
+	if (has_name("content-length") && get_content_length() < 0) {
+		response_code = 400;
+		return;
+	}
+	if (_parse_host() == 1)
 		return;
 }
 
@@ -62,10 +69,36 @@ int Request::_parse_field_values() {
 	return 0;
 }
 
-int Request::_duplicate_name(std::string name) {
-	for (std::vector<Header_field>::const_iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
-		if (it->name == name)
-			return 1;
+/*
+Host = uri-host [ ":" port ]
+
+A server MUST respond with a 400 (Bad Request) status code to any
+HTTP/1.1 request message that lacks a Host header field and to any
+request message that contains more than one Host header field or a
+Host header field with an invalid field-value
+*/
+int Request::_parse_host() {
+	size_t colon;
+
+	if (!has_name("host"))
+		return _set_code_and_return(400);
+	// check valid field-value
+	for (std::vector<Header_field>::iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
+		if (it->name == "host") {
+			if (it->size_values != 1)
+				return _set_code_and_return(400);
+			colon = it->values[0].find_first_of(":");
+			it->host = it->values[0].substr(0, colon); // if colon is string::npos, all characters until the end of the string
+			if (colon + 1 == std::string::npos) {
+				it->host = it->values[0].substr(0, colon + 1);
+			}
+			if (colon != std::string::npos) {
+				colon++;
+				if (parse_int(it->port, it->values[0].substr(colon)) == 0) // TODO: doesn't work yet
+					return _set_code_and_return(400);
+			}
+		}
+		this->port = it->port;
 	}
 	return 0;
 }
@@ -81,10 +114,8 @@ header-field = field-name ":" OWS field-value OWS
 each header field name is case-insensitive
 ows = optional whitespaces = *(SP / HTAB)
 
-A server MUST respond with a 400 (Bad Request) status code to any
-HTTP/1.1 request message that lacks a Host header field and to any
-request message that contains more than one Host header field or a
-Host header field with an invalid field-value
+URI = scheme ":" ["//" authority] path ["?" query] ["#" fragment]
+authority = [userinfo "@"] host [":" port]
 */
 int Request::_parse_header_fields() { // TODO: set return code and return in case of error
 	size_t		start;
@@ -109,7 +140,7 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 		name = line.substr(0, colon); // if colon is string::npos, all characters until the end of the string
 		name = _str_tolower(name);
 		if (name.compare("host") == 0) {
-			if (_duplicate_name(name)) // if there is already a host in the header class, error
+			if (has_name(name)) // if there is already a host in the header class, error
 				return _set_code_and_return(400);
 		}
 		if (colon == std::string::npos) { // skip line without ':'
@@ -132,7 +163,7 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 }
 
 int Request::_set_code_and_return(int code) {
-	_response_code = code;
+	response_code = code;
 	return 1;
 }
 
@@ -216,14 +247,6 @@ std::map<std::string, std::string> Request::get_request_line() const {
 
 std::vector<char> Request::get_body() const {
 	return _body;
-}
-
-uint32_t Request::get_response_code() const {
-	return _response_code;
-}
-
-fd_t Request::get_fd() const {
-	return _fd;
 }
 
 size_t Request::get_content_length() const {

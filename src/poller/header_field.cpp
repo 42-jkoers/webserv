@@ -2,6 +2,8 @@
 
 Header_field::Header_field(std::string name, std::string raw_value) : name(name), raw_value(raw_value) {
 	size_values = 0;
+	host.clear();
+	port = 80;
 	if (name == "content-length")
 		type = integer;
 	else

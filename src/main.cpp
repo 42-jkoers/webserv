@@ -14,9 +14,9 @@
 #define PORT 8080
 
 void on_request(Request& request) {
-	std::cout << request << std::endl;
+	// std::cout << request << std::endl; // uncomment to show result request parsing
 
-	Response response(request.get_fd(), request.get_response_code());
+	Response response(request.fd, request.response_code);
 	response.send_response("Hello World!\n");
 }
 

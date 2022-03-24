@@ -17,6 +17,8 @@ class Header_field {
 	std::vector<std::string> values;
 	std::string				 name;
 	Type					 type;
+	std::string				 host;
+	uint32_t				 port;
 	std::string				 raw_value;
 
   private:

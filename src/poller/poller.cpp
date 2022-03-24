@@ -81,7 +81,7 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Request& request)) {
 		_buffers.resize(pfd.fd + 1); // do not change this to reserve(), that one does not call the constructors of the elements
 	_buffers[pfd.fd].read_pollfd(pfd);
 	if (_buffers[pfd.fd].parse_status() == Buffer::FINISHED) {
-		Response response(pfd.fd, _buffers[pfd.fd].request.get_response_code());
+		Response response(pfd.fd, _buffers[pfd.fd].request.response_code);
 		response.send_response("Hello World!\n");
 
 		_buffers[pfd.fd].reset();

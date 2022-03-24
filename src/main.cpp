@@ -15,10 +15,13 @@ Config g_config;
 //
 
 void on_request(Client& client) {
-	client.print();
+	// client.print();
 
 	Response response(client.request.fd, 200);
-	response.send_response("Hello World!\n");
+	if (client.request.get_value("user-agent").find("curl") != std::string::npos)
+		response.send_response("Hello curl\n");
+	else
+		response.send_response(fs::read_file("./html/upload.html"));
 }
 
 int main(int argc, char** argv) {

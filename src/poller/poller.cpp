@@ -173,7 +173,9 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 			if (cs == CS_NULL_BLOCK_REACHED)
 				_parse_status = FINISHED;
 		}
+		return;
 	}
+	std::cout << "\nRequest not supported" << std::endl;
 }
 
 void Client::print() const {

@@ -41,8 +41,8 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client)) {
 
 	client.read_pollfd(pfd);
 	if (client.parse_status() == Client::FINISHED) {
-		if (client.request.get_response_code() >= 400) {
-			Response response(pfd.fd, client.request.get_response_code());
+		if (client.request.response_code >= 400) {
+			Response response(pfd.fd, client.request.response_code);
 			response.send_response("Error!\n"); // TODO
 		}
 		on_request(client);
@@ -50,7 +50,6 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client)) {
 		close(pfd.fd); // TODO: only when keepalive is true
 		pfd.fd = FD_CLOSED;
 	}
-	(void)on_request;
 }
 
 void Poller::start(void (*on_request)(Client& client)) {
@@ -150,7 +149,7 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 		if (request.has_name("content-length")) {
 			_body_type = MULTIPART;
 			_bytes_to_read = static_cast<ssize_t>(request.get_content_length());
-		} else if (request.has_name("transfer-encoding") && request.get_value("transfer-encoding") == "chunked")
+		} else if (request.has_value("transfer-encoding", "chunked"))
 			_body_type = CHUNKED;
 		else {
 			_parse_status = FINISHED;
@@ -174,7 +173,10 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 			if (cs == CS_NULL_BLOCK_REACHED)
 				_parse_status = FINISHED;
 		}
+		return;
 	}
+	_body_type = EMPTY;
+	_parse_status = HEADER_IN_PROGRESS;
 }
 
 void Client::print() const {

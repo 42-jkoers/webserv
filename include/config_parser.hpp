@@ -17,7 +17,7 @@
 
 class Config;
 
-extern Config* g_config;
+extern Config g_config;
 
 /*
 How to get to the variable you want you asked?
@@ -32,7 +32,7 @@ so it will be either:
 class Config {
   public:
 	Config(int argc, char** argv);
-	Config();
+	Config() {};
 	~Config();
 	uint32_t	get_port() const;
 	std::string get_root() const;

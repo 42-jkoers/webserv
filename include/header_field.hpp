@@ -1,6 +1,11 @@
 #pragma once
 #include "main.hpp"
 
+enum Type {
+	string,
+	integer
+};
+
 class Header_field {
   public:
 	// Header_field();
@@ -8,10 +13,13 @@ class Header_field {
 	~Header_field();
 	void add_value(std::string value);
 	// read-only variables
-	size_t					 _size_values;
-	std::vector<std::string> _values;
-	std::string				 _name;
-	std::string				 _raw_value; // TODO: make private after parsing values
+	size_t					 size_values;
+	std::vector<std::string> values;
+	std::string				 name;
+	Type					 type;
+	std::string				 host;
+	uint32_t				 port;
+	std::string				 raw_value;
 
   private:
 	// disabled

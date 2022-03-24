@@ -17,7 +17,7 @@ Config g_config;
 void on_request(Client& client) {
 	client.print();
 
-	Response response(client.request.get_fd(), 200);
+	Response response(client.request.fd, 200);
 	response.send_response("Hello World!\n");
 }
 

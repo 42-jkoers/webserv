@@ -1,23 +1,25 @@
 #include "request.hpp"
 
 Request::Request() {
-	std::cout << "Request constructor called" << std::endl;
-	_reset();
+	// std::cout << "Request constructor called" << std::endl;
+	reset();
 }
 
 Request::~Request() {
 }
 
-void Request::_reset() {
-	_response_code = 200;
+void Request::reset() {
+	response_code = 200;
+	port = 80; // default if no port is specified in host header field
 	_CRLF = "\r\n";
 	_whitespaces = " \t";
 	_vchar_no_delimiter = "abcdefghijklmnopqrstuvwxyz0123456789!#$%&’*+-.^_‘| ̃";
+	header_fields.clear();
 }
 
 void Request::parse_header(const pollfd& pfd, const std::string& raw) {
-	_reset();
-	_fd = pfd.fd;
+	reset();
+	fd = pfd.fd;
 	_raw = raw;
 	if (_parse_request_line() == 1)
 		return;
@@ -25,16 +27,78 @@ void Request::parse_header(const pollfd& pfd, const std::string& raw) {
 		return;
 	if (_parse_field_values() == 1)
 		return;
+	if (has_name("content-length") && get_content_length() < 0) {
+		response_code = 400;
+		return;
+	}
+	if (_parse_host() == 1)
+		return;
 }
 
+/*
+Header field parsing:
+
+header-field	= field-name ":" OWS field-value OWS
+field-name		= token
+field-value		= *( field-content / obs-fold )
+field-content	= field-vchar [ 1*( SP / HTAB ) field-vchar ]
+field-vchar		= VCHAR / obs-text
+obs-fold		= CRLF 1*( SP / HTAB ) field
+				; obsolete line folding
+				; see Section 3.2.4
+*/
 int Request::_parse_field_values() {
+	size_t		comma;
+	size_t		start;
+	std::string value;
+
+	for (std::vector<Header_field>::iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
+		comma = 0;
+		while (comma != std::string::npos) {
+			start = comma;
+			if (comma != 0)
+				start++;
+			comma = it->raw_value.find_first_of(",", start);			  // if comma is string::npos, all characters until the end of the string
+			start = it->raw_value.find_first_not_of(_whitespaces, start); // skip optional whitespaces
+			if (start == std::string::npos || start == comma)			  // if field value ends with only ',' or empty field value -> continue
+				continue;
+			value = it->raw_value.substr(start, comma - start);
+			it->add_value(value);
+		}
+	}
 	return 0;
 }
 
-int Request::_duplicate_name(std::string name) {
-	for (std::vector<Header_field>::const_iterator it = _header_fields.begin(); it != _header_fields.end(); ++it) {
-		if (it->_name == name)
-			return 1;
+/*
+Host = uri-host [ ":" port ]
+
+A server MUST respond with a 400 (Bad Request) status code to any
+HTTP/1.1 request message that lacks a Host header field and to any
+request message that contains more than one Host header field or a
+Host header field with an invalid field-value
+*/
+int Request::_parse_host() {
+	size_t colon;
+
+	if (!has_name("host"))
+		return _set_code_and_return(400);
+	// check valid field-value
+	for (std::vector<Header_field>::iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
+		if (it->name == "host") {
+			if (it->size_values != 1)
+				return _set_code_and_return(400);
+			colon = it->values[0].find_first_of(":");
+			it->host = it->values[0].substr(0, colon); // if colon is string::npos, all characters until the end of the string
+			if (colon + 1 == std::string::npos) {
+				it->host = it->values[0].substr(0, colon + 1);
+			}
+			if (colon != std::string::npos) {
+				colon++;
+				if (parse_int(it->port, it->values[0].substr(colon)) == 0) // TODO: doesn't work yet
+					return _set_code_and_return(400);
+			}
+		}
+		this->port = it->port;
 	}
 	return 0;
 }
@@ -49,6 +113,9 @@ field values are parsed after whole header section has been processed
 header-field = field-name ":" OWS field-value OWS
 each header field name is case-insensitive
 ows = optional whitespaces = *(SP / HTAB)
+
+URI = scheme ":" ["//" authority] path ["?" query] ["#" fragment]
+authority = [userinfo "@"] host [":" port]
 */
 int Request::_parse_header_fields() { // TODO: set return code and return in case of error
 	size_t		start;
@@ -73,7 +140,7 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 		name = line.substr(0, colon); // if colon is string::npos, all characters until the end of the string
 		name = _str_tolower(name);
 		if (name.compare("host") == 0) {
-			if (_duplicate_name(name)) // if there is already a host in the header class, error
+			if (has_name(name)) // if there is already a host in the header class, error
 				return _set_code_and_return(400);
 		}
 		if (colon == std::string::npos) { // skip line without ':'
@@ -87,17 +154,16 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 		if (start == std::string::npos) {						 // skip line without value
 			continue;
 		}
-		value = line.substr(start, line.find_last_not_of(_whitespaces) - start + 1); // remove trailing whitespaces
-		// value = _str_tolower(value); // values may be case-sensitive?
+		value = line.substr(start, line.find_last_not_of(_whitespaces) - start + 1); // remove trailing whitespaces, values can be case-sensitive
 		// save name and value
 		Header_field new_header_field(name, value);
-		_header_fields.push_back(new_header_field);
+		header_fields.push_back(new_header_field);
 	}
 	return 0;
 }
 
 int Request::_set_code_and_return(int code) {
-	_response_code = code;
+	response_code = code;
 	return 1;
 }
 
@@ -136,11 +202,25 @@ int Request::_parse_request_line() {
 	return 0;
 }
 
-bool Request::has_name(const std::string& name) const { // is the key in one of the Header_fields
-	// iterate over Header_fields and get names.
-	for (std::vector<Header_field>::const_iterator it = _header_fields.begin(); it != _header_fields.end(); ++it) {
-		if (it->_name == name)
+bool Request::has_name(const std::string& name) const { // is the name in one of the Header_fields
+	// iterate over Header_fields and get names
+	for (std::vector<Header_field>::const_iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
+		if (it->name == name)
 			return 1;
+	}
+	return 0;
+}
+
+bool Request::has_value(const std::string& name, const std::string& value) const { // is the value in one of the values of the Header_field's name
+	// iterate over Header_fields and get names
+	for (std::vector<Header_field>::const_iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
+		if (it->name == name) {
+			// iterate over values
+			for (std::vector<std::string>::const_iterator it2 = (it->values).begin(); it2 != (it->values).end(); ++it2) {
+				if (*it2 == value)
+					return 1;
+			}
+		}
 	}
 	return 0;
 }
@@ -168,48 +248,40 @@ std::map<std::string, std::string> Request::get_request_line() const {
 std::vector<char> Request::get_body() const {
 	return _body;
 }
-uint32_t Request::get_response_code() const {
-	return _response_code;
-}
-
-fd_t Request::get_fd() const {
-	return _fd;
-}
 
 size_t Request::get_content_length() const {
 	size_t content_length;
 	content_length = 0;
-	for (std::vector<Header_field>::const_iterator it = _header_fields.begin(); it != _header_fields.end(); ++it) {
-		if (it->_name == "content-length") {
-			assert(parse_int(content_length, it->_name));
+	for (std::vector<Header_field>::const_iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
+		if (it->name == "content-length") {
+			assert(parse_int(content_length, it->values[0]));
 			break;
 		}
-		assert(it != _header_fields.end()); // if statement is false, assert
+		assert(it != header_fields.end()); // if statement is false, assert
 	}
 	return content_length;
 }
 
 std::string Request::get_value(const std::string& name) const {
 	std::string value;
-	for (std::vector<Header_field>::const_iterator it = _header_fields.begin(); it != _header_fields.end(); ++it) {
-		if (it->_name == name) {
-			// value = it->_values[0];
-			value = it->_raw_value;
+	for (std::vector<Header_field>::const_iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
+		if (it->name == name) {
+			value = it->values[0];
 			break;
 		}
-		assert(it != _header_fields.end()); // if statement is false, assert
+		assert(it != header_fields.end()); // if statement is false, assert
 	}
 	return value;
 }
 
 std::string Request::get_value(const std::string& name, size_t index) const {
 	std::string value;
-	for (std::vector<Header_field>::const_iterator it = _header_fields.begin(); it != _header_fields.end(); ++it) {
-		if (it->_name == name) {
-			value = it->_values[index];
+	for (std::vector<Header_field>::const_iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
+		if (it->name == name) {
+			value = it->values[index];
 			break;
 		}
-		assert(it != _header_fields.end()); // if statement is false, assert
+		assert(it != header_fields.end()); // if statement is false, assert
 	}
 	return value;
 }
@@ -220,14 +292,14 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 
 	output << "Request line-------------" << std::endl;
 	for (std::map<std::string, std::string>::const_iterator it = request_line.begin(); it != request_line.end(); ++it) {
-		output << it->first << ": " << it->second << std::endl;
+		output << "[" << it->first << "]: "
+			   << "[" << it->second << "]" << std::endl;
 	}
 	output << "Request header fields----" << std::endl;
-	for (std::vector<Header_field>::const_iterator it = rhs._header_fields.begin(); it != rhs._header_fields.end(); ++it) {
-		output << it->_name << ":";
-		output << " " << it->_raw_value;
-		for (size_t i = 0; i < it->_size_values; i++) {
-			output << " [" << it->_values[i] << "]";
+	for (std::vector<Header_field>::const_iterator it = rhs.header_fields.begin(); it != rhs.header_fields.end(); ++it) {
+		output << "[" << it->name << "]:";
+		for (size_t i = 0; i < it->size_values; i++) {
+			output << " [" << it->values[i] << "]";
 		}
 		output << std::endl;
 	}

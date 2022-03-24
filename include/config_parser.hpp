@@ -17,7 +17,7 @@
 
 class Config;
 
-extern Config *g_config;
+extern Config* g_config;
 
 /*
 How to get to the variable you want you asked?
@@ -46,15 +46,15 @@ class Config {
 		std::string getLocation() const;
 		void		setLocation(const std::string location);
 		// READONLY!!!!!
-		std::string					  _path;
-		std::string					  _root;
-		std::vector<std::string*>	  _methods;
-		std::string					  _autoIndex;
-		std::string					  _defaultfile;
-		std::string					  _cgi;
-		std::vector<uint32_t>		  _port;
-		std::vector<std::string>	  _ip;
-		std::map<size_t, std::string> _error_pages;
+		std::string							_path;
+		std::string							_root;
+		std::vector<std::string*>			_methods;
+		std::string							_autoIndex;
+		std::string							_defaultfile;
+		std::pair<std::string, std::string> _cgiPath;
+		std::vector<uint32_t>				_port;
+		std::vector<std::string>			_ip;
+		std::map<size_t, std::string>		_error_pages;
 
 	  private:
 	};
@@ -78,17 +78,18 @@ class Config {
 		void		set_clientMaxBodySize(std::string size);
 		std::string get_clientMaxBodySize() const;
 		// READ ONLY!!!!!!!
-		std::vector<uint32_t>	 _port;
-		std::vector<std::string> _ip;
-		std::string				 _serverName;
-		std::string				 _serverUrl;
-		std::string				 _root;
+		std::vector<uint32_t>		  _port;
+		std::vector<std::string>	  _ip;
+		std::string					  _serverName;
+		std::string					  _serverUrl;
+		std::string					  _root;
 		std::string					  _autoIndex;
 		std::string					  _client_max_body_size;
 		std::map<size_t, std::string> _error_pages;
 		std::vector<Location>		  _location;
 		std::vector<std::string>	  _methods;
 		size_t						  _number_methods;
+		std::string					  _cgiPath;
 
 	  private:
 	};
@@ -109,10 +110,11 @@ class Config {
 	void _parseAutoIndex(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
 	void _parseServer(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
 	void _parseLocation(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void _parseCgi(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
 	void _print_class();
 	void _config_parser(int argc, char** argv);
 	void _safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);
 };
 
 bool		  parse_int(unsigned int& output, const std::string& str);
-std::ostream& operator<<(std::ostream& stream, Config const *config);
+std::ostream& operator<<(std::ostream& stream, Config const* config);

@@ -233,3 +233,21 @@ void Config::_parseAutoIndex(std::string option, std::map<const std::string, std
 	(void)option;
 	(void)line;
 }
+
+void Config::_parseCgi(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+	std::string cgi = config_info["cgi"];
+
+	cut_till_collon(cgi);
+	size_t		space = cgi.find_first_of(" \t");
+	size_t		not_space = cgi.find_first_not_of(" \t", space);
+	std::string path = cgi.substr(not_space, cgi.size());
+	if (_location_check == true) {
+		_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._cgiPath.first = cgi.substr(0, space);
+		_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._cgiPath.second = path;
+	} else
+		exit_with::e_perror("config error: cgi");
+		// std::cout << _server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._cgiPath.first << " | " << _server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._cgiPath.second << std::endl;
+	(void)config_info;
+	(void)option;
+	(void)line;
+}

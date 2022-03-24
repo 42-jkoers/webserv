@@ -28,7 +28,6 @@ int main(int argc, char** argv) {
 	Poller poller;
 	poller.add_server(mode_ipv6, g_config->get_port());
 	// poller.add_server(mode_ipv6, config.get_port() + 1);
-
 	poller.start(on_request);
 	return 0;
 }

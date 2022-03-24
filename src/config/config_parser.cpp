@@ -45,7 +45,7 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 		&Config::_parseLocation,
 		&Config::_parseAutoIndex,
 		&Config::_parseIndex,
-		&Config::_parseServer};
+		&Config::_parseCgi};
 	for (size_t i = 0; i < options.size(); i++) {
 		if (line.find("server") != std::string::npos && line.find("{") != std::string::npos) {
 			_server.push_back(Server());
@@ -84,6 +84,7 @@ void Config::_config_parser(int argc, char** argv) {
 	options.push_back("location");
 	options.push_back("autoindex");
 	options.push_back("index");
+	options.push_back("cgi");
 	if (argc == 2)
 		config_file.open(argv[1]);
 	else
@@ -123,7 +124,7 @@ std::ostream& operator<<(std::ostream& stream, Config const* config) {
 			}
 			stream << "AUTOINDEX = " << config->_server[i]._location[a]._autoIndex << std::endl;
 			stream << "DEFAULT = " << config->_server[i]._location[a]._defaultfile << std::endl;
-			stream << "CGI = " << config->_server[i]._location[a]._cgi << std::endl;
+			// stream << "CGI = " << config->_server[i]._location[a]._cgiPath->first << config->_server[i]._location[a]._cgiPath->second << std::endl;
 			for (size_t j = 0; j < config->_server[i]._location[a]._port.size(); j++) {
 				stream << "PORTS = " << config->_server[i]._location[a]._port[j] << std::endl;
 			}
@@ -131,7 +132,7 @@ std::ostream& operator<<(std::ostream& stream, Config const* config) {
 				stream << "IP = " << config->_server[i]._location[a]._ip[k] << std::endl;
 			}
 			for (std::map<size_t, std::string>::const_iterator it = config->_server[i]._location[a]._error_pages.begin(); it != config->_server[i]._location[a]._error_pages.end(); it++) {
-				stream << "ERROR_PAGES = " <<  it->first <<  " | " << it->second << std::endl;
+				stream << "ERROR_PAGES = " << it->first << " | " << it->second << std::endl;
 			}
 		}
 	}

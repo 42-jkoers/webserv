@@ -11,23 +11,25 @@
 #include <sys/poll.h>
 #include <sys/socket.h>
 
-#define PORT 8080
+Config g_config;
+//
 
-Config* g_config;
-void	on_request(Client& client) {
-	   client.print();
+void on_request(Client& client) {
+	client.print();
 
-	   Response response(client.request.get_fd(), 200);
-	   response.send_response("Hello World!\n");
+	Response response(client.request.get_fd(), 200);
+	response.send_response("Hello World!\n");
 }
 
 int main(int argc, char** argv) {
-	Config config(argc, argv);
-
-	g_config = &config;
+	g_config = Config(argc, argv);
 	Poller poller;
-	poller.add_server(mode_ipv6, g_config->get_port());
-	// poller.add_server(mode_ipv6, config.get_port() + 1);
+
+	for (std::vector<Config::Server>::iterator server = g_config._server.begin(); server != g_config._server.end(); ++server) {
+		for (std::vector<uint32_t>::iterator port = server->_port.begin(); port != server->_port.end(); ++port) {
+			poller.add_server(mode_ipv6, *port);
+		}
+	}
 
 	poller.start(on_request);
 	return 0;

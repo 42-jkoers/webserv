@@ -175,6 +175,8 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 		}
 		return;
 	}
+	_body_type = EMPTY;
+	_parse_status = FINISHED;
 	std::cout << "\nRequest not supported" << std::endl;
 }
 

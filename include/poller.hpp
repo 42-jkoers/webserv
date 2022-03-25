@@ -6,6 +6,7 @@
 class Client {
   public:
 	Client();
+#pragma region asd
 	enum Read_status {
 		UNSET,
 		TEMPORALLY_UNIAVAILABLE,
@@ -40,7 +41,7 @@ class Client {
 		CS_NULL_BLOCK_REACHED,
 		CS_ERROR
 	};
-
+#pragma region asd
 	Read_status		  read_pollfd(const pollfd& pfd);
 	Parse_status	  parse_status() const;
 	void			  reset();

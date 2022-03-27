@@ -3,14 +3,12 @@
 
 class Response {
   public:
-	Response(fd_t fd, uint32_t ret);
+	Response(fd_t fd);
 	~Response();
-	void		send_response(const std::string& message);
-	std::string get_index(Config& config);
+	void send_response(uint32_t code, const std::string& message);
 
   private:
-	fd_t	 _fd;
-	uint32_t _response_code;
+	fd_t _fd;
 
 	// disabled
 	Response(const Response& cp);

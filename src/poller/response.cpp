@@ -1,13 +1,13 @@
 #include "response.hpp"
 
-Response::Response(fd_t fd, uint32_t ret) : _fd(fd), _response_code(ret) {
+Response::Response(fd_t fd) : _fd(fd) {
 }
 
 Response::~Response() {
 }
 
 // TODO: optimize
-void Response::send_response(const std::string& message) {
+void Response::send_response(uint32_t code, const std::string& message) {
 	std::map<uint32_t, std::string> m; // TODO: make this static
 	m[100] = "Continue";
 	m[101] = "Switching Protocols";
@@ -52,22 +52,10 @@ void Response::send_response(const std::string& message) {
 	m[505] = "HTTP Version Not Supported";
 
 	std::string response = "HTTP/1.1 ";
-	response += std_ft::to_string(_response_code);
+	response += std_ft::to_string(code);
 	response += " ";
-	response += m[_response_code];
+	response += m[code];
 	response += "\r\n\r\n";
 	response += message;
 	write(_fd, response.c_str(), response.length()); // TODO: error handling
-}
-
-std::string Response::get_index(Config& config) {
-	std::ifstream html_file;
-	std::string	  line;
-	std::string	  html;
-	html_file.open(config.get_root().c_str());
-	while (getline(html_file, line)) {
-		html += line;
-	}
-	html_file.close();
-	return html;
 }

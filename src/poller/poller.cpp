@@ -43,7 +43,7 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client)) {
 	if (client.parse_status() == Client::FINISHED) {
 		if (client.request.response_code >= 400) {
 			Response response(pfd.fd);
-			response.send_response(client.request.response_code, "Error!\n"); // TODO
+			response.text(client.request.response_code, "Error!\n"); // TODO
 		}
 		on_request(client);
 		client.reset();

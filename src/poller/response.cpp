@@ -1,25 +1,32 @@
 #include "response.hpp"
 #include "constants.hpp"
+#include "file_system.hpp"
 
 Response::Response(fd_t fd) : _fd(fd) {
 }
 
 Response::~Response() {
+	close(_fd);
+}
+
+// returns minimum starting paramters of response header
+static std::string header_template(uint32_t code) {
+	std::string header = "HTTP/1.1 ";
+	header += std_ft::to_string(code);
+	header += " ";
+	header += g_constants.to_response_string(code);
+	return header;
 }
 
 // TODO: optimize
-void Response::send_response(uint32_t code, const std::string& message) {
-
-	std::string response = "HTTP/1.1 ";
-	response += std_ft::to_string(code);
-	response += " ";
-	response += g_constants.to_response_string(code);
+void Response::text(uint32_t code, const std::string& message) {
+	std::string response = header_template(code);
 	response += "\r\n\r\n";
 	response += message;
 	write(_fd, response.c_str(), response.length()); // TODO: error handling
 }
 
-void Response::send_cgi(const std::string& path, const std::string& path_info, const std::string& query_string) {
+void Response::cgi(const std::string& path, const std::string& path_info, const std::string& query_string) {
 	pid_t pid = fork();
 	if (pid == 0) { // child
 		dup2(_fd, STDERR_FILENO);
@@ -48,7 +55,15 @@ void Response::send_cgi(const std::string& path, const std::string& path_info, c
 		close(STDOUT_FILENO);
 		close(STDERR_FILENO);
 		exit(0);
-	} else {
-		close(_fd);
 	}
+}
+
+void Response::file(const std::string& path) {
+	std::string header = header_template(200);
+	std::string file = fs::read_file(path);
+	header += "Content-length: " + std_ft::to_string(file.size());
+	header += "\r\n\r\n";
+	write(_fd, header.data(), header.size());
+	// TODO wait for 100-Continue?
+	write(_fd, file.data(), file.size());
 }

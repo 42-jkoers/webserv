@@ -5,8 +5,9 @@ class Response {
   public:
 	Response(fd_t fd);
 	~Response();
-	void send_response(uint32_t code, const std::string& message);
-	void send_cgi(const std::string& path, const std::string& path_info, const std::string& query_string);
+	void text(uint32_t code, const std::string& message);
+	void cgi(const std::string& path, const std::string& path_info, const std::string& query_string);
+	void file(const std::string& path);
 
   private:
 	fd_t _fd;

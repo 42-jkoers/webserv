@@ -1,5 +1,6 @@
 #include "main.hpp"
 #include "config_parser.hpp"
+#include "constants.hpp"
 #include "file_system.hpp"
 #include "poller.hpp"
 #include "request.hpp"
@@ -11,7 +12,8 @@
 #include <sys/poll.h>
 #include <sys/socket.h>
 
-Config g_config;
+Config	  g_config;
+Constants g_constants;
 //
 
 void on_request(Client& client) {

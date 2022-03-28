@@ -16,12 +16,16 @@ Config g_config;
 
 void on_request(Client& client) {
 	// client.print();
+	// std::cout << client.request << std::endl;
+	Response response(client.request.fd);
+	std::cout << client.request.get_request_line()["URI"] << std::endl;
 
-	Response response(client.request.fd, 200);
-	if (client.request.get_value("user-agent").find("curl") != std::string::npos)
-		response.send_response("Hello curl\n");
+	if (client.request.get_request_line()["URI"].find(".py") != std::string::npos)
+		response.send_cgi("./html/index.sh", "", "");
+	else if (client.request.get_value("user-agent").find("curl") != std::string::npos)
+		response.send_response(200, "Hello curl\n");
 	else
-		response.send_response(fs::read_file("./html/upload.html"));
+		response.send_response(200, fs::read_file("./html/upload.html"));
 }
 
 int main(int argc, char** argv) {

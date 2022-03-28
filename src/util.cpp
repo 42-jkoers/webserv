@@ -16,6 +16,12 @@ void message(const std::string& msg) {
 	exit(EXIT_FAILURE);
 }
 
+void e_errno(const std::string& msg) {
+	std::cout << msg << std::endl;
+	std::cout << std::strerror(errno) << std::endl;
+	exit(EXIT_FAILURE);
+}
+
 } // namespace exit_with
 
 void print_escaped(const char* s, size_t n, std::string label) {

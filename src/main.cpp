@@ -12,8 +12,8 @@
 #include <sys/poll.h>
 #include <sys/socket.h>
 
-Config	  g_config;
-Constants g_constants;
+Config			g_config;
+const Constants g_constants;
 //
 
 void on_request(Client& client) {

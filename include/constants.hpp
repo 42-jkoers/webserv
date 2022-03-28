@@ -4,8 +4,8 @@
 class Constants {
   public:
 	Constants();
-	std::string to_content_type(const std::string& filename);
-	std::string to_response_string(uint32_t code);
+	const std::string& to_content_type(const std::string& filename) const;
+	const std::string& to_response_string(uint32_t code) const;
 
   private:
 	std::map<std::string, std::string> _content_type;
@@ -16,4 +16,4 @@ class Constants {
 	Constants& operator=(const Constants& cp);
 };
 
-extern Constants g_constants;
+extern const Constants g_constants;

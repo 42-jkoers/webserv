@@ -125,12 +125,14 @@ Constants::Constants() {
 	// clang-format on
 }
 
-std::string Constants::to_content_type(const std::string& filename) {
-	assert(_content_type.find(filename) != _content_type.end());
-	return _content_type[filename];
+const std::string& Constants::to_content_type(const std::string& filename) const {
+	std::map<std::string, std::string>::const_iterator it = _content_type.find(filename);
+	assert(it != _content_type.end());
+	return it->second;
 }
 
-std::string Constants::to_response_string(uint32_t code) {
-	assert(_response_str.find(code) != _response_str.end());
-	return _response_str[code];
+const std::string& Constants::to_response_string(uint32_t code) const {
+	std::map<uint32_t, std::string>::const_iterator it = _response_str.find(code);
+	assert(it != _response_str.end());
+	return it->second;
 }

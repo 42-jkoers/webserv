@@ -41,11 +41,12 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client)) {
 
 	client.read_pollfd(pfd);
 	if (client.parse_status() == Client::FINISHED) {
-		if (client.request.response_code >= 400) {
+		if (client.request.response_code >= 203) {
 			Response response(pfd.fd, client.request.response_code);
 			response.send_response("Error!\n"); // TODO
 		}
-		on_request(client);
+		else
+			on_request(client);
 		client.reset();
 		close(pfd.fd); // TODO: only when keepalive is true
 		pfd.fd = FD_CLOSED;

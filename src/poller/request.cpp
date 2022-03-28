@@ -94,11 +94,22 @@ int Request::_parse_host() {
 			}
 			if (colon != std::string::npos) {
 				colon++;
-				if (parse_int(it->port, it->values[0].substr(colon)) == 0) // TODO: doesn't work yet
+				if (parse_int(it->port, it->values[0].substr(colon)) == 0)
 					return _set_code_and_return(400);
 			}
+			this->port = it->port;
+			// loop over servers and check for valid host name and port
+			for (std::vector<Config::Server>::iterator it2 = g_config._server.begin(); it2 != g_config._server.end(); ++it2) {
+				if (it2->_serverName == it->host) {
+					for (std::vector<uint32_t>::iterator it3 = it2->_port.begin(); it3 != it2->_port.end(); ++it3) {
+						if (it->port == *it3)
+							return 0;
+					}
+					return _set_code_and_return(400); // TODO: not sure if correct port is needed
+				}
+			}
+			return _set_code_and_return(400); // TODO: not sure if correct server name is needed
 		}
-		this->port = it->port;
 	}
 	return 0;
 }
@@ -113,9 +124,6 @@ field values are parsed after whole header section has been processed
 header-field = field-name ":" OWS field-value OWS
 each header field name is case-insensitive
 ows = optional whitespaces = *(SP / HTAB)
-
-URI = scheme ":" ["//" authority] path ["?" query] ["#" fragment]
-authority = [userinfo "@"] host [":" port]
 */
 int Request::_parse_header_fields() { // TODO: set return code and return in case of error
 	size_t		start;
@@ -167,6 +175,25 @@ int Request::_set_code_and_return(int code) {
 	return 1;
 }
 
+/*
+URI = scheme ":" ["//" authority] path ["?" query] ["#" fragment]
+authority = [userinfo "@"] host [":" port]
+https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
+*/
+int Request::_parse_URI() {
+	std::string uri = _request_line["URI"];
+
+	if (uri.find("/") != std::string::npos && uri[0] == '/') { // origin form
+		;
+	} else if (uri.find(":") != std::string::npos && uri[0] != ':') { // absolute form
+		;
+	} else {
+		response_code = 400;
+		return 1;
+	}
+	return 0;
+}
+
 // Request-Line = Method SP Request-URI SP HTTP-Version CRLF
 int Request::_parse_request_line() {
 	size_t					 end;
@@ -190,6 +217,8 @@ int Request::_parse_request_line() {
 		delimiter = _raw.find_first_of(" \r", prev);
 		if (components[i] != "HTTP_version" && delimiter == end)
 			return _set_code_and_return(301);
+		if (delimiter - prev <= 0)
+			return _set_code_and_return(400); // TODO: if URI is empty -> error; but this should probably be checked later
 		_request_line[components[i]] = _raw.substr(prev, delimiter - prev);
 		prev = delimiter + 1;
 	}
@@ -199,6 +228,8 @@ int Request::_parse_request_line() {
 		return _set_code_and_return(301);
 	if (_request_line["HTTP_version"].compare("HTTP/1.1") != 0)
 		return _set_code_and_return(505); // TODO: generate representation why version is not supported & what is supported [RFC7231; 6.6.6]
+	if (_parse_URI() == 1)
+		return 1;
 	return 0;
 }
 

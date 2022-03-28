@@ -35,6 +35,7 @@ class Request {
 	int								   _parse_host();
 	std::string						   _str_tolower(std::string& str);
 	int								   _set_code_and_return(int ret);
+	int								   _parse_URI();
 
 	// disabled
 	// Request(const Request& cp); // TODO

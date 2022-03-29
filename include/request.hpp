@@ -17,10 +17,10 @@ class Request {
 	bool							   has_value(const std::string& name, const std::string& value) const;
 	void							   reset();
 	// read-only variables
-	std::vector<Header_field> header_fields;
-	uint32_t				  response_code;
-	uint32_t				  port;
-	fd_t					  fd;
+	std::map<std::string, Header_field> header_fields;
+	uint32_t							response_code;
+	uint32_t							port;
+	fd_t								fd;
 
   private:
 	std::string						   _raw;

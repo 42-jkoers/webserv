@@ -18,7 +18,7 @@ void on_request(Client& client) {
 	// client.print();
 
 	Response response(client.request.fd, 200);
-	if (client.request.get_value("user-agent").find("curl") != std::string::npos)
+	if (client.request.has_name("user-agent") && client.request.has_value("user-agent", "curl"))
 		response.send_response("Hello curl\n");
 	else
 		response.send_response(fs::read_file("./html/upload.html"));

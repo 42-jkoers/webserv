@@ -44,8 +44,7 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client)) {
 		if (client.request.response_code >= 203) {
 			Response response(pfd.fd, client.request.response_code);
 			response.send_response("Error!\n"); // TODO
-		}
-		else
+		} else
 			on_request(client);
 		client.reset();
 		close(pfd.fd); // TODO: only when keepalive is true
@@ -150,7 +149,7 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 		if (request.has_name("content-length")) {
 			_body_type = MULTIPART;
 			_bytes_to_read = static_cast<ssize_t>(request.get_content_length());
-		} else if (request.has_value("transfer-encoding", "chunked"))
+		} else if (request.has_name("transfer-encoding") && request.has_value("transfer-encoding", "chunked"))
 			_body_type = CHUNKED;
 		else {
 			_parse_status = FINISHED;

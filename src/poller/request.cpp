@@ -52,18 +52,18 @@ int Request::_parse_field_values() {
 	size_t		start;
 	std::string value;
 
-	for (std::vector<Header_field>::iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
+	for (std::map<std::string, Header_field>::iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
 		comma = 0;
 		while (comma != std::string::npos) {
 			start = comma;
 			if (comma != 0)
 				start++;
-			comma = it->raw_value.find_first_of(",", start);			  // if comma is string::npos, all characters until the end of the string
-			start = it->raw_value.find_first_not_of(_whitespaces, start); // skip optional whitespaces
-			if (start == std::string::npos || start == comma)			  // if field value ends with only ',' or empty field value -> continue
+			comma = it->second.raw_value.find_first_of(",", start);				 // if comma is string::npos, all characters until the end of the string
+			start = it->second.raw_value.find_first_not_of(_whitespaces, start); // skip optional whitespaces
+			if (start == std::string::npos || start == comma)					 // if field value ends with only ',' or empty field value -> continue
 				continue;
-			value = it->raw_value.substr(start, comma - start);
-			it->add_value(value);
+			value = it->second.raw_value.substr(start, comma - start);
+			it->second.add_value(value);
 		}
 	}
 	return 0;
@@ -82,36 +82,32 @@ int Request::_parse_host() {
 
 	if (!has_name("host"))
 		return _set_code_and_return(400);
+	std::map<std::string, Header_field>::iterator it = header_fields.find("host");
 	// check valid field-value
-	for (std::vector<Header_field>::iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
-		if (it->name == "host") {
-			if (it->size_values != 1)
-				return _set_code_and_return(400);
-			colon = it->values[0].find_first_of(":");
-			it->host = it->values[0].substr(0, colon); // if colon is string::npos, all characters until the end of the string
-			if (colon + 1 == std::string::npos) {
-				it->host = it->values[0].substr(0, colon + 1);
+	if (it->second.size_values != 1)
+		return _set_code_and_return(400);
+	colon = it->second.values[0].find_first_of(":");
+	it->second.host = it->second.values[0].substr(0, colon); // if colon is string::npos, all characters until the end of the string
+	if (colon + 1 == std::string::npos) {
+		it->second.host = it->second.values[0].substr(0, colon + 1);
+	}
+	if (colon != std::string::npos) {
+		colon++;
+		if (parse_int(it->second.port, it->second.values[0].substr(colon)) == 0)
+			return _set_code_and_return(400);
+	}
+	this->port = it->second.port;
+	// loop over servers and check for valid host name and port
+	for (std::vector<Config::Server>::iterator it2 = g_config._server.begin(); it2 != g_config._server.end(); ++it2) {
+		if (it2->_serverName == it->second.host) {
+			for (std::vector<uint32_t>::iterator it3 = it2->_port.begin(); it3 != it2->_port.end(); ++it3) {
+				if (it->second.port == *it3)
+					return 0;
 			}
-			if (colon != std::string::npos) {
-				colon++;
-				if (parse_int(it->port, it->values[0].substr(colon)) == 0)
-					return _set_code_and_return(400);
-			}
-			this->port = it->port;
-			// loop over servers and check for valid host name and port
-			for (std::vector<Config::Server>::iterator it2 = g_config._server.begin(); it2 != g_config._server.end(); ++it2) {
-				if (it2->_serverName == it->host) {
-					for (std::vector<uint32_t>::iterator it3 = it2->_port.begin(); it3 != it2->_port.end(); ++it3) {
-						if (it->port == *it3)
-							return 0;
-					}
-					return _set_code_and_return(400); // TODO: not sure if correct port is needed
-				}
-			}
-			return _set_code_and_return(400); // TODO: not sure if correct server name is needed
+			return _set_code_and_return(400); // TODO: not sure if correct port is needed
 		}
 	}
-	return 0;
+	return _set_code_and_return(400); // TODO: not sure if correct server name is needed
 }
 
 /*
@@ -165,7 +161,8 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 		value = line.substr(start, line.find_last_not_of(_whitespaces) - start + 1); // remove trailing whitespaces, values can be case-sensitive
 		// save name and value
 		Header_field new_header_field(name, value);
-		header_fields.push_back(new_header_field);
+		header_fields.insert(std::pair<std::string, Header_field>(name, new_header_field));
+		// header_fields[name] = new_header_field;
 	}
 	return 0;
 }
@@ -234,26 +231,41 @@ int Request::_parse_request_line() {
 }
 
 bool Request::has_name(const std::string& name) const { // is the name in one of the Header_fields
-	// iterate over Header_fields and get names
-	for (std::vector<Header_field>::const_iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
-		if (it->name == name)
+	if (header_fields.find(name) != header_fields.end())
+		return 1;
+	return 0;
+}
+
+bool Request::has_value(const std::string& name, const std::string& value) const { // is the value in one of the values of the Header_field's name
+	// assert if header field with this name does not exists
+	assert(header_fields.find(name) != header_fields.end());
+	for (std::vector<std::string>::const_iterator it = header_fields.find(name)->second.values.begin(); it != header_fields.find(name)->second.values.end(); ++it) {
+		if (*it == value)
 			return 1;
 	}
 	return 0;
 }
 
-bool Request::has_value(const std::string& name, const std::string& value) const { // is the value in one of the values of the Header_field's name
-	// iterate over Header_fields and get names
-	for (std::vector<Header_field>::const_iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
-		if (it->name == name) {
-			// iterate over values
-			for (std::vector<std::string>::const_iterator it2 = (it->values).begin(); it2 != (it->values).end(); ++it2) {
-				if (*it2 == value)
-					return 1;
-			}
-		}
-	}
-	return 0;
+std::string Request::get_value(const std::string& name) const {
+	std::map<std::string, Header_field>::const_iterator it = header_fields.find(name);
+	assert(it != header_fields.end());
+	return it->second.values[0];
+}
+
+std::string Request::get_value(const std::string& name, size_t index) const {
+	std::map<std::string, Header_field>::const_iterator it = header_fields.find(name);
+	assert(it != header_fields.end());
+	assert(index < it->second.size_values);
+	return it->second.values[index];
+}
+
+size_t Request::get_content_length() const {
+	size_t content_length;
+	content_length = 0;
+	std::map<std::string, Header_field>::const_iterator it = header_fields.find("content-length");
+	assert(it != header_fields.end());
+	assert(parse_int(content_length, it->second.values[0]));
+	return content_length;
 }
 
 std::string Request::_str_tolower(std::string& str) {
@@ -280,43 +292,6 @@ std::vector<char> Request::get_body() const {
 	return _body;
 }
 
-size_t Request::get_content_length() const {
-	size_t content_length;
-	content_length = 0;
-	for (std::vector<Header_field>::const_iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
-		if (it->name == "content-length") {
-			assert(parse_int(content_length, it->values[0]));
-			break;
-		}
-		assert(it != header_fields.end()); // if statement is false, assert
-	}
-	return content_length;
-}
-
-std::string Request::get_value(const std::string& name) const {
-	std::string value;
-	for (std::vector<Header_field>::const_iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
-		if (it->name == name) {
-			value = it->values[0];
-			break;
-		}
-		assert(it != header_fields.end()); // if statement is false, assert
-	}
-	return value;
-}
-
-std::string Request::get_value(const std::string& name, size_t index) const {
-	std::string value;
-	for (std::vector<Header_field>::const_iterator it = header_fields.begin(); it != header_fields.end(); ++it) {
-		if (it->name == name) {
-			value = it->values[index];
-			break;
-		}
-		assert(it != header_fields.end()); // if statement is false, assert
-	}
-	return value;
-}
-
 std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 	std::map<std::string, std::string> request_line = rhs.get_request_line();
 	std::vector<char>				   body = rhs.get_body();
@@ -327,10 +302,10 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 			   << "[" << it->second << "]" << std::endl;
 	}
 	output << "Request header fields----" << std::endl;
-	for (std::vector<Header_field>::const_iterator it = rhs.header_fields.begin(); it != rhs.header_fields.end(); ++it) {
-		output << "[" << it->name << "]:";
-		for (size_t i = 0; i < it->size_values; i++) {
-			output << " [" << it->values[i] << "]";
+	for (std::map<std::string, Header_field>::const_iterator it = rhs.header_fields.begin(); it != rhs.header_fields.end(); ++it) {
+		output << "[" << it->first << "]:";
+		for (std::vector<std::string>::const_iterator it2 = it->second.values.begin(); it2 != it->second.values.end(); ++it2) {
+			output << " [" << *it2 << "]";
 		}
 		output << std::endl;
 	}

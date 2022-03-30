@@ -21,11 +21,17 @@ class Request {
 	uint32_t							response_code;
 	uint32_t							port;
 	fd_t								fd;
+	std::string							method;
+	std::string							uri_raw;
+	std::string							http_version;
+	std::string							path;
+	std::map<std::string, std::string>	queries;
+	std::string							fragment;
 
   private:
 	std::string						   _raw;
 	std::string						   _whitespaces;
-	std::string						   _CRLF;
+	std::string						   _crlf;
 	std::string						   _vchar_no_delimiter;
 	std::map<std::string, std::string> _request_line;
 	std::vector<char>				   _body;

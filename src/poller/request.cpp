@@ -11,7 +11,7 @@ Request::~Request() {
 void Request::reset() {
 	response_code = 200;
 	port = 80; // default if no port is specified in host header field
-	_CRLF = "\r\n";
+	_crlf = "\r\n";
 	_whitespaces = " \t";
 	_vchar_no_delimiter = "abcdefghijklmnopqrstuvwxyz0123456789!#$%&’*+-.^_‘| ̃";
 	header_fields.clear();
@@ -96,7 +96,6 @@ int Request::_parse_host() {
 		if (parse_int(it->second.port, it->second.values[0].substr(colon)) == 0)
 			return _set_code_and_return(400);
 	}
-	this->port = it->second.port;
 	// loop over servers and check for valid host name and port
 	for (std::vector<Config::Server>::iterator it2 = g_config._server.begin(); it2 != g_config._server.end(); ++it2) {
 		if (it2->_serverName == it->second.host) {
@@ -129,12 +128,12 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 	std::string name;
 	std::string value;
 
-	end = _raw.find(_CRLF);					  // skip request line
-	while (end != _raw.find(_CRLF + _CRLF)) { // until last line
+	end = _raw.find(_crlf);					  // skip request line
+	while (end != _raw.find(_crlf + _crlf)) { // until last line
 		// get line
 		_whitespaces = " \t";
 		start = end + 2;
-		end = _raw.find(_CRLF, start);
+		end = _raw.find(_crlf, start);
 		line = _raw.substr(start, end - start);	 // line contains all up to \r\n
 		if (line[0] == ' ' || line[0] == '\t') { // skip whitespace-preceded line
 			continue;
@@ -162,7 +161,6 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 		// save name and value
 		Header_field new_header_field(name, value);
 		header_fields.insert(std::pair<std::string, Header_field>(name, new_header_field));
-		// header_fields[name] = new_header_field;
 	}
 	return 0;
 }
@@ -175,14 +173,36 @@ int Request::_set_code_and_return(int code) {
 /*
 URI = scheme ":" ["//" authority] path ["?" query] ["#" fragment]
 authority = [userinfo "@"] host [":" port]
+request-URI:
 https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 */
 int Request::_parse_URI() {
-	std::string uri = _request_line["URI"];
+	method = _request_line["method"];
+	uri_raw = _request_line["URI"];
+	http_version = _request_line["HTTP_version"];
+	size_t		end;
+	size_t		prev;
+	std::string key;
+	std::string value;
 
-	if (uri.find("/") != std::string::npos && uri[0] == '/') { // origin form
-		;
-	} else if (uri.find(":") != std::string::npos && uri[0] != ':') { // absolute form
+	prev = 0;
+	if (uri_raw.find("/") != std::string::npos && uri_raw[0] == '/') { // origin form
+		prev = uri_raw.find_first_of("?");
+		path = uri_raw.substr(0, prev);
+		while (prev != std::string::npos) {
+			prev++;
+			end = uri_raw.find_first_of("=", prev);
+			if (end == std::string::npos) {
+				break;
+			}
+			key = uri_raw.substr(prev, end - prev);
+			prev = end + 1;
+			end = uri_raw.find_first_of("&", end); // if std::string::npos-> until end of string and breaks next round
+			value = uri_raw.substr(prev, end - prev);
+			queries[key] = value;
+			prev = end;
+		}
+	} else if (uri_raw.find(":") != std::string::npos && uri_raw[0] != ':') { // absolute form
 		;
 	} else {
 		response_code = 400;
@@ -207,7 +227,7 @@ int Request::_parse_request_line() {
 	methods.push_back("POST");
 	methods.push_back("DELETE");
 	prev = 0;
-	end = _raw.find(_CRLF);
+	end = _raw.find(_crlf);
 	if (end == std::string::npos)
 		return _set_code_and_return(301);
 	for (size_t i = 0; i < components.size(); i++) {
@@ -300,6 +320,17 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 	for (std::map<std::string, std::string>::const_iterator it = request_line.begin(); it != request_line.end(); ++it) {
 		output << "[" << it->first << "]: "
 			   << "[" << it->second << "]" << std::endl;
+	}
+	if (!rhs.path.empty()) {
+		output << "Path---------------------" << std::endl;
+		output << rhs.path << std::endl;
+	}
+	if (!rhs.queries.empty()) {
+		output << "Queries---------------------" << std::endl;
+		for (std::map<std::string, std::string>::const_iterator it = rhs.queries.begin(); it != rhs.queries.end(); ++it) {
+			output << "[" << it->first << "]: "
+				   << "[" << it->second << "]" << std::endl;
+		}
 	}
 	output << "Request header fields----" << std::endl;
 	for (std::map<std::string, Header_field>::const_iterator it = rhs.header_fields.begin(); it != rhs.header_fields.end(); ++it) {

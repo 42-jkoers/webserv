@@ -24,7 +24,7 @@ void cut_till_bracket(std::string& line) {
 	line = line.substr(0, end + 1); // getting rid of the ';' and whitespace
 }
 
-void Config::_parseServerName(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+void Config::_parseServerName(std::map<const std::string, std::string>& config_info) {
 	std::string serverName = config_info["server_name"];
 	size_t		split;
 
@@ -34,8 +34,6 @@ void Config::_parseServerName(std::string option, std::map<const std::string, st
 	split = serverName.find_last_of("\t ");
 	_server[_server.size() - 1]._serverUrl = serverName.substr(split + 1, serverName.size());
 	// std::cout << config.get_serverName() << "\\" << config.get_serverUrl() << std::endl;
-	(void)option;
-	(void)line;
 }
 
 /*
@@ -48,7 +46,7 @@ void Config::_parseServerName(std::string option, std::map<const std::string, st
  if there is no port the port will be set to 8080
  if there is no ip the ip will be set to 0.0.0.0
  */
-void Config::_parseListen(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+void Config::_parseListen(std::map<const std::string, std::string>& config_info) {
 	std::string listen = config_info["listen"];
 	size_t		i = 0;
 	size_t		check_dots = 0;
@@ -98,12 +96,9 @@ void Config::_parseListen(std::string option, std::map<const std::string, std::s
 		_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._port.push_back(port);
 	else
 		_server[_server.size() - 1]._port.push_back(port);
-	(void)config_info;
-	(void)line;
-	(void)option;
 }
 
-void Config::_parseErrorPage(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+void Config::_parseErrorPage(std::map<const std::string, std::string>& config_info) {
 	std::string error = config_info["error_page"];
 	size_t		space;
 
@@ -119,30 +114,22 @@ void Config::_parseErrorPage(std::string option, std::map<const std::string, std
 	else
 		_server[_server.size() - 1]._error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
 	// std::cout << _server[_server.size() - 1]._error_pages[error_code] << std::endl;
-	(void)option;
-	(void)config_info;
-	(void)line;
 }
 
-void Config::_parseClientMaxBodySize(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+void Config::_parseClientMaxBodySize(std::map<const std::string, std::string>& config_info) {
 	std::string body_size = config_info["client_max_body_size"];
 	cut_till_collon(body_size);
 	if (body_size[body_size.size() - 1] != 'M' && body_size[body_size.size() - 1] != 'm')
 		exit_with::e_perror("config error: client_max_body_size");
 	_server[_server.size() - 1]._client_max_body_size = body_size;
 
-	(void)option;
-	(void)config_info;
-	(void)line;
 }
 
-void Config::_parseAllowedMethods(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+void Config::_parseAllowedMethods(std::map<const std::string, std::string>& config_info) {
 	std::string methods = config_info["allowed_methods"];
-	// size_t		space = 0;
 	size_t i = 0;
 	size_t j = 0;
 
-	// Make it work for multiple allowed methods
 	cut_till_collon(methods);
 	_server[_server.size() - 1]._methods.push_back("");
 	while (i < methods.length()) {
@@ -158,19 +145,13 @@ void Config::_parseAllowedMethods(std::string option, std::map<const std::string
 	if (strncmp(_server[_server.size() - 1]._methods[j].c_str(), "GET", _server[_server.size() - 1]._methods[j].length()) != 0 && strncmp(_server[_server.size() - 1]._methods[j].c_str(), "POST", _server[_server.size() - 1]._methods[j].length()) != 0 && strncmp(_server[_server.size() - 1]._methods[j].c_str(), "SET", _server[_server.size() - 1]._methods[j].length()) != 0)
 		exit_with::e_perror("config error: methods");
 	_server[_server.size() - 1]._number_methods = j + 1;
-	(void)config_info;
-	(void)option;
-	(void)line;
 }
 
-void Config::_parseRoot(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+void Config::_parseRoot(std::map<const std::string, std::string>& config_info) {
 	std::string root = config_info["root"];
 
 	cut_till_collon(root);
 	_server[_server.size() - 1]._root = root;
-	(void)option;
-	(void)config_info;
-	(void)line;
 }
 
 bool IsPathExist(const std::string& s) {
@@ -178,7 +159,7 @@ bool IsPathExist(const std::string& s) {
 	return (stat(s.c_str(), &buffer) == 0);
 }
 
-void Config::_parseLocation(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+void Config::_parseLocation(std::map<const std::string, std::string>& config_info) {
 	std::string location = config_info["location"];
 	_location_check = true;
 	cut_till_bracket(location);
@@ -191,36 +172,22 @@ void Config::_parseLocation(std::string option, std::map<const std::string, std:
 	_server[_server.size() - 1]._location.push_back(Location());
 	_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1] = (Location());
 	_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._path = location;
-	// std::cout << _server[_server.size() - 1]._location[location]._location << std::endl;
-
-	(void)option;
-	(void)config_info;
-	(void)line;
 }
 
-void Config::_parseIndex(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
-	// std::string	  index = config_info["index"];
-	// std::ifstream try_file;
-	// std::string	  path_to_file;
+void Config::_parseIndex(std::map<const std::string, std::string>& config_info) {
+	std::string	  index = config_info["index"];
+	std::ifstream try_file;
+	std::string	  path_to_file;
 
-	// cut_till_collon(index);
-	// path_to_file = _location[_location.size() - 1 - 1].getLocation() + "/" + index;
-	// try_file.open(path_to_file);
-	// if (!try_file.is_open())
-	// 	exit_with::e_perror("config error: index");
-	// try_file.close();
-	(void)option;
-	(void)config_info;
-	(void)line;
+	cut_till_collon(index);
+	path_to_file = _server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._path + "/" + index;
+	try_file.open(path_to_file);
+	if (!try_file.is_open())
+		exit_with::e_perror("config error: index");
+	try_file.close();
 }
 
-void Config::_parseServer(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
-	(void)option;
-	(void)config_info;
-	(void)line;
-}
-
-void Config::_parseAutoIndex(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+void Config::_parseAutoIndex(std::map<const std::string, std::string>& config_info) {
 	std::string autoIndex = config_info["autoindex"];
 
 	cut_till_collon(autoIndex);
@@ -230,11 +197,9 @@ void Config::_parseAutoIndex(std::string option, std::map<const std::string, std
 		_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._autoIndex = autoIndex;
 	else
 		_server[_server.size() - 1]._autoIndex = autoIndex;
-	(void)option;
-	(void)line;
 }
 
-void Config::_parseCgi(std::string option, std::map<const std::string, std::string>& config_info, std::string line) {
+void Config::_parseCgi(std::map<const std::string, std::string>& config_info) {
 	std::string cgi = config_info["cgi"];
 
 	cut_till_collon(cgi);
@@ -246,8 +211,5 @@ void Config::_parseCgi(std::string option, std::map<const std::string, std::stri
 		_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._cgiPath.second = path;
 	} else
 		exit_with::e_perror("config error: cgi");
-		// std::cout << _server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._cgiPath.first << " | " << _server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._cgiPath.second << std::endl;
-	(void)config_info;
-	(void)option;
-	(void)line;
+	// std::cout << _server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._cgiPath.first << " | " << _server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._cgiPath.second << std::endl;
 }

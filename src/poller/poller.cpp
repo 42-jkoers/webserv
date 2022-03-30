@@ -142,7 +142,7 @@ Client::Chunk_status Client::_append_chunk(size_t bytes_read) {
 void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 	if (_parse_status <= HEADER_IN_PROGRESS &&
 		_buf.size() > 4 &&
-		!strcmp(&_buf.data()[_buf.size() - 4], "\r\n\r\n")) {
+		!strncmp(&_buf.data()[_buf.size() - 4], "\r\n\r\n", 4)) {
 		request.parse_header(pfd, _buf.data());
 		_buf.clear();
 		_parse_status = HEADER_DONE;

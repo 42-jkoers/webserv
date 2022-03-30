@@ -50,7 +50,8 @@ fd_t server_socket(IP_mode ip_mode, uint16_t port) {
 	if (rc < 0)
 		exit_with::e_perror("Cannot bind to port");
 
-	if (fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | O_NONBLOCK) == -1)
+	// if (fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | O_NONBLOCK) == -1) // hopefully this is equivalent to the line below
+	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
 		exit_with::e_perror("Cannot set non blocking");
 	if (listen(fd, 128) < 0) // TODO: what should this number be? 128 is maximum
 		exit_with::e_perror("Cannot listen on port");

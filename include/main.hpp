@@ -34,6 +34,16 @@ void e_perror(const std::string& msg);
 void message(const std::string& msg);
 
 } // namespace exit_with
+void print_escaped(const char* s, size_t n, std::string label = "");
+
+namespace Color {
+
+static const char DEFAULT[] = "\033[0m";
+static const char RED[] = "\033[31m";
+static const char GREEN[] = "\033[32m";
+static const char BLUE[] = "\033[34m";
+
+} // namespace Color
 
 namespace std_ft {
 

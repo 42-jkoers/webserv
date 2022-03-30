@@ -2,6 +2,7 @@
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
+#include <ostream>
 
 namespace exit_with {
 
@@ -16,3 +17,24 @@ void message(const std::string& msg) {
 }
 
 } // namespace exit_with
+
+void print_escaped(const char* s, size_t n, std::string label) {
+	static const std::string hidden = "\a\b\f\n\r\t\v";
+	static const std::string print = "abfnrtv";
+	size_t					 h;
+
+	if (label.length())
+		std::cout << label << ": <";
+	for (size_t i = 0; i < n; i++) {
+		if ((h = hidden.find(s[i])) != std::string::npos)
+			std::cout << Color::BLUE << "\\" << print[h] << Color::DEFAULT;
+		else if (!std::isprint(s[i]))
+			std::cout << Color::BLUE << "0x" << std::hex << std::uppercase << static_cast<int>(s[i]) << Color::DEFAULT;
+		else
+			std::cout << s[i];
+	}
+	if (label.length())
+		std::cout << ">" << std::endl;
+	else
+		std::cout << std::ends;
+}

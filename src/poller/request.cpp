@@ -98,16 +98,16 @@ int Request::_parse_host() {
 	}
 	// TODO: refactor: to other class
 	// loop over servers and check for valid host name and port
-	for (std::vector<Config::Server>::iterator it2 = g_config._server.begin(); it2 != g_config._server.end(); ++it2) {
-		if (it2->_serverName == it->second.host) {
-			for (std::vector<uint32_t>::iterator it3 = it2->_port.begin(); it3 != it2->_port.end(); ++it3) {
-				if (it->second.port == *it3)
-					return 0;
-			}
-			return _set_response_code(400); // TODO: not sure if correct port is needed
-		}
-	}
-	return _set_response_code(400); // TODO: not sure if correct server name is needed
+	// for (std::vector<Config::Server>::iterator it2 = g_config._server.begin(); it2 != g_config._server.end(); ++it2) {
+	// 	if (it2->_serverName == it->second.host) {
+	// 		for (std::vector<uint32_t>::iterator it3 = it2->_port.begin(); it3 != it2->_port.end(); ++it3) {
+	// 			if (it->second.port == *it3)
+	// 				return 0;
+	// 		}
+	// 		return _set_response_code(400); // TODO: not sure if correct port is needed
+	// 	}
+	// }
+	return 0; // TODO: not sure if correct server name is needed
 }
 
 /*

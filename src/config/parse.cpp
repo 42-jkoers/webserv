@@ -67,14 +67,20 @@ void cut_till_bracket(std::string& line) {
 
 void Config::_parseServerName(std::map<const std::string, std::string>& config_info) {
 	std::string serverName = config_info["server_name"];
-	size_t		split;
-
+	size_t i = 0;
 	cut_till_collon(serverName);
-	split = serverName.find_first_of(" \t");
-	_server[_server.size() - 1]._serverName = serverName.substr(0, split);
-	split = serverName.find_last_of("\t ");
-	_server[_server.size() - 1]._serverUrl = serverName.substr(split + 1, serverName.size());
-	// std::cout << config.get_serverName() << "\\" << config.get_serverUrl() << std::endl;
+	while (i < serverName.length() && i != std::string::npos) {
+		if (serverName[i] != ' ' && serverName[i] != '\t') {
+			_server[_server.size() - 1]._serverName.push_back(serverName.substr(i, serverName.find_first_of(" \t", i) - i));
+			i = serverName.find_first_of(" \t", i);
+			if (i == std::string::npos)
+				break;
+		}
+		i++;
+	}
+	// for (size_t j = 0; j < _server[_server.size() - 1]._serverName.size(); j++) {
+	// 	std::cout << _server[_server.size() - 1]._serverName[j] << std::endl;
+	// }
 }
 
 /*

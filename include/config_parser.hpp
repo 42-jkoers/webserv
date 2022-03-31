@@ -80,7 +80,7 @@ class Config {
 		// READ ONLY!!!!!!!
 		std::vector<uint32_t>		  _port;
 		std::vector<std::string>	  _ip;
-		std::string					  _serverName;
+		std::vector<std::string>	  _serverName;
 		std::string					  _serverUrl;
 		std::string					  _root;
 		std::string					  _autoIndex;

@@ -153,7 +153,7 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 			_body_type = CHUNKED;
 		else {
 			_parse_status = FINISHED;
-			print();
+			// print();
 		}
 		return;
 	}

@@ -25,14 +25,15 @@ class Request {
 	std::string							uri_raw;
 	std::string							http_version;
 	std::string							path;
-	std::map<std::string, std::string>	queries;
+	std::string							absolute_form;
+	std::string							queries;
 	std::string							fragment;
+	size_t								server_index;
 
   private:
 	std::string						   _raw;
 	std::string						   _whitespaces;
 	std::string						   _crlf;
-	std::string						   _vchar_no_delimiter;
 	std::map<std::string, std::string> _request_line;
 	std::vector<char>				   _body;
 	int								   _parse_request_line();
@@ -40,7 +41,7 @@ class Request {
 	int								   _parse_field_values();
 	int								   _parse_host();
 	std::string						   _str_tolower(std::string& str);
-	int								   _set_code_and_return(int ret);
+	int								   _set_response_code(int ret);
 	int								   _parse_URI();
 
 	// disabled

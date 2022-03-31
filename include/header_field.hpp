@@ -8,7 +8,7 @@ enum Type {
 
 class Header_field {
   public:
-	// Header_field();
+	Header_field(){};
 	Header_field(std::string name, std::string raw_value);
 	~Header_field();
 	void add_value(std::string value);

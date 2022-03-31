@@ -10,10 +10,9 @@ Request::~Request() {
 
 void Request::reset() {
 	response_code = 200;
-	port = 80; // default if no port is specified in host header field
+	port = 8080; // default if no port is specified in host header field
 	_crlf = "\r\n";
 	_whitespaces = " \t";
-	_vchar_no_delimiter = "abcdefghijklmnopqrstuvwxyz0123456789!#$%&’*+-.^_‘| ̃";
 	header_fields.clear();
 }
 
@@ -27,6 +26,7 @@ void Request::parse_header(const pollfd& pfd, const std::string& raw) {
 		return;
 	if (_parse_field_values() == 1)
 		return;
+	// TODO: some checks to another class; only request error codes here
 	if (has_name("content-length") && get_content_length() < 0) {
 		response_code = 400;
 		return;
@@ -81,11 +81,11 @@ int Request::_parse_host() {
 	size_t colon;
 
 	if (!has_name("host"))
-		return _set_code_and_return(400);
+		return _set_response_code(400);
 	std::map<std::string, Header_field>::iterator it = header_fields.find("host");
 	// check valid field-value
 	if (it->second.size_values != 1)
-		return _set_code_and_return(400);
+		return _set_response_code(400);
 	colon = it->second.values[0].find_first_of(":");
 	it->second.host = it->second.values[0].substr(0, colon); // if colon is string::npos, all characters until the end of the string
 	if (colon + 1 == std::string::npos) {
@@ -94,8 +94,9 @@ int Request::_parse_host() {
 	if (colon != std::string::npos) {
 		colon++;
 		if (parse_int(it->second.port, it->second.values[0].substr(colon)) == 0)
-			return _set_code_and_return(400);
+			return _set_response_code(400);
 	}
+	// TODO: refactor: to other class
 	// loop over servers and check for valid host name and port
 	for (std::vector<Config::Server>::iterator it2 = g_config._server.begin(); it2 != g_config._server.end(); ++it2) {
 		if (it2->_serverName == it->second.host) {
@@ -103,10 +104,10 @@ int Request::_parse_host() {
 				if (it->second.port == *it3)
 					return 0;
 			}
-			return _set_code_and_return(400); // TODO: not sure if correct port is needed
+			return _set_response_code(400); // TODO: not sure if correct port is needed
 		}
 	}
-	return _set_code_and_return(400); // TODO: not sure if correct server name is needed
+	return _set_response_code(400); // TODO: not sure if correct server name is needed
 }
 
 /*
@@ -144,13 +145,13 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 		name = _str_tolower(name);
 		if (name.compare("host") == 0) {
 			if (has_name(name)) // if there is already a host in the header class, error
-				return _set_code_and_return(400);
+				return _set_response_code(400);
 		}
 		if (colon == std::string::npos) { // skip line without ':'
 			continue;
 		}
 		if (line.find_first_of(_whitespaces) < colon) { // check for whitespace in between field name and ":": 400 (Bad Request)
-			return _set_code_and_return(400);
+			return _set_response_code(400);
 		}
 		// get value
 		start = line.find_first_not_of(_whitespaces, colon + 1); // skip optional whitespaces
@@ -160,12 +161,12 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 		value = line.substr(start, line.find_last_not_of(_whitespaces) - start + 1); // remove trailing whitespaces, values can be case-sensitive
 		// save name and value
 		Header_field new_header_field(name, value);
-		header_fields.insert(std::pair<std::string, Header_field>(name, new_header_field));
+		header_fields[name] = new_header_field;
 	}
 	return 0;
 }
 
-int Request::_set_code_and_return(int code) {
+int Request::_set_response_code(int code) {
 	response_code = code;
 	return 1;
 }
@@ -173,40 +174,27 @@ int Request::_set_code_and_return(int code) {
 /*
 URI = scheme ":" ["//" authority] path ["?" query] ["#" fragment]
 authority = [userinfo "@"] host [":" port]
-request-URI:
+request-URI: path ["?" query]
 https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 */
 int Request::_parse_URI() {
 	method = _request_line["method"];
 	uri_raw = _request_line["URI"];
 	http_version = _request_line["HTTP_version"];
-	size_t		end;
-	size_t		prev;
-	std::string key;
-	std::string value;
+	size_t prev;
 
 	prev = 0;
 	if (uri_raw.find("/") != std::string::npos && uri_raw[0] == '/') { // origin form
 		prev = uri_raw.find_first_of("?");
 		path = uri_raw.substr(0, prev);
-		while (prev != std::string::npos) {
-			prev++;
-			end = uri_raw.find_first_of("=", prev);
-			if (end == std::string::npos) {
-				break;
-			}
-			key = uri_raw.substr(prev, end - prev);
-			prev = end + 1;
-			end = uri_raw.find_first_of("&", end); // if std::string::npos-> until end of string and breaks next round
-			value = uri_raw.substr(prev, end - prev);
-			queries[key] = value;
-			prev = end;
-		}
+		if (prev == std::string::npos)
+			return 0;
+		prev++;
+		queries = uri_raw.substr(prev);
 	} else if (uri_raw.find(":") != std::string::npos && uri_raw[0] != ':') { // absolute form
-		;
+		absolute_form += uri_raw;
 	} else {
-		response_code = 400;
-		return 1;
+		return _set_response_code(400);
 	}
 	return 0;
 }
@@ -229,22 +217,22 @@ int Request::_parse_request_line() {
 	prev = 0;
 	end = _raw.find(_crlf);
 	if (end == std::string::npos)
-		return _set_code_and_return(301);
+		return _set_response_code(301);
 	for (size_t i = 0; i < components.size(); i++) {
 		delimiter = _raw.find_first_of(" \r", prev);
 		if (components[i] != "HTTP_version" && delimiter == end)
-			return _set_code_and_return(301);
+			return _set_response_code(301);
 		if (delimiter - prev <= 0)
-			return _set_code_and_return(400); // TODO: if URI is empty -> error; but this should probably be checked later
+			return _set_response_code(400); // TODO: if URI is empty -> error; but this should probably be checked later
 		_request_line[components[i]] = _raw.substr(prev, delimiter - prev);
 		prev = delimiter + 1;
 	}
 	if (delimiter != end)
-		return _set_code_and_return(301);
+		return _set_response_code(301);
 	if (std::find(methods.begin(), methods.end(), _request_line["method"]) == methods.end()) // TODO: invalid request line, decide: 400 bad request/301 moved permanently
-		return _set_code_and_return(301);
+		return _set_response_code(301);
 	if (_request_line["HTTP_version"].compare("HTTP/1.1") != 0)
-		return _set_code_and_return(505); // TODO: generate representation why version is not supported & what is supported [RFC7231; 6.6.6]
+		return _set_response_code(505); // TODO: generate representation why version is not supported & what is supported [RFC7231; 6.6.6]
 	if (_parse_URI() == 1)
 		return 1;
 	return 0;
@@ -322,15 +310,16 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 			   << "[" << it->second << "]" << std::endl;
 	}
 	if (!rhs.path.empty()) {
-		output << "Path---------------------" << std::endl;
-		output << rhs.path << std::endl;
+		output << "Path: ";
+		output << "[" << rhs.path << "]" << std::endl;
 	}
 	if (!rhs.queries.empty()) {
-		output << "Queries---------------------" << std::endl;
-		for (std::map<std::string, std::string>::const_iterator it = rhs.queries.begin(); it != rhs.queries.end(); ++it) {
-			output << "[" << it->first << "]: "
-				   << "[" << it->second << "]" << std::endl;
-		}
+		output << "Queries: ";
+		output << "[" << rhs.queries << "]" << std::endl;
+	}
+	if (!rhs.absolute_form.empty()) {
+		output << "Absolute form: ";
+		output << "[" << rhs.absolute_form << "]" << std::endl;
 	}
 	output << "Request header fields----" << std::endl;
 	for (std::map<std::string, Header_field>::const_iterator it = rhs.header_fields.begin(); it != rhs.header_fields.end(); ++it) {

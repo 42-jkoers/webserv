@@ -1,2 +1,5 @@
 #!/bin/bash
-echo -ne "HTTP/1.1 200 OK\r\nContent-length: 15\r\n\r\nhello from bash"
+echo -ne "Content-type: text/plain\r\n\r\n"
+echo -ne "hello from bash"
+echo -ne "$SERVER_PROTOCOL"
+echo -ne "aaa"

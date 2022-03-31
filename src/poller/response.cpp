@@ -29,6 +29,9 @@ void Response::text(uint32_t code, const std::string& message) {
 void Response::cgi(const std::string& path, const std::string& path_info, const std::string& query_string) {
 	pid_t pid = fork();
 	if (pid == 0) { // child
+		static std::string start_header = header_template(200);
+		write(_fd, start_header.data(), start_header.size());
+
 		dup2(_fd, STDERR_FILENO);
 		dup2(_fd, STDOUT_FILENO);
 
@@ -38,14 +41,11 @@ void Response::cgi(const std::string& path, const std::string& path_info, const 
 		env.push_back("REQUEST_METHOD=GET");		 // TODO: allow POST
 		env.push_back("SCRIPT_NAME=" + path);		 //
 		env.push_back("SERVER_NAME=127.0.0.1");		 // TODO: read from config
-		env.push_back("SERVER_PORT=");				 // TODO: read from request
+		env.push_back("SERVER_PORT=8080");			 // TODO: read from request
 		env.push_back("SERVER_PROTOCOL=HTTP/1.1");	 //
 		env.push_back("SERVER_SOFTWARE=webserv/42"); //
-
-		if (path_info.length())
-			env.push_back("PATH_INFO=" + path_info);
-		if (query_string.length())
-			env.push_back("QUERY_STRING=" + query_string);
+		env.push_back("PATH_INFO=" + path_info);
+		env.push_back("QUERY_STRING=" + query_string);
 
 		std::vector<const char*> envp = vector_to_c_array(env);
 		if (execve(path.c_str(), NULL, (char* const*)envp.data()))

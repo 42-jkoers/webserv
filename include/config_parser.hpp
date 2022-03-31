@@ -32,7 +32,7 @@ so it will be either:
 class Config {
   public:
 	Config(int argc, char** argv);
-	Config() {};
+	Config(){};
 	~Config();
 	uint32_t	get_port() const;
 	std::string get_root() const;
@@ -46,15 +46,15 @@ class Config {
 		std::string getLocation() const;
 		void		setLocation(const std::string location);
 		// READONLY!!!!!
-		std::string					  _path;
-		std::string					  _root;
-		std::vector<std::string*>	  _methods;
-		std::string					  _autoIndex;
-		std::string					  _defaultfile;
-		std::string					  _cgi;
-		std::vector<uint32_t>		  _port;
-		std::vector<std::string>	  _ip;
-		std::map<size_t, std::string> _error_pages;
+		std::string							_path;
+		std::string							_root;
+		std::vector<std::string*>			_methods;
+		std::string							_autoIndex;
+		std::string							_defaultfile;
+		std::pair<std::string, std::string> _cgiPath;
+		std::vector<uint32_t>				_port;
+		std::vector<std::string>			_ip;
+		std::map<size_t, std::string>		_error_pages;
 
 	  private:
 	};
@@ -78,41 +78,40 @@ class Config {
 		void		set_clientMaxBodySize(std::string size);
 		std::string get_clientMaxBodySize() const;
 		// READ ONLY!!!!!!!
-		std::vector<uint32_t>	 _port;
-		std::vector<std::string> _ip;
-		std::string				 _serverName;
-		std::string				 _serverUrl;
-		std::string				 _root;
+		std::vector<uint32_t>		  _port;
+		std::vector<std::string>	  _ip;
+		std::string					  _serverName;
+		std::string					  _serverUrl;
+		std::string					  _root;
 		std::string					  _autoIndex;
 		std::string					  _client_max_body_size;
 		std::map<size_t, std::string> _error_pages;
 		std::vector<Location>		  _location;
 		std::vector<std::string>	  _methods;
 		size_t						  _number_methods;
+		std::string					  _cgiPath;
 
 	  private:
 	};
 	std::vector<Server> _server;
-	size_t				_current_server;
-	bool				_location_check;
-	size_t				_current_location;
-	bool				_server_check;
 
   private:
-	void _parseServerName(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void _parseListen(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void _parseErrorPage(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void _parseClientMaxBodySize(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void _parseAllowedMethods(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void _parseRoot(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void _parseIndex(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void _parseAutoIndex(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void _parseServer(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
-	void _parseLocation(std::string option, std::map<const std::string, std::string>& config_info, std::string line);
+	void _parseServerName(std::map<const std::string, std::string>& config_info);
+	void _parseListen(std::map<const std::string, std::string>& config_info);
+	void _parseErrorPage(std::map<const std::string, std::string>& config_info);
+	void _parseClientMaxBodySize(std::map<const std::string, std::string>& config_info);
+	void _parseAllowedMethods(std::map<const std::string, std::string>& config_info);
+	void _parseRoot(std::map<const std::string, std::string>& config_info);
+	void _parseIndex(std::map<const std::string, std::string>& config_info);
+	void _parseAutoIndex(std::map<const std::string, std::string>& config_info);
+	void _parseLocation(std::map<const std::string, std::string>& config_info);
+	void _parseCgi(std::map<const std::string, std::string>& config_info);
 	void _print_class();
 	void _config_parser(int argc, char** argv);
 	void _safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);
+	bool _server_check;
+	bool _location_check;
 };
 
 bool		  parse_int(unsigned int& output, const std::string& str);
-std::ostream& operator<<(std::ostream& stream, Config const *config);
+std::ostream& operator<<(std::ostream& stream, Config const& config);

@@ -12,7 +12,6 @@
 #include <sys/socket.h>
 
 Config g_config;
-//
 
 void on_request(Client& client) {
 	// client.print();
@@ -33,7 +32,6 @@ int main(int argc, char** argv) {
 			poller.add_server(mode_ipv6, *port);
 		}
 	}
-
 	poller.start(on_request);
 	return 0;
 }

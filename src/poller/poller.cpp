@@ -42,8 +42,8 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client)) {
 	client.read_pollfd(pfd);
 	if (client.parse_status() == Client::FINISHED) {
 		if (client.request.response_code >= 203) {
-			Response response(pfd.fd, client.request.response_code);
-			response.send_response("Error!\n"); // TODO
+			Response response(pfd.fd);
+			response.text(client.request.response_code, "Error!\n"); // TODO
 		} else
 			on_request(client);
 		client.reset();
@@ -153,7 +153,6 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 			_body_type = CHUNKED;
 		else {
 			_parse_status = FINISHED;
-			// print();
 		}
 		return;
 	}

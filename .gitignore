@@ -3,3 +3,4 @@ obj/
 test.cpp
 .DS_Store
 /webserv
+*.dSYM

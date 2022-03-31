@@ -109,8 +109,8 @@ class Config {
 	void _print_class();
 	void _config_parser(int argc, char** argv);
 	void _safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);
-	bool				_server_check;
-	bool				_location_check;
+	bool _server_check;
+	bool _location_check;
 };
 
 bool		  parse_int(unsigned int& output, const std::string& str);

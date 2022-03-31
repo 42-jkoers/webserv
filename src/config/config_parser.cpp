@@ -3,6 +3,8 @@
 #include <sstream>
 
 // true on success
+
+
 bool parse_int(unsigned int& output, const std::string& str) {
 	char			  c;
 	std::stringstream ss(str);
@@ -100,7 +102,7 @@ std::ostream& operator<<(std::ostream& stream, Config const& config) {
 		for (size_t k = 0; k < config._server[server]._port.size(); k++) {
 			stream << "IP = " << config._server[server]._ip[k] << std::endl;
 		}
-		stream << "SERVERNAME = " << config._server[server]._serverName << std::endl;
+		// stream << "SERVERNAME = " << config._server[server]._serverName << std::endl;
 		stream << "SEVERURL = " << config._server[server]._serverUrl << std::endl;
 		stream << "ROOT = " << config._server[server]._autoIndex << std::endl;
 		stream << "CLIENT_MAX_BODY_SIZE = " << config._server[server]._client_max_body_size << std::endl;

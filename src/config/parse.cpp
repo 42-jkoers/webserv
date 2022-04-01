@@ -65,7 +65,7 @@ void cut_till_bracket(std::string& line) {
 	line = line.substr(0, end + 1); // getting rid of the ';' and whitespace
 }
 
-void Config::_parseServerName(std::map<const std::string, std::string>& config_info) {
+void Config::_parse_server_name(std::map<const std::string, std::string>& config_info) {
 	std::string serverName = config_info["server_name"];
 	size_t		i = 0;
 	cut_till_collon(serverName);
@@ -93,7 +93,7 @@ void Config::_parseServerName(std::map<const std::string, std::string>& config_i
  if there is no port the port will be set to 8080
  if there is no ip the ip will be set to 0.0.0.0
  */
-void Config::_parseListen(std::map<const std::string, std::string>& config_info) {
+void Config::_parse_listen(std::map<const std::string, std::string>& config_info) {
 	std::string listen = config_info["listen"];
 	size_t		i = 0;
 	size_t		check_dots = 0;
@@ -145,7 +145,7 @@ void Config::_parseListen(std::map<const std::string, std::string>& config_info)
 		_server[_server.size() - 1]._port.push_back(port);
 }
 
-void Config::_parseErrorPage(std::map<const std::string, std::string>& config_info) {
+void Config::_parse_error_page(std::map<const std::string, std::string>& config_info) {
 	std::string error = config_info["error_page"];
 	size_t		space;
 
@@ -163,7 +163,7 @@ void Config::_parseErrorPage(std::map<const std::string, std::string>& config_in
 	// std::cout << _server[_server.size() - 1]._error_pages[error_code] << std::endl;
 }
 
-void Config::_parseClientMaxBodySize(std::map<const std::string, std::string>& config_info) {
+void Config::_parse_client_max_body_size(std::map<const std::string, std::string>& config_info) {
 	std::string body_size = config_info["client_max_body_size"];
 	cut_till_collon(body_size);
 	if (body_size[body_size.size() - 1] != 'M' && body_size[body_size.size() - 1] != 'm')
@@ -171,7 +171,7 @@ void Config::_parseClientMaxBodySize(std::map<const std::string, std::string>& c
 	_server[_server.size() - 1]._client_max_body_size = body_size;
 }
 
-void Config::_parseAllowedMethods(std::map<const std::string, std::string>& config_info) {
+void Config::_parse_allowed_methods(std::map<const std::string, std::string>& config_info) {
 	std::string methods = config_info["allowed_methods"];
 	size_t		i = 0;
 	size_t		j = 0;
@@ -205,7 +205,7 @@ bool IsPathExist(const std::string& s) {
 	return (stat(s.c_str(), &buffer) == 0);
 }
 
-void Config::_parseLocation(std::map<const std::string, std::string>& config_info) {
+void Config::_parse_location(std::map<const std::string, std::string>& config_info) {
 	std::string location = config_info["location"];
 	_location_check = true;
 	cut_till_bracket(location);
@@ -220,7 +220,7 @@ void Config::_parseLocation(std::map<const std::string, std::string>& config_inf
 	_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._path = location;
 }
 
-void Config::_parseIndex(std::map<const std::string, std::string>& config_info) {
+void Config::_parse_index(std::map<const std::string, std::string>& config_info) {
 	std::string	  index = config_info["index"];
 	std::ifstream try_file;
 	std::string	  path_to_file;
@@ -233,7 +233,7 @@ void Config::_parseIndex(std::map<const std::string, std::string>& config_info) 
 	try_file.close();
 }
 
-void Config::_parseAutoIndex(std::map<const std::string, std::string>& config_info) {
+void Config::_parse_auto_index(std::map<const std::string, std::string>& config_info) {
 	std::string autoIndex = config_info["autoindex"];
 
 	cut_till_collon(autoIndex);
@@ -245,7 +245,7 @@ void Config::_parseAutoIndex(std::map<const std::string, std::string>& config_in
 		_server[_server.size() - 1]._autoIndex = autoIndex;
 }
 
-void Config::_parseCgi(std::map<const std::string, std::string>& config_info) {
+void Config::_parse_cgi(std::map<const std::string, std::string>& config_info) {
 	std::string cgi = config_info["cgi"];
 
 	cut_till_collon(cgi);

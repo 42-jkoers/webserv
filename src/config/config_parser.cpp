@@ -22,16 +22,16 @@ void tokenizer(std::string option, std::map<const std::string, std::string>& con
 void Config::_safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options) {
 	typedef void (Config::*Jump_table)(std::map<const std::string, std::string>&);
 	const static Jump_table jump_table[] = {
-		&Config::_parseServerName,
-		&Config::_parseListen,
-		&Config::_parseErrorPage,
-		&Config::_parseClientMaxBodySize,
-		&Config::_parseAllowedMethods,
+		&Config::_parse_server_name,
+		&Config::_parse_listen,
+		&Config::_parse_error_page,
+		&Config::_parse_client_max_body_size,
+		&Config::_parse_allowed_methods,
 		&Config::_parseRoot,
-		&Config::_parseLocation,
-		&Config::_parseAutoIndex,
-		&Config::_parseIndex,
-		&Config::_parseCgi};
+		&Config::_parse_location,
+		&Config::_parse_auto_index,
+		&Config::_parse_index,
+		&Config::_parse_cgi};
 	for (size_t i = 0; i < options.size(); i++) {
 		if (line.find("server") != std::string::npos && line.find("{") != std::string::npos) {
 			_server.push_back(Server());

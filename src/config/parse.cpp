@@ -67,7 +67,7 @@ void cut_till_bracket(std::string& line) {
 
 void Config::_parseServerName(std::map<const std::string, std::string>& config_info) {
 	std::string serverName = config_info["server_name"];
-	size_t i = 0;
+	size_t		i = 0;
 	cut_till_collon(serverName);
 	while (i < serverName.length() && i != std::string::npos) {
 		if (serverName[i] != ' ' && serverName[i] != '\t') {

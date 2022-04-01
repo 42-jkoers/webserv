@@ -34,8 +34,7 @@ class Config {
 	Config(int argc, char** argv);
 	Config(){};
 	~Config();
-	uint32_t	get_port() const;
-	std::string get_root() const;
+
 	class Location {
 		friend class Config;
 		friend class Server;
@@ -65,19 +64,8 @@ class Config {
 	  public:
 		Server(){};
 		~Server(){};
-		void		set_port(unsigned int set);
-		void		set_ip(std::string ip_adres);
-		std::string get_ip() const;
-		void		set_serverName(std::string name);
-		std::string get_serverName() const;
-		void		set_serverUrl(std::string url);
-		std::string get_serverUrl() const;
-		std::string get_root() const;
-		void		set_errorPages(size_t error_code, std::string error);
-		std::string get_errorPages(size_t error) const;
-		void		set_clientMaxBodySize(std::string size);
-		std::string get_clientMaxBodySize() const;
-		// READ ONLY!!!!!!!
+
+		// READONLY
 		std::vector<uint32_t>		  _port;
 		std::vector<std::string>	  _ip;
 		std::vector<std::string>	  _serverName;
@@ -113,5 +101,4 @@ class Config {
 	bool _location_check;
 };
 
-bool		  parse_int(unsigned int& output, const std::string& str);
 std::ostream& operator<<(std::ostream& stream, Config const& config);

@@ -2,16 +2,6 @@
 #include "main.hpp"
 #include <sstream>
 
-// true on success
-
-
-bool parse_int(unsigned int& output, const std::string& str) {
-	char			  c;
-	std::stringstream ss(str);
-	ss >> output;
-	return !(ss.fail() || ss.get(c));
-}
-
 Config::Config(int argc, char** argv) {
 	_config_parser(argc, argv);
 	(void)argc;

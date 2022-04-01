@@ -5,8 +5,7 @@ class Response {
   public:
 	Response(fd_t fd, uint32_t ret);
 	~Response();
-	void		send_response(const std::string& message);
-	std::string get_index(Config& config);
+	void send_response(const std::string& message);
 
   private:
 	fd_t	 _fd;

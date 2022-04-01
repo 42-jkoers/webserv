@@ -246,6 +246,8 @@ bool Request::has_name(const std::string& name) const { // is the name in one of
 
 bool Request::has_value(const std::string& name, const std::string& value) const { // is the value in one of the values of the Header_field's name
 	// assert if header field with this name does not exists
+	if (!has_name(name))
+		return false;
 	assert(header_fields.find(name) != header_fields.end());
 	for (std::vector<std::string>::const_iterator it = header_fields.find(name)->second.values.begin(); it != header_fields.find(name)->second.values.end(); ++it) {
 		if (*it == value)

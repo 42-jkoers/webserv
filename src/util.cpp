@@ -16,6 +16,12 @@ void message(const std::string& msg) {
 	exit(EXIT_FAILURE);
 }
 
+void e_errno(const std::string& msg) {
+	std::cout << msg << std::endl;
+	std::cout << std::strerror(errno) << std::endl;
+	exit(EXIT_FAILURE);
+}
+
 } // namespace exit_with
 
 void print_escaped(const char* s, size_t n, std::string label) {
@@ -37,4 +43,15 @@ void print_escaped(const char* s, size_t n, std::string label) {
 		std::cout << ">" << std::endl;
 	else
 		std::cout << std::ends;
+}
+
+// Returns null terminated array of pointers to strings
+// Can be used like this: char **env = vector_to_c_array(v).data();
+std::vector<const char*> vector_to_c_array(const std::vector<const std::string>& v) {
+	std::vector<const char*> cv;
+	cv.reserve(v.size() + 1);
+	for (size_t i = 0; i < v.size(); i++)
+		cv.push_back(v[i].c_str());
+	cv.push_back(NULL);
+	return cv;
 }

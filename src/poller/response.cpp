@@ -1,61 +1,69 @@
 #include "response.hpp"
+#include "constants.hpp"
+#include "file_system.hpp"
 
-Response::Response(fd_t fd, uint32_t ret) : _fd(fd), _response_code(ret) {
+Response::Response(fd_t fd) : _fd(fd) {
 }
 
 Response::~Response() {
+	close(_fd);
+}
+
+// returns minimum starting paramters of response header
+static std::string header_template(uint32_t code) {
+	std::string header = "HTTP/1.1 ";
+	header += std_ft::to_string(code);
+	header += " ";
+	header += g_constants.to_response_string(code);
+	return header;
 }
 
 // TODO: optimize
-void Response::send_response(const std::string& message) {
-	std::map<uint32_t, std::string> m; // TODO: make this static
-	m[100] = "Continue";
-	m[101] = "Switching Protocols";
-	m[200] = "OK";
-	m[201] = "Created";
-	m[202] = "Accepted";
-	m[203] = "Non-Authoritative Information";
-	m[204] = "No Content";
-	m[205] = "Reset Content";
-	m[206] = "Partial Content";
-	m[300] = "Multiple Choices";
-	m[301] = "Moved Permanently";
-	m[302] = "Found";
-	m[303] = "See Other";
-	m[304] = "Not Modified";
-	m[305] = "Use Proxy";
-	m[307] = "Temporary Redirect";
-	m[400] = "Bad Request";
-	m[401] = "Unauthorized";
-	m[402] = "Payment Required";
-	m[403] = "Forbidden";
-	m[404] = "Not Found";
-	m[405] = "Method Not Allowed";
-	m[406] = "Not Acceptable";
-	m[407] = "Proxy Authentication Required";
-	m[408] = "Request Timeout";
-	m[409] = "Conflict";
-	m[410] = "Gone";
-	m[411] = "Length Required";
-	m[412] = "Precondition Failed";
-	m[413] = "Payload Too Large";
-	m[414] = "URI Too Long";
-	m[415] = "Unsupported Media Type";
-	m[416] = "Range Not Satisfiable";
-	m[417] = "Expectation Failed";
-	m[426] = "Upgrade Required";
-	m[500] = "Internal Server Error";
-	m[501] = "Not Implemented";
-	m[502] = "Bad Gateway";
-	m[503] = "Service Unavailable";
-	m[504] = "Gateway Timeout";
-	m[505] = "HTTP Version Not Supported";
-
-	std::string response = "HTTP/1.1 ";
-	response += std_ft::to_string(_response_code);
-	response += " ";
-	response += m[_response_code];
+void Response::text(uint32_t code, const std::string& message) {
+	std::string response = header_template(code);
 	response += "\r\n\r\n";
 	response += message;
 	write(_fd, response.c_str(), response.length()); // TODO: error handling
+}
+
+void Response::cgi(const std::string& path, const std::string& path_info, const std::string& query_string) {
+	pid_t pid = fork();
+	if (pid == 0) { // child
+		static std::string start_header = header_template(200);
+		write(_fd, start_header.data(), start_header.size());
+
+		dup2(_fd, STDERR_FILENO);
+		dup2(_fd, STDOUT_FILENO);
+
+		std::vector<const std::string> env;
+		env.push_back("GATEWAY_INTERFACE=CGI/1.1");	 // TODO: what value
+		env.push_back("REMOTE_ADDR=127.0.0.1");		 // TODO: IP of the client
+		env.push_back("REQUEST_METHOD=GET");		 // TODO: allow POST
+		env.push_back("SCRIPT_NAME=" + path);		 //
+		env.push_back("SERVER_NAME=127.0.0.1");		 // TODO: read from config
+		env.push_back("SERVER_PORT=8080");			 // TODO: read from request
+		env.push_back("SERVER_PROTOCOL=HTTP/1.1");	 //
+		env.push_back("SERVER_SOFTWARE=webserv/42"); //
+		env.push_back("PATH_INFO=" + path_info);
+		env.push_back("QUERY_STRING=" + query_string);
+
+		std::vector<const char*> envp = vector_to_c_array(env);
+		if (execve(path.c_str(), NULL, (char* const*)envp.data()))
+			exit_with::e_errno("Could not start cgi script");
+
+		close(_fd);
+		close(STDOUT_FILENO);
+		close(STDERR_FILENO);
+		exit(0);
+	}
+}
+
+void Response::file(const std::string& path) {
+	std::string header = header_template(200);
+	std::string file = fs::read_file(path);
+	header += "Content-length: " + std_ft::to_string(file.size());
+	header += "\r\n\r\n";
+	write(_fd, header.data(), header.size());
+	// TODO wait for 100-Continue?
+	write(_fd, file.data(), file.size());
 }

@@ -1,5 +1,6 @@
 #include "main.hpp"
 #include "config_parser.hpp"
+#include "constants.hpp"
 #include "file_system.hpp"
 #include "poller.hpp"
 #include "request.hpp"
@@ -11,16 +12,21 @@
 #include <sys/poll.h>
 #include <sys/socket.h>
 
-Config g_config;
+Config			g_config;
+const Constants g_constants;
+//
 
 void on_request(Client& client) {
 	// client.print();
+	// std::cout << client.request << std::endl;
+	Response response(client.request.fd);
 
-	Response response(client.request.fd, 200);
-	if (client.request.has_name("user-agent") && client.request.has_value("user-agent", "curl"))
-		response.send_response("Hello curl\n");
+	if (client.request.get_request_line()["URI"].find("cgi") != std::string::npos)
+		response.cgi("./html/index.sh", "", "hello form bash");
+	else if (client.request.has_value("user-agent", "curl"))
+		response.text(200, "Hello curl\n");
 	else
-		response.send_response(fs::read_file("./html/upload.html"));
+		response.file("./html/upload.html");
 }
 
 int main(int argc, char** argv) {

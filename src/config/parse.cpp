@@ -65,13 +65,19 @@ void cut_till_bracket(std::string& line) {
 	line = line.substr(0, end + 1); // getting rid of the ';' and whitespace
 }
 
+/* How to check which server to connect to through server name
+1. exact name
+2. longest wildcard name starting with an asterisk, e.g. “*.example.org”
+3. longest wildcard name ending with an asterisk, e.g. “mail.*”
+*/
+
 void Config::_parse_server_name(std::map<const std::string, std::string>& config_info) {
 	std::string serverName = config_info["server_name"];
 	size_t		i = 0;
 	cut_till_collon(serverName);
 	while (i < serverName.length() && i != std::string::npos) {
 		if (serverName[i] != ' ' && serverName[i] != '\t') {
-			_server[_server.size() - 1]._serverName.push_back(serverName.substr(i, serverName.find_first_of(" \t", i) - i));
+			_servers[_servers.size() - 1].server_name.push_back(serverName.substr(i, serverName.find_first_of(" \t", i) - i));
 			i = serverName.find_first_of(" \t", i);
 			if (i == std::string::npos)
 				break;
@@ -89,7 +95,7 @@ void Config::_parse_server_name(std::map<const std::string, std::string>& config
  then it will count all the '.' to see if the ip adress is valid. And check if the char is actually a digit or not.
  errors if something isn't right.
  then sets the right position to actually safe the ip adress and the port
- checks if it should be safed in _location or in _server
+ checks if it should be safed in location or in _server
  if there is no port the port will be set to 8080
  if there is no ip the ip will be set to 0.0.0.0
  */
@@ -99,6 +105,7 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 	size_t		check_dots = 0;
 	size_t		check_ip = 0;
 
+	// std::cout << "hello I am here" << _servers.size() - 1 << std::endl;
 	cut_till_collon(listen);
 	if (strchr(listen.c_str(), '.') || strchr(listen.c_str(), ':')) {
 		while (i < listen.size()) {
@@ -117,17 +124,18 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 			i++;
 		}
 	}
-	uint32_t port;
-	size_t	 pos;
+	uint32_t			port;
+	size_t				pos;
+	std::vector<size_t> it;
 	if (strchr(listen.c_str(), ':'))
 		pos = config_info["listen"].find_first_of(":");
 	else
 		pos = listen.size();
 	if (check_ip != 0) {
 		if (_location_check == true)
-			_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._ip.push_back(listen.substr(0, pos));
+			_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].ip.push_back(listen.substr(0, pos));
 		else
-			_server[_server.size() - 1]._ip.push_back(listen.substr(0, pos));
+			_servers[_servers.size() - 1].ip.push_back(listen.substr(0, pos));
 		if (!strchr(listen.c_str(), ':'))
 			port = 8080;
 		else
@@ -135,14 +143,16 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 	} else {
 		parse_int(port, &config_info["listen"][0]);
 		if (_location_check == true)
-			_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._ip.push_back("0.0.0.0");
+			_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].ip.push_back("0.0.0.0");
 		else
-			_server[_server.size() - 1]._ip.push_back("0.0.0.0");
+			_servers[_servers.size() - 1].ip.push_back("0.0.0.0");
 	}
 	if (_location_check == true)
-		_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._port.push_back(port);
+		_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].port.push_back(port);
 	else
-		_server[_server.size() - 1]._port.push_back(port);
+		_servers[_servers.size() - 1].port.push_back(port);
+	_ports_servers[_servers[_servers.size() - 1].port[_servers[_servers.size() - 1].port.size() - 1]].push_back(_servers.size() - 1);
+	// std::cout << _servers[_servers.size() - 1].port[_servers[_servers.size() - 1].port.size() - 1] << std::endl;
 }
 
 void Config::_parse_error_page(std::map<const std::string, std::string>& config_info) {
@@ -157,10 +167,10 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 	std::stringstream sstream(error.substr(0, space).c_str());
 	sstream >> error_code;
 	if (_location_check == true)
-		_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
+		_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
 	else
-		_server[_server.size() - 1]._error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
-	// std::cout << _server[_server.size() - 1]._error_pages[error_code] << std::endl;
+		_servers[_servers.size() - 1].error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
+	// std::cout << _server[_server.size() - 1].error_pages[error_code] << std::endl;
 }
 
 void Config::_parse_client_max_body_size(std::map<const std::string, std::string>& config_info) {
@@ -168,7 +178,7 @@ void Config::_parse_client_max_body_size(std::map<const std::string, std::string
 	cut_till_collon(body_size);
 	if (body_size[body_size.size() - 1] != 'M' && body_size[body_size.size() - 1] != 'm')
 		exit_with::e_perror("config error: client_max_body_size");
-	_server[_server.size() - 1]._client_max_body_size = body_size;
+	_servers[_servers.size() - 1].client_max_body_size = body_size;
 }
 
 void Config::_parse_allowed_methods(std::map<const std::string, std::string>& config_info) {
@@ -177,27 +187,27 @@ void Config::_parse_allowed_methods(std::map<const std::string, std::string>& co
 	size_t		j = 0;
 
 	cut_till_collon(methods);
-	_server[_server.size() - 1]._methods.push_back("");
+	_servers[_servers.size() - 1].methods.push_back("");
 	while (i < methods.length()) {
 		if (methods[i] == '\t' || methods[i] == ' ') {
-			_server[_server.size() - 1]._methods.push_back("");
-			if (strncmp(_server[_server.size() - 1]._methods[j].c_str(), "GET", _server[_server.size() - 1]._methods[j].length()) != 0 && strncmp(_server[_server.size() - 1]._methods[j].c_str(), "POST", _server[_server.size() - 1]._methods[j].length()) != 0 && strncmp(_server[_server.size() - 1]._methods[j].c_str(), "SET", _server[_server.size() - 1]._methods[j].length()) != 0)
+			_servers[_servers.size() - 1].methods.push_back("");
+			if (strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "GET", _servers[_servers.size() - 1].methods[j].length()) != 0 && strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "POST", _servers[_servers.size() - 1].methods[j].length()) != 0 && strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "SET", _servers[_servers.size() - 1].methods[j].length()) != 0)
 				exit_with::e_perror("config error: methods");
 			j++;
 		} else
-			_server[_server.size() - 1]._methods[j].push_back(methods[i]);
+			_servers[_servers.size() - 1].methods[j].push_back(methods[i]);
 		i++;
 	}
-	if (strncmp(_server[_server.size() - 1]._methods[j].c_str(), "GET", _server[_server.size() - 1]._methods[j].length()) != 0 && strncmp(_server[_server.size() - 1]._methods[j].c_str(), "POST", _server[_server.size() - 1]._methods[j].length()) != 0 && strncmp(_server[_server.size() - 1]._methods[j].c_str(), "SET", _server[_server.size() - 1]._methods[j].length()) != 0)
+	if (strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "GET", _servers[_servers.size() - 1].methods[j].length()) != 0 && strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "POST", _servers[_servers.size() - 1].methods[j].length()) != 0 && strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "SET", _servers[_servers.size() - 1].methods[j].length()) != 0)
 		exit_with::e_perror("config error: methods");
-	_server[_server.size() - 1]._number_methods = j + 1;
+	_servers[_servers.size() - 1].number_methods = j + 1;
 }
 
 void Config::_parseRoot(std::map<const std::string, std::string>& config_info) {
 	std::string root = config_info["root"];
 
 	cut_till_collon(root);
-	_server[_server.size() - 1]._root = root;
+	_servers[_servers.size() - 1].root = root;
 }
 
 bool IsPathExist(const std::string& s) {
@@ -215,9 +225,9 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 		location.insert(0, "./");
 	if (!IsPathExist(location))
 		exit_with::e_perror("config error: location");
-	_server[_server.size() - 1]._location.push_back(Location());
-	_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1] = (Location());
-	_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._path = location;
+	_servers[_servers.size() - 1].location.push_back(Location());
+	_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1] = (Location());
+	_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1]._path = location;
 }
 
 void Config::_parse_index(std::map<const std::string, std::string>& config_info) {
@@ -226,7 +236,7 @@ void Config::_parse_index(std::map<const std::string, std::string>& config_info)
 	std::string	  path_to_file;
 
 	cut_till_collon(index);
-	path_to_file = _server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._path + "/" + index;
+	path_to_file = _servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1]._path + "/" + index;
 	try_file.open(path_to_file);
 	if (!try_file.is_open())
 		exit_with::e_perror("config error: index");
@@ -240,9 +250,9 @@ void Config::_parse_auto_index(std::map<const std::string, std::string>& config_
 	if (autoIndex.compare("on") != 0 && autoIndex.compare("off") != 0)
 		exit_with::e_perror("config error: autoindex");
 	if (_location_check == true)
-		_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._autoIndex = autoIndex;
+		_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].auto_index = autoIndex;
 	else
-		_server[_server.size() - 1]._autoIndex = autoIndex;
+		_servers[_servers.size() - 1].auto_index = autoIndex;
 }
 
 void Config::_parse_cgi(std::map<const std::string, std::string>& config_info) {
@@ -253,9 +263,9 @@ void Config::_parse_cgi(std::map<const std::string, std::string>& config_info) {
 	size_t		not_space = cgi.find_first_not_of(" \t", space);
 	std::string path = cgi.substr(not_space, cgi.size());
 	if (_location_check == true) {
-		_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._cgiPath.first = cgi.substr(0, space);
-		_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._cgiPath.second = path;
+		_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].cgi_path.first = cgi.substr(0, space);
+		_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].cgi_path.second = path;
 	} else
 		exit_with::e_perror("config error: cgi");
-	// std::cout << _server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._cgiPath.first << " | " << _server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1]._cgiPath.second << std::endl;
+	// std::cout << _server[_server.size() - 1].location[_server[_server.size() - 1].location.size() - 1].cgi_path.first << " | " << _server[_server.size() - 1].location[_server[_server.size() - 1].location.size() - 1].cgi_path.second << std::endl;
 }

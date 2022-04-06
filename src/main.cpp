@@ -33,8 +33,8 @@ int main(int argc, char** argv) {
 	g_config = Config(argc, argv);
 	Poller poller;
 
-	for (std::vector<Config::Server>::iterator server = g_config._server.begin(); server != g_config._server.end(); ++server) {
-		for (std::vector<uint32_t>::iterator port = server->_port.begin(); port != server->_port.end(); ++port) {
+	for (std::vector<Config::Server>::iterator server = g_config._servers.begin(); server != g_config._servers.end(); ++server) {
+		for (std::vector<uint32_t>::iterator port = server->port.begin(); port != server->port.end(); ++port) {
 			poller.add_server(mode_ipv6, *port);
 		}
 	}

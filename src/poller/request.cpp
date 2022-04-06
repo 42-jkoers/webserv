@@ -100,7 +100,7 @@ int Request::_parse_host() {
 	// loop over servers and check for valid host name and port
 	// for (std::vector<Config::Server>::iterator it2 = g_config._server.begin(); it2 != g_config._server.end(); ++it2) {
 	// 	if (it2->_serverName == it->second.host) {
-	// 		for (std::vector<uint32_t>::iterator it3 = it2->_port.begin(); it3 != it2->_port.end(); ++it3) {
+	// 		for (std::vector<uint32_t>::iterator it3 = it2->port.begin(); it3 != it2->port.end(); ++it3) {
 	// 			if (it->second.port == *it3)
 	// 				return 0;
 	// 		}

@@ -14,11 +14,11 @@ Currently in the process of creating a slimmed down version of nginx from scratc
 	- Handles all incoming requests on `poll()`
 	- Manages all open file descriptors
 	- Attempts to read as much bytes as possible from client
-	- Class::Buffer
+	- Class::Client
 		- Stores in progress raw read data
 		- TODO: validate max body size
-    - Class::Request
-		- Attempts to parse raw incoming header bytes
+		- Class::Request
+			- Attempts to parse raw incoming header bytes
 			- Validates request line: HTTP version and method (GET/POST/DELETE)
 			- Validates Host present
             - Validates Content-length

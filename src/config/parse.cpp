@@ -1,47 +1,7 @@
 
 #include "config_parser.hpp"
+#include "file_system.hpp"
 #include "main.hpp"
-
-// char* ft_subStr(const char* cStr, int iStart, int iLength) {
-// 	static char cRes[1024];
-// 	char*		pRes = cRes;
-// 	int			i = 0, iPos = 0;
-// 	int			iByte;
-
-// 	while (cStr[i] != '\0') {
-// 		iByte = cntByte(cStr[i]);
-// 		if (iStart <= iPos && iPos < iStart + iLength) {
-// 			memcpy(pRes, (cStr + i), iByte);
-// 			pRes += iByte;
-// 		}
-// 		i += iByte;
-// 		iPos++;
-// 	}
-// 	*pRes = '\0';
-
-// 	return cRes;
-// }
-
-// std::string serverName = config_info["server_name"];
-
-// cut_till_collon(serverName);
-// // size_t		i = 0;
-// // while (i < serverName.length() && i != std::string::npos) {
-// // 	if (serverName[i] != ' ' && serverName[i] != '\t') {
-// // 		std::cout << "i = " << i << std::endl;
-// // 		std::cout << serverName.substr(i, serverName.find_first_of(" \t", i)) << std::endl;
-// // 		std::cout << "find first of = " << serverName.find_first_of(" \t", i) << std::endl;
-// // 		_server[_server.size() - 1]._serverName.push_back(serverName.substr(i, serverName.find_first_of(" \t", i)));
-// // 		i = serverName.find_first_of(" \t", i);
-// // 		std::cout << "i2 = " << i << std::endl;
-// // 		if (i == std::string::npos)
-// // 			break;
-// // 	}
-// // 	i++;
-// // }
-// // for (size_t j = 0; j < _server[_server.size() - 1]._serverName.size(); j++) {
-// // 	std::cout << _server[_server.size() - 1]._serverName[j] << std::endl;
-// // }
 
 void cut_till_collon(std::string& line) {
 	size_t find_collon;
@@ -210,11 +170,6 @@ void Config::_parseRoot(std::map<const std::string, std::string>& config_info) {
 	_servers[_servers.size() - 1].root = root;
 }
 
-bool IsPathExist(const std::string& s) {
-	struct stat buffer;
-	return (stat(s.c_str(), &buffer) == 0);
-}
-
 void Config::_parse_location(std::map<const std::string, std::string>& config_info) {
 	std::string location = config_info["location"];
 	_location_check = true;
@@ -223,7 +178,7 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 		location.insert(0, ".");
 	else
 		location.insert(0, "./");
-	if (!IsPathExist(location))
+	if (!fs::path_exists(location))
 		exit_with::e_perror("config error: location");
 	_servers[_servers.size() - 1].location.push_back(Location());
 	_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1] = (Location());

@@ -41,4 +41,10 @@ std::vector<std::string> list_dir(const std::string& path) {
 	closedir(dir);
 	return files;
 }
+
+bool path_exists(const std::string& path) {
+	struct stat buffer;
+	return stat(path.c_str(), &buffer) == 0;
+}
+
 } // namespace fs

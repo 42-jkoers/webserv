@@ -19,5 +19,6 @@ bool write_file(const std::string& path, const std::vector<T>& data) { // return
 }
 
 std::vector<std::string> list_dir(const std::string& path);
+bool					 path_exists(const std::string& path);
 
 } // namespace fs

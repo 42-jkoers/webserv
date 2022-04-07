@@ -121,14 +121,14 @@ Client::Chunk_status Client::_append_chunk(size_t bytes_read) {
 	size_t block_size;
 	size_t hex_len = parse_hex(block_size, _buf.data(), '\r');
 	assert(hex_len > 0); // if parse_hex is successful
+	hex_len += 2;		 // also include \r\n suffix
 	if (block_size == 0) {
 		_buf.clear(); // TODO: end values
 		return CS_NULL_BLOCK_REACHED;
 	}
-	if (block_size <= _buf.size() - (hex_len + 2)) {
-		_buf.erase(_buf.begin(), _buf.begin() + static_cast<ssize_t>(hex_len + 2));
-		body.insert(body.end(), _buf.begin(), _buf.begin() + static_cast<ssize_t>(block_size));
-		_buf.erase(_buf.begin(), _buf.begin() + static_cast<ssize_t>(block_size + 2));
+	if (block_size <= _buf.size() - hex_len) {
+		request.append_to_body(_buf.begin() + hex_len, _buf.begin() + hex_len + block_size);
+		_buf.erase(_buf.begin(), _buf.begin() + hex_len + block_size + 2); // also remove \r\n suffix
 	}
 	if (_buf.size())
 		return _append_chunk(bytes_read);
@@ -177,21 +177,10 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 	_parse_status = HEADER_IN_PROGRESS;
 }
 
-void Client::print() const {
-	std::cout << "========== Header ==============\n";
-	std::cout << request << std::endl;
-	std::cout << "========== Body ================\n " << std::endl;
-	write(1, body.data(), body.size());
-	std::cout << "========== End Body ============\n";
-	std::cout << std::endl;
-}
-
 void Client::reset() {
 	_read_status = UNSET;
 	_parse_status = INCOMPLETE;
 	_body_type = EMPTY;
 	_bytes_to_read = -1;
 	_buf.clear();
-	body.clear();
-	body.shrink_to_fit();
 }

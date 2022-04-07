@@ -302,8 +302,8 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 		output << std::endl;
 	}
 	output << "Request body-------------" << std::endl;
-	for (std::vector<char>::const_iterator it = rhs.body.begin(); it != rhs.body.end(); ++it) {
-		output << *it << std::endl;
-	}
+	print_escaped(rhs.body.data(), rhs.body.size());
+	output << "End----------------------" << std::endl;
+
 	return output;
 }

@@ -15,6 +15,7 @@ Poller::Poller() {
 void Poller::add_server(IP_mode ip_mode, uint16_t port) {
 	fd_t server_socket = constructors::server_socket(ip_mode, port);
 	_pollfds.push_back(constructors::pollfd(server_socket, POLLIN | POLLOUT));
+	_server_socket_port[server_socket] = port;
 	_n_servers++;
 }
 
@@ -28,6 +29,7 @@ void Poller::_accept_clients() {
 				break;
 
 			// New incoming connection
+			_new_port = _server_socket_port[_pollfds[i].fd];
 			_pollfds.push_back(constructors::pollfd(newfd, POLLIN | POLLOUT));
 		}
 	}
@@ -35,8 +37,10 @@ void Poller::_accept_clients() {
 
 #define FD_CLOSED -1
 void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client)) {
-	if (_clients.find(pfd.fd) == _clients.end())
+	if (_clients.find(pfd.fd) == _clients.end()) {
 		_clients[pfd.fd] = Client();
+		_clients[pfd.fd].port = _new_port;
+	}
 	Client& client = _clients[pfd.fd];
 
 	client.read_pollfd(pfd);

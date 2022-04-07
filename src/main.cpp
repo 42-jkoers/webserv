@@ -5,6 +5,7 @@
 #include "poller.hpp"
 #include "request.hpp"
 #include "response.hpp"
+#include "router.hpp"
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <sstream>
@@ -14,19 +15,20 @@
 
 Config			g_config;
 const Constants g_constants;
-//
 
-void on_request(Client& client) {
-	// client.print();
-	// std::cout << client.request << std::endl;
-	Response response(client.request.fd);
+void			on_request(Client& client) {
+	   // client.print();
+	   // std::cout << client.request << std::endl;
+	   Router	router;
+	   Response response(client.request.fd);
 
-	if (client.request.get_request_line()["URI"].find("cgi") != std::string::npos)
-		response.cgi("./html/index.sh", "", "hello form bash");
-	else if (client.request.has_value("user-agent", "curl"))
-		response.text(200, "Hello curl\n");
-	else
-		response.file("./html/upload.html");
+	   router.route(client);
+	   if (client.request.get_request_line()["URI"].find("cgi") != std::string::npos)
+		   response.cgi("./html/index.sh", "", "hello form bash");
+	   else if (client.request.has_value("user-agent", "curl"))
+		   response.text(200, "Hello curl\n");
+	   else
+		   response.file("./html/upload.html");
 }
 
 int main(int argc, char** argv) {
@@ -35,6 +37,7 @@ int main(int argc, char** argv) {
 
 	for (std::vector<Config::Server>::iterator server = g_config._server.begin(); server != g_config._server.end(); ++server) {
 		for (std::vector<uint32_t>::iterator port = server->_port.begin(); port != server->_port.end(); ++port) {
+			// TODO: not if port is already open
 			poller.add_server(mode_ipv6, *port);
 		}
 	}

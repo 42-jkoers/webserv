@@ -96,17 +96,6 @@ int Request::_parse_host() {
 		if (parse_int(it->second.port, it->second.values[0].substr(colon)) == 0)
 			return _set_response_code(400);
 	}
-	// TODO: refactor: to other class
-	// loop over servers and check for valid host name and port
-	// for (std::vector<Config::Server>::iterator it2 = g_config._server.begin(); it2 != g_config._server.end(); ++it2) {
-	// 	if (it2->_serverName == it->second.host) {
-	// 		for (std::vector<uint32_t>::iterator it3 = it2->_port.begin(); it3 != it2->_port.end(); ++it3) {
-	// 			if (it->second.port == *it3)
-	// 				return 0;
-	// 		}
-	// 		return _set_response_code(400); // TODO: not sure if correct port is needed
-	// 	}
-	// }
 	return 0; // TODO: not sure if correct server name is needed
 }
 
@@ -245,10 +234,8 @@ bool Request::has_name(const std::string& name) const { // is the name in one of
 }
 
 bool Request::has_value(const std::string& name, const std::string& value) const { // is the value in one of the values of the Header_field's name
-	// assert if header field with this name does not exists
 	if (!has_name(name))
 		return false;
-	assert(header_fields.find(name) != header_fields.end());
 	for (std::vector<std::string>::const_iterator it = header_fields.find(name)->second.values.begin(); it != header_fields.find(name)->second.values.end(); ++it) {
 		if (*it == value)
 			return 1;

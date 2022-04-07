@@ -49,6 +49,8 @@ class Client {
 
 	Request			  request;
 	std::vector<char> body;
+	uint32_t		  port;
+	int				  server_index;
 
   private:
 	Read_status		  _read_status;
@@ -85,6 +87,8 @@ class Poller {
 	size_t					   _n_servers;
 	std::vector<struct pollfd> _pollfds;
 	std::map<fd_t, Client>	   _clients;
+	std::map<fd_t, uint32_t>   _server_socket_port;
+	uint32_t				   _new_port;
 
 	// disabled
 	Poller(const Poller& cp);

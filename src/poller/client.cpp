@@ -7,7 +7,7 @@ Client::Client() { // TODO: disable
 Client::Parse_status Client::parse_status() const { return _parse_status; }
 
 // TODO: fix this horrible unstable abomination of what is not even allowed to be called "code"
-Client::Read_status Client::read_pollfd(const pollfd& pfd) {
+void Client::read_pollfd(const pollfd& pfd) {
 	ssize_t		bytes_read;
 	static char buf[4096];
 
@@ -16,14 +16,14 @@ Client::Read_status Client::read_pollfd(const pollfd& pfd) {
 		if (bytes_read == 0)
 			break;
 		if (bytes_read < 0)
-			return TEMPORALLY_UNIAVAILABLE;
+			return;
 		for (ssize_t i = 0; i < bytes_read; i++)
 			_buf.push_back(buf[i]);
 		_parse(static_cast<size_t>(bytes_read), pfd);
 		if (_parse_status <= HEADER_DONE)
 			break;
 		if (_parse_status == FINISHED)
-			return _read_status;
+			return;
 	}
 	if (_parse_status == HEADER_DONE &&
 		pfd.revents & POLLOUT) {
@@ -31,7 +31,6 @@ Client::Read_status Client::read_pollfd(const pollfd& pfd) {
 		write(pfd.fd, resp.data(), resp.length());
 		_parse_status = WAITING_FOR_BODY;
 	}
-	return _read_status;
 }
 
 Client::Chunk_status Client::_append_chunk(size_t bytes_read) {
@@ -95,7 +94,6 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 }
 
 void Client::reset() {
-	_read_status = UNSET;
 	_parse_status = INCOMPLETE;
 	_body_type = EMPTY;
 	_bytes_to_read = -1;

@@ -5,12 +5,6 @@
 class Client {
   public:
 	Client();
-	enum Read_status {
-		UNSET,
-		TEMPORALLY_UNIAVAILABLE,
-		IN_PROGRESS,
-		DONE
-	};
 
 	enum Body_type {
 		EMPTY,
@@ -40,14 +34,13 @@ class Client {
 		CS_ERROR
 	};
 
-	Read_status	 read_pollfd(const pollfd& pfd);
+	void		 read_pollfd(const pollfd& pfd);
 	Parse_status parse_status() const;
 	void		 reset();
 
 	Request		 request;
 
   private:
-	Read_status		  _read_status;
 	Parse_status	  _parse_status;
 	Body_type		  _body_type;
 	ssize_t			  _bytes_to_read;

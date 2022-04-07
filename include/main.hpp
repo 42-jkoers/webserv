@@ -37,6 +37,7 @@ void message(const std::string& msg);
 } // namespace exit_with
 void					 print_escaped(const char* s, size_t n, std::string label = "");
 std::vector<const char*> vector_to_c_array(const std::vector<const std::string>& v);
+std::string				 to_lower(const std::string& s);
 
 namespace Color {
 

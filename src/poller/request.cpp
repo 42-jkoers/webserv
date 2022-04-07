@@ -131,7 +131,7 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 		// get name
 		colon = line.find_first_of(":");
 		name = line.substr(0, colon); // if colon is string::npos, all characters until the end of the string
-		name = _str_tolower(name);
+		name = to_lower(name);
 		if (name.compare("host") == 0) {
 			if (has_name(name)) // if there is already a host in the header class, error
 				return _set_response_code(400);
@@ -228,19 +228,18 @@ int Request::_parse_request_line() {
 }
 
 bool Request::has_name(const std::string& name) const { // is the name in one of the Header_fields
-	if (header_fields.find(name) != header_fields.end())
-		return 1;
-	return 0;
+	return header_fields.find(to_lower(name)) != header_fields.end();
 }
 
 bool Request::has_value(const std::string& name, const std::string& value) const { // is the value in one of the values of the Header_field's name
-	if (!has_name(name))
+	const std::string name_lower = to_lower(name);
+	if (!has_name(name_lower))
 		return false;
-	for (std::vector<std::string>::const_iterator it = header_fields.find(name)->second.values.begin(); it != header_fields.find(name)->second.values.end(); ++it) {
+	for (std::vector<std::string>::const_iterator it = header_fields.find(name_lower)->second.values.begin(); it != header_fields.find(name_lower)->second.values.end(); ++it) {
 		if (*it == value)
-			return 1;
+			return true;
 	}
-	return 0;
+	return false;
 }
 
 std::string Request::get_value(const std::string& name) const {
@@ -263,21 +262,6 @@ size_t Request::get_content_length() const {
 	assert(it != header_fields.end());
 	assert(parse_int(content_length, it->second.values[0]));
 	return content_length;
-}
-
-std::string Request::_str_tolower(std::string& str) {
-	char		c;
-	int			i;
-	std::string new_str;
-
-	i = 0;
-	while (str[i]) {
-		c = str[i];
-		c = std::tolower(c);
-		new_str += c;
-		i++;
-	}
-	return new_str;
 }
 
 // getters
@@ -318,8 +302,8 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 		output << std::endl;
 	}
 	output << "Request body-------------" << std::endl;
-	for (std::vector<char>::const_iterator it = rhs.body.begin(); it != rhs.body.end(); ++it) {
-		output << *it << std::endl;
-	}
+	print_escaped(rhs.body.data(), rhs.body.size());
+	output << "End----------------------" << std::endl;
+
 	return output;
 }

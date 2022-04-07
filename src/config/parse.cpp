@@ -1,5 +1,6 @@
 
 #include "config_parser.hpp"
+#include "file_system.hpp"
 #include "main.hpp"
 
 // char* ft_subStr(const char* cStr, int iStart, int iLength) {
@@ -200,11 +201,6 @@ void Config::_parseRoot(std::map<const std::string, std::string>& config_info) {
 	_server[_server.size() - 1]._root = root;
 }
 
-bool IsPathExist(const std::string& s) {
-	struct stat buffer;
-	return (stat(s.c_str(), &buffer) == 0);
-}
-
 void Config::_parse_location(std::map<const std::string, std::string>& config_info) {
 	std::string location = config_info["location"];
 	_location_check = true;
@@ -213,7 +209,7 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 		location.insert(0, ".");
 	else
 		location.insert(0, "./");
-	if (!IsPathExist(location))
+	if (!fs::path_exists(location))
 		exit_with::e_perror("config error: location");
 	_server[_server.size() - 1]._location.push_back(Location());
 	_server[_server.size() - 1]._location[_server[_server.size() - 1]._location.size() - 1] = (Location());

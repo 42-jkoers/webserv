@@ -2,38 +2,39 @@
 #include "constants.hpp"
 #include "file_system.hpp"
 
-Response::Response(fd_t fd) : _fd(fd) {
-}
-
-Response::~Response() {
-	close(_fd);
-}
-
 // returns minimum starting paramters of response header
 static std::string header_template(uint32_t code) {
 	std::string header = "HTTP/1.1 ";
 	header += std_ft::to_string(code);
 	header += " ";
 	header += g_constants.to_response_string(code);
+	header += "\n";
 	return header;
 }
 
+namespace Response {
+
 // TODO: optimize
-void Response::text(uint32_t code, const std::string& message) {
+void text(const Request& request, uint32_t code, const std::string& message) {
 	std::string response = header_template(code);
 	response += "\r\n\r\n";
 	response += message;
-	write(_fd, response.c_str(), response.length()); // TODO: error handling
+	write(request.fd, response.c_str(), response.length()); // TODO: error handling
 }
 
-void Response::cgi(const std::string& path, const std::string& path_info, const std::string& query_string) {
+void cgi(const Request& request, const std::string& path, const std::string& path_info, const std::string& query_string) {
+	int pipe_in[2];
+	if (pipe(pipe_in))
+		exit_with::e_errno("pipe() failed");
+
 	pid_t pid = fork();
 	if (pid == 0) { // child
 		static std::string start_header = header_template(200);
-		write(_fd, start_header.data(), start_header.size());
+		write(request.fd, start_header.data(), start_header.size());
 
-		dup2(_fd, STDERR_FILENO);
-		dup2(_fd, STDOUT_FILENO);
+		dup2(pipe_in[0], STDIN_FILENO);
+		dup2(request.fd, STDOUT_FILENO);
+		dup2(request.fd, STDERR_FILENO);
 
 		std::vector<const std::string> env;
 		env.push_back("GATEWAY_INTERFACE=CGI/1.1");	 // TODO: what value
@@ -49,21 +50,31 @@ void Response::cgi(const std::string& path, const std::string& path_info, const 
 
 		std::vector<const char*> envp = vector_to_c_array(env);
 		if (execve(path.c_str(), NULL, (char* const*)envp.data()))
-			exit_with::e_errno("Could not start cgi script");
+			exit_with::e_errno("Could not start cgi script"); // TODO pipe to parent?
 
-		close(_fd);
+		close(pipe_in[0]);
+		close(pipe_in[1]);
+		close(request.fd);
 		close(STDOUT_FILENO);
 		close(STDERR_FILENO);
 		exit(0);
+	} //
+	else {
+		write(pipe_in[1], request.body.data(), request.body.size());
+		close(pipe_in[0]);
+		close(pipe_in[1]);
+		close(request.fd);
 	}
 }
 
-void Response::file(const std::string& path) {
+void file(const Request& request, const std::string& path) {
 	std::string header = header_template(200);
 	std::string file = fs::read_file(path);
 	header += "Content-length: " + std_ft::to_string(file.size());
 	header += "\r\n\r\n";
-	write(_fd, header.data(), header.size());
+	write(request.fd, header.data(), header.size());
 	// TODO wait for 100-Continue?
-	write(_fd, file.data(), file.size());
+	write(request.fd, file.data(), file.size());
 }
+
+} // namespace Response

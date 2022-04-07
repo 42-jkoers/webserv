@@ -42,8 +42,7 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client)) {
 	client.read_pollfd(pfd);
 	if (client.parse_status() == Client::FINISHED) {
 		if (client.request.response_code >= 203) {
-			Response response(pfd.fd);
-			response.text(client.request.response_code, "Error!\n"); // TODO
+			Response::text(client.request, client.request.response_code, "Error!\n"); // TODO
 		} else
 			on_request(client);
 		client.reset();
@@ -158,7 +157,7 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 	}
 	if (_parse_status >= WAITING_FOR_BODY) {
 		if (_body_type == MULTIPART) {
-			body.insert(body.end(), _buf.begin(), _buf.end());
+			request.append_to_body(_buf.begin(), _buf.end());
 			_buf.clear();
 			_bytes_to_read -= bytes_read;
 			if (_bytes_to_read <= 0) { // TODO: what the fuck

@@ -55,3 +55,11 @@ std::vector<const char*> vector_to_c_array(const std::vector<const std::string>&
 	cv.push_back(NULL);
 	return cv;
 }
+
+std::string to_lower(const std::string& s) {
+	std::string out;
+	out.reserve(s.size());
+	for (size_t i = 0; i < s.size(); i++)
+		out += std::tolower(s[i]);
+	return out;
+}

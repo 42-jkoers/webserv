@@ -131,7 +131,7 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 		// get name
 		colon = line.find_first_of(":");
 		name = line.substr(0, colon); // if colon is string::npos, all characters until the end of the string
-		name = _str_tolower(name);
+		name = to_lower(name);
 		if (name.compare("host") == 0) {
 			if (has_name(name)) // if there is already a host in the header class, error
 				return _set_response_code(400);
@@ -263,21 +263,6 @@ size_t Request::get_content_length() const {
 	assert(it != header_fields.end());
 	assert(parse_int(content_length, it->second.values[0]));
 	return content_length;
-}
-
-std::string Request::_str_tolower(std::string& str) {
-	char		c;
-	int			i;
-	std::string new_str;
-
-	i = 0;
-	while (str[i]) {
-		c = str[i];
-		c = std::tolower(c);
-		new_str += c;
-		i++;
-	}
-	return new_str;
 }
 
 // getters

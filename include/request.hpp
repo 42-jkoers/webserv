@@ -40,7 +40,6 @@ class Request {
 	int								   _parse_header_fields();
 	int								   _parse_field_values();
 	int								   _parse_host();
-	std::string						   _str_tolower(std::string& str);
 	int								   _set_response_code(int ret);
 	int								   _parse_URI();
 

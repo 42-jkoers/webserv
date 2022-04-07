@@ -19,8 +19,8 @@ bool Router::_has_server_name(std::vector<Config::Server>::iterator server, std:
 void Router::_link_client_server(Client& client) {
 	int found = 0;
 	int i = 0;
-	client.server_index = -1;
-
+	// client.server_index = -1;
+	(void)client;
 	(void)found;
 	(void)i;
 

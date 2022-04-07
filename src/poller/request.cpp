@@ -228,19 +228,18 @@ int Request::_parse_request_line() {
 }
 
 bool Request::has_name(const std::string& name) const { // is the name in one of the Header_fields
-	if (header_fields.find(name) != header_fields.end())
-		return 1;
-	return 0;
+	return header_fields.find(to_lower(name)) != header_fields.end();
 }
 
 bool Request::has_value(const std::string& name, const std::string& value) const { // is the value in one of the values of the Header_field's name
-	if (!has_name(name))
+	const std::string name_lower = to_lower(name);
+	if (!has_name(name_lower))
 		return false;
-	for (std::vector<std::string>::const_iterator it = header_fields.find(name)->second.values.begin(); it != header_fields.find(name)->second.values.end(); ++it) {
+	for (std::vector<std::string>::const_iterator it = header_fields.find(name_lower)->second.values.begin(); it != header_fields.find(name_lower)->second.values.end(); ++it) {
 		if (*it == value)
-			return 1;
+			return true;
 	}
-	return 0;
+	return false;
 }
 
 std::string Request::get_value(const std::string& name) const {

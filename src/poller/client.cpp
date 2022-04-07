@@ -19,7 +19,7 @@ void Client::read_pollfd(const pollfd& pfd) {
 			return;
 		for (ssize_t i = 0; i < bytes_read; i++)
 			_buf.push_back(buf[i]);
-		_parse(static_cast<size_t>(bytes_read), pfd);
+		_parse(bytes_read, pfd);
 		if (_parse_status <= HEADER_DONE)
 			break;
 		if (_parse_status == FINISHED)
@@ -63,7 +63,7 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 		_parse_status = HEADER_DONE;
 		if (request.has_name("content-length")) {
 			_body_type = MULTIPART;
-			_bytes_to_read = static_cast<ssize_t>(request.get_content_length());
+			_bytes_to_read = request.get_content_length();
 		} else if (request.has_name("transfer-encoding") && request.has_value("transfer-encoding", "chunked"))
 			_body_type = CHUNKED;
 		else {

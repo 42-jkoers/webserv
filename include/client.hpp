@@ -46,7 +46,6 @@ class Client {
 	ssize_t			  _bytes_to_read;
 	std::vector<char> _buf;
 
-	bool			  _is_end_of_http_request(const std::string& s);
 	void			  _parse(size_t bytes_read, const pollfd& pfd);
 	Chunk_status	  _append_chunk(size_t bytes_read);
 };

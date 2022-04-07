@@ -13,19 +13,16 @@ class Client {
 	};
 
 	enum Parse_status {
-		INCOMPLETE = 0,
-		HEADER_IN_PROGRESS = 1,
+		INCOMPLETE,
+		READING_HEADER,
+		READING_HEADER_DONE,
 
-		HEADER_DONE = 2,
+		HEADER_DONE,
 		// send 100-continue
-		WAITING_FOR_BODY = 4,
-		// while (read() > 0)
-		BODY_IN_PROGRESS = 5,
+		READING_BODY,
+		FINISHED,
 
-		BODY_DONE = 6,
-		FINISHED = 7,
-
-		ERROR = 8
+		ERROR
 	};
 
 	enum Chunk_status {

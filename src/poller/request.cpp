@@ -298,13 +298,12 @@ std::map<std::string, std::string> Request::get_request_line() const {
 	return _request_line;
 }
 
-std::vector<char> Request::get_body() const {
-	return _body;
+void Request::append_to_body(std::vector<char>::const_iterator begin, std::vector<char>::const_iterator end) {
+	body.insert(body.end(), begin, end);
 }
 
 std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 	std::map<std::string, std::string> request_line = rhs.get_request_line();
-	std::vector<char>				   body = rhs.get_body();
 
 	output << "Request line-------------" << std::endl;
 	for (std::map<std::string, std::string>::const_iterator it = request_line.begin(); it != request_line.end(); ++it) {
@@ -332,7 +331,7 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 		output << std::endl;
 	}
 	output << "Request body-------------" << std::endl;
-	for (std::vector<char>::const_iterator it = body.begin(); it != body.end(); ++it) {
+	for (std::vector<char>::const_iterator it = rhs.body.begin(); it != rhs.body.end(); ++it) {
 		output << *it << std::endl;
 	}
 	return output;

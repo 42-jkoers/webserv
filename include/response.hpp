@@ -1,18 +1,11 @@
 #pragma once
 #include "main.hpp"
+#include "request.hpp"
 
-class Response {
-  public:
-	Response(fd_t fd);
-	~Response();
-	void text(uint32_t code, const std::string& message);
-	void cgi(const std::string& path, const std::string& path_info, const std::string& query_string);
-	void file(const std::string& path);
+namespace Response {
 
-  private:
-	fd_t _fd;
+void text(const Request& request, uint32_t code, const std::string& message);
+void cgi(const Request& request, const std::string& path, const std::string& path_info, const std::string& query_string);
+void file(const Request& request, const std::string& path);
 
-	// disabled
-	Response(const Response& cp);
-	Response& operator=(const Response& cp);
-};
+} // namespace Response

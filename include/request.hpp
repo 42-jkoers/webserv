@@ -8,10 +8,10 @@ class Request {
 	Request();
 	~Request();
 	void							   parse_header(const pollfd& pfd, const std::string& raw);
+	void							   append_to_body(std::vector<char>::const_iterator begin, std::vector<char>::const_iterator end);
 	bool							   has_name(const std::string& name) const;
 	size_t							   get_content_length() const;
 	std::map<std::string, std::string> get_request_line() const;
-	std::vector<char>				   get_body() const;
 	std::string						   get_value(const std::string& name) const;
 	std::string						   get_value(const std::string& name, size_t index) const;
 	bool							   has_value(const std::string& name, const std::string& value) const;
@@ -29,13 +29,13 @@ class Request {
 	std::string							queries;
 	std::string							fragment;
 	size_t								server_index;
+	std::vector<char>					body;
 
   private:
 	std::string						   _raw;
 	std::string						   _whitespaces;
 	std::string						   _crlf;
 	std::map<std::string, std::string> _request_line;
-	std::vector<char>				   _body;
 	int								   _parse_request_line();
 	int								   _parse_header_fields();
 	int								   _parse_field_values();

@@ -4,3 +4,4 @@ test.cpp
 .DS_Store
 /webserv
 *.dSYM
+/cgi/input

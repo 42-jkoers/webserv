@@ -32,9 +32,11 @@ void print_escaped(const char* s, size_t n, std::string label) {
 	if (label.length())
 		std::cout << label << ": <";
 	for (size_t i = 0; i < n; i++) {
-		if ((h = hidden.find(s[i])) != std::string::npos)
+		if ((h = hidden.find(s[i])) != std::string::npos) {
 			std::cout << Color::BLUE << "\\" << print[h] << Color::DEFAULT;
-		else if (!std::isprint(s[i]))
+			if (s[i] == '\n')
+				std::cout << '\n';
+		} else if (!std::isprint(s[i]))
 			std::cout << Color::BLUE << "0x" << std::hex << std::uppercase << static_cast<int>(s[i]) << Color::DEFAULT;
 		else
 			std::cout << s[i];

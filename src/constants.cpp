@@ -122,6 +122,10 @@ Constants::Constants() {
 	_response_str[503] = "Service Unavailable";
 	_response_str[504] = "Gateway Timeout";
 	_response_str[505] = "HTTP Version Not Supported";
+
+	_methods.push_back("GET");
+	_methods.push_back("POST");
+	_methods.push_back("DELETE");
 	// clang-format on
 }
 
@@ -135,4 +139,11 @@ const std::string& Constants::to_response_string(uint32_t code) const {
 	std::map<uint32_t, std::string>::const_iterator it = _response_str.find(code);
 	assert(it != _response_str.end());
 	return it->second;
+}
+
+bool Constants::is_valid_method(const std::string& method) const {
+	for (size_t i = 0; i < _methods.size(); i++)
+		if (_methods[i] == method)
+			return true;
+	return false;
 }

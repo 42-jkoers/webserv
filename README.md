@@ -7,8 +7,8 @@ Currently in the process of creating a slimmed down version of nginx from scratc
 ## Structure
 - Class::Config (global)
 	- Reads and validates configuration file
-    - Class::Location
     - Class::Server
+		- Class::Location
 
 - Class::Poller
 	- Handles all incoming requests on `poll()`

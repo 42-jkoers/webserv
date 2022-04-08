@@ -8,7 +8,7 @@ Router::Router() {
 }
 
 bool Router::_has_server_name(std::vector<Config::Server>::iterator server, std::string server_name) {
-	for (std::vector<std::string>::iterator it = server->_serverName.begin(); it != server->_serverName.end(); ++it) {
+	for (std::vector<std::string>::iterator it = server->server_name.begin(); it != server->server_name.end(); ++it) {
 		if (*it == server_name) {
 			return 1;
 		}

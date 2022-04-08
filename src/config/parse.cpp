@@ -53,9 +53,6 @@ void Config::_parse_server_name(std::map<const std::string, std::string>& config
 		}
 		i++;
 	}
-	// for (size_t j = 0; j < _server[_server.size() - 1]._serverName.size(); j++) {
-	// 	std::cout << _server[_server.size() - 1]._serverName[j] << std::endl;
-	// }
 }
 
 /*
@@ -135,7 +132,6 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 		last_location().error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
 	else
 		_servers[_servers.size() - 1].error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
-	// std::cout << _server[_server.size() - 1].error_pages[error_code] << std::endl;
 }
 
 void Config::_parse_client_max_body_size(std::map<const std::string, std::string>& config_info) {
@@ -178,7 +174,6 @@ void Config::_parseRoot(std::map<const std::string, std::string>& config_info) {
 if there is a '=' a match if the requestif the request URI exactly matches the location given
 you can see if this is the case with checking the equal variable. if it is 1 it should match if its 0 is doesn't
 */
-
 void Config::_parse_location(std::map<const std::string, std::string>& config_info) {
 	std::string location = config_info["location"];
 	size_t		equal_sign;

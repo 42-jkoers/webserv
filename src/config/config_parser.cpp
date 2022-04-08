@@ -45,9 +45,9 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 		} else if (line.find_first_not_of("\t ") == std::string::npos)
 			return;
 		else if (line.find_first_of("}") != std::string::npos) {
-			if (_inside_location == true)
+			if (_inside_location)
 				_inside_location = false;
-			else if (_inside_server == true)
+			else if (_inside_server)
 				_inside_server = false;
 			return;
 		}

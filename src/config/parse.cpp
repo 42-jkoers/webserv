@@ -80,7 +80,7 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 				exit_with::e_perror("config error: listen");
 			if (listen[i] == '.') {
 				check_ip = 0;
-				if (check_dots > 2) // check if its a real ip adress
+				if (check_dots > 2) // check if its a real ip address
 					exit_with::e_perror("config error: listen");
 				check_dots++;
 			}
@@ -104,7 +104,7 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 		else
 			_servers[_servers.size() - 1].ip.push_back(listen.substr(0, pos));
 		if (!strchr(listen.c_str(), ':'))
-			port = 8080;
+			port = 80;
 		else
 			parse_int(port, &config_info["listen"][pos + 1]);
 	} else {

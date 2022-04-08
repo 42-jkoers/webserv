@@ -20,11 +20,11 @@ void on_request(Client& client) {
 	// client.print();
 	// std::cout << client.request << std::endl;
 
-	if (client.request.get_request_line()["URI"].find("/cgi/input") != std::string::npos)
+	if (client.request.uri_raw.find("/cgi/input") != std::string::npos)
 		Response::cgi(client.request, "./cgi/input", "", "");
-	else if (client.request.get_request_line()["URI"].find("/cgi/index.sh") != std::string::npos)
+	else if (client.request.uri_raw.find("/cgi/index.sh") != std::string::npos)
 		Response::cgi(client.request, "./cgi/index.sh", "", "");
-	else if (client.request.has_value("user-agent", "curl"))
+	else if (client.request.field_value("user-agent").find("curl") != std::string::npos)
 		Response::text(client.request, 200, "Hello curl\n");
 	else
 		Response::file(client.request, "./html/upload.html");

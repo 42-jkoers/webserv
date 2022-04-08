@@ -74,8 +74,7 @@ class Config {
 
 	  private:
 	};
-	std::map<size_t, std::vector<size_t> /**/> _ports_servers;
-	std::vector<Server>						   _servers;
+	std::vector<Server> _servers;
 
   private:
 	Location& last_location();

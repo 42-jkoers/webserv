@@ -125,10 +125,5 @@ std::ostream& operator<<(std::ostream& stream, Config const& config) {
 			}
 		}
 	}
-	for (std::map<size_t, std::vector<size_t> /**/>::const_iterator it = config._ports_servers.begin(); it != config._ports_servers.end(); it++) {
-		for (size_t index = 0; index < it->second.size(); index++) {
-			std::cout << "PORTS_SERVER = " << it->first << " | " << it->second[index] << std::endl;
-		}
-	}
 	return stream;
 }

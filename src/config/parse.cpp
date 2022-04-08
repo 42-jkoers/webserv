@@ -119,8 +119,6 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 		last_location().port.push_back(port);
 	else
 		_servers[_servers.size() - 1].port.push_back(port);
-	_ports_servers[_servers[_servers.size() - 1].port[_servers[_servers.size() - 1].port.size() - 1]].push_back(_servers.size() - 1);
-	// std::cout << _servers[_servers.size() - 1].port[_servers[_servers.size() - 1].port.size() - 1] << std::endl;
 }
 
 void Config::_parse_error_page(std::map<const std::string, std::string>& config_info) {

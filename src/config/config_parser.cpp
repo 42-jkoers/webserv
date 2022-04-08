@@ -55,6 +55,7 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 	exit_with::e_perror("config error: invalid line");
 }
 
+//TODO: work with comments
 void Config::_config_parser(int argc, char** argv) {
 	std::ifstream							 config_file;
 	std::string								 buffer;
@@ -95,7 +96,6 @@ std::ostream& operator<<(std::ostream& stream, Config const& config) {
 		for (size_t j = 0; j < config._servers[server].server_name.size(); j++){
 				std::cout << "SERVER NAME = " << config._servers[server].server_name[j] << std::endl;
 		}
-		// stream << "SERVERNAME = " << config._server[server]._serverName << std::endl;
 		stream << "SEVERURL = " << config._servers[server].server_url << std::endl;
 		stream << "ROOT = " << config._servers[server].auto_index << std::endl;
 		stream << "CLIENT_MAX_BODY_SIZE = " << config._servers[server].client_max_body_size << std::endl;

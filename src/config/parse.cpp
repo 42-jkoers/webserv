@@ -141,6 +141,26 @@ void Config::_parse_client_max_body_size(std::map<const std::string, std::string
 	_servers[_servers.size() - 1].client_max_body_size = body_size;
 }
 
+void Config::_location_methods(std::string methods) {
+	size_t i = 0;
+	size_t j = 0;
+
+	while (i < methods.length()) {
+		if (methods[i] == '\t' || methods[i] == ' ') {
+			_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].methods.push_back("");
+			if (strncmp(_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].methods[j].c_str(), "GET", _servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].methods[j].length()) != 0 && strncmp(_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].methods[j].c_str(), "POST", _servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].methods[j].length()) != 0 && strncmp(_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].methods[j].c_str(), "DELETE", _servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].methods[j].length()) != 0)
+				exit_with::e_perror("config error: methods");
+			j++;
+		} else
+			_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].methods[j].push_back(methods[i]);
+		i++;
+	}
+	if (strncmp(_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].methods[j].c_str(), "GET", _servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].methods[j].length()) != 0 && strncmp(_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].methods[j].c_str(), "POST", _servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].methods[j].length()) != 0 && strncmp(_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].methods[j].c_str(), "DELETE", _servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].methods[j].length()) != 0)
+		exit_with::e_perror("config error: methods");
+	_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1].number_methods = j + 1;
+}
+
+// TODO: set methods in location aswell
 void Config::_parse_allowed_methods(std::map<const std::string, std::string>& config_info) {
 	std::string methods = config_info["allowed_methods"];
 	size_t		i = 0;
@@ -148,19 +168,23 @@ void Config::_parse_allowed_methods(std::map<const std::string, std::string>& co
 
 	cut_till_collon(methods);
 	_servers[_servers.size() - 1].methods.push_back("");
-	while (i < methods.length()) {
-		if (methods[i] == '\t' || methods[i] == ' ') {
-			_servers[_servers.size() - 1].methods.push_back("");
-			if (strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "GET", _servers[_servers.size() - 1].methods[j].length()) != 0 && strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "POST", _servers[_servers.size() - 1].methods[j].length()) != 0 && strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "SET", _servers[_servers.size() - 1].methods[j].length()) != 0)
-				exit_with::e_perror("config error: methods");
-			j++;
-		} else
-			_servers[_servers.size() - 1].methods[j].push_back(methods[i]);
-		i++;
+	if (_location_check == true)
+		_location_methods(methods);
+	else {
+		while (i < methods.length()) {
+			if (methods[i] == '\t' || methods[i] == ' ') {
+				_servers[_servers.size() - 1].methods.push_back("");
+				if (strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "GET", _servers[_servers.size() - 1].methods[j].length()) != 0 && strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "POST", _servers[_servers.size() - 1].methods[j].length()) != 0 && strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "DELETE", _servers[_servers.size() - 1].methods[j].length()) != 0)
+					exit_with::e_perror("config error: methods");
+				j++;
+			} else
+				_servers[_servers.size() - 1].methods[j].push_back(methods[i]);
+			i++;
+		}
+		if (strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "GET", _servers[_servers.size() - 1].methods[j].length()) != 0 && strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "POST", _servers[_servers.size() - 1].methods[j].length()) != 0 && strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "DELETE", _servers[_servers.size() - 1].methods[j].length()) != 0)
+			exit_with::e_perror("config error: methods");
+		_servers[_servers.size() - 1].number_methods = j + 1;
 	}
-	if (strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "GET", _servers[_servers.size() - 1].methods[j].length()) != 0 && strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "POST", _servers[_servers.size() - 1].methods[j].length()) != 0 && strncmp(_servers[_servers.size() - 1].methods[j].c_str(), "SET", _servers[_servers.size() - 1].methods[j].length()) != 0)
-		exit_with::e_perror("config error: methods");
-	_servers[_servers.size() - 1].number_methods = j + 1;
 }
 
 void Config::_parseRoot(std::map<const std::string, std::string>& config_info) {
@@ -169,22 +193,36 @@ void Config::_parseRoot(std::map<const std::string, std::string>& config_info) {
 	cut_till_collon(root);
 	_servers[_servers.size() - 1].root = root;
 }
+/*
+if there is a '=' a match if the requestif the request URI exactly matches the location given
+you can see if this is the case with checking the equal variable. if it is 1 it should match if its 0 is doesn't
+*/
 
 void Config::_parse_location(std::map<const std::string, std::string>& config_info) {
 	std::string location = config_info["location"];
+	size_t		equal_sign;
+
 	_location_check = true;
 	cut_till_bracket(location);
+	if (strchr(location.c_str(), '=')) {
+		_servers[_servers.size() - 1].equal = 1;
+		equal_sign = location.find_first_of("=") + 1;
+		equal_sign = location.find_first_not_of(" \t", equal_sign);
+		location = location.substr(equal_sign, location.length() - equal_sign);
+	} else
+		_servers[_servers.size() - 1].equal = 0;
 	if (location[0] == '/')
 		location.insert(0, ".");
 	else
 		location.insert(0, "./");
 	if (!fs::path_exists(location))
 		exit_with::e_perror("config error: location");
+	// std::cout << location << std::endl;
 	_servers[_servers.size() - 1].location.push_back(Location());
 	_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1] = (Location());
 	_servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1]._path = location;
 }
-
+// TODO: multiple indexes
 void Config::_parse_index(std::map<const std::string, std::string>& config_info) {
 	std::string	  index = config_info["index"];
 	std::ifstream try_file;

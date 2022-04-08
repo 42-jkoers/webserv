@@ -38,7 +38,8 @@ class Config {
 		// READONLY
 		std::string							_path;
 		std::string							root;
-		std::vector<std::string*>			methods;
+		std::vector<std::string>			methods;
+		size_t								number_methods;
 		std::string							auto_index;
 		std::string							_defaultfile;
 		std::pair<std::string, std::string> cgi_path;
@@ -66,6 +67,7 @@ class Config {
 		std::string					  client_max_body_size;
 		std::map<size_t, std::string> error_pages;
 		std::vector<Location>		  location;
+		std::size_t					  equal;
 		std::vector<std::string>	  methods;
 		size_t						  number_methods;
 		std::string					  cgi_path;
@@ -89,6 +91,7 @@ class Config {
 	void _print_class();
 	void _config_parser(int argc, char** argv);
 	void _safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);
+	void _location_methods(std::string methods);
 	bool _server_check;
 	bool _location_check;
 };

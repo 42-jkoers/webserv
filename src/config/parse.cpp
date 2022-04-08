@@ -28,7 +28,8 @@ void cut_till_bracket(std::string& line) {
 
 Config::Location& Config::last_location() {
 	assert(_servers.size());
-	assert(_servers[_servers.size() - 1].location.size());
+	if (!_servers[_servers.size() - 1].location.size())
+		_servers[_servers.size() - 1].location.push_back(Location());
 	return _servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1];
 }
 

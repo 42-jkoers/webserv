@@ -35,7 +35,7 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 	for (size_t i = 0; i < options.size(); i++) {
 		if (line.find("server") != std::string::npos && line.find("{") != std::string::npos) {
 			_servers.push_back(Server());
-			_server_check = false;
+			_inside_server = false;
 			return;
 		}
 		if (line.find(options[i]) != std::string::npos) {
@@ -45,17 +45,17 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 		} else if (line.find_first_not_of("\t ") == std::string::npos)
 			return;
 		else if (line.find_first_of("}") != std::string::npos) {
-			if (_location_check == true)
-				_location_check = false;
-			else if (_server_check == true)
-				_server_check = false;
+			if (_inside_location == true)
+				_inside_location = false;
+			else if (_inside_server == true)
+				_inside_server = false;
 			return;
 		}
 	}
 	exit_with::e_perror("config error: invalid line");
 }
 
-//TODO: work with comments
+// TODO: work with comments
 void Config::_config_parser(int argc, char** argv) {
 	std::ifstream							 config_file;
 	std::string								 buffer;
@@ -93,8 +93,8 @@ std::ostream& operator<<(std::ostream& stream, Config const& config) {
 		for (size_t k = 0; k < config._servers[server].port.size(); k++) {
 			stream << "IP = " << config._servers[server].ip[k] << std::endl;
 		}
-		for (size_t j = 0; j < config._servers[server].server_name.size(); j++){
-				std::cout << "SERVER NAME = " << config._servers[server].server_name[j] << std::endl;
+		for (size_t j = 0; j < config._servers[server].server_name.size(); j++) {
+			std::cout << "SERVER NAME = " << config._servers[server].server_name[j] << std::endl;
 		}
 		stream << "SEVERURL = " << config._servers[server].server_url << std::endl;
 		stream << "ROOT = " << config._servers[server].auto_index << std::endl;
@@ -125,7 +125,7 @@ std::ostream& operator<<(std::ostream& stream, Config const& config) {
 			}
 		}
 	}
-	for (std::map<size_t, std::vector<size_t> >::const_iterator it = config._ports_servers.begin(); it != config._ports_servers.end(); it++) {
+	for (std::map<size_t, std::vector<size_t> /**/>::const_iterator it = config._ports_servers.begin(); it != config._ports_servers.end(); it++) {
 		for (size_t index = 0; index < it->second.size(); index++) {
 			std::cout << "PORTS_SERVER = " << it->first << " | " << it->second[index] << std::endl;
 		}

@@ -74,26 +74,27 @@ class Config {
 
 	  private:
 	};
-	std::map<size_t, std::vector<size_t> > _ports_servers;
-	std::vector<Server>					  _servers;
+	std::map<size_t, std::vector<size_t> /**/> _ports_servers;
+	std::vector<Server>						   _servers;
 
   private:
-	void _parse_server_name(std::map<const std::string, std::string>& config_info);
-	void _parse_listen(std::map<const std::string, std::string>& config_info);
-	void _parse_error_page(std::map<const std::string, std::string>& config_info);
-	void _parse_client_max_body_size(std::map<const std::string, std::string>& config_info);
-	void _parse_allowed_methods(std::map<const std::string, std::string>& config_info);
-	void _parseRoot(std::map<const std::string, std::string>& config_info);
-	void _parse_index(std::map<const std::string, std::string>& config_info);
-	void _parse_auto_index(std::map<const std::string, std::string>& config_info);
-	void _parse_location(std::map<const std::string, std::string>& config_info);
-	void _parse_cgi(std::map<const std::string, std::string>& config_info);
-	void _print_class();
-	void _config_parser(int argc, char** argv);
-	void _safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);
-	void _location_methods(std::string methods);
-	bool _server_check;
-	bool _location_check;
+	Location& last_location();
+	void	  _parse_server_name(std::map<const std::string, std::string>& config_info);
+	void	  _parse_listen(std::map<const std::string, std::string>& config_info);
+	void	  _parse_error_page(std::map<const std::string, std::string>& config_info);
+	void	  _parse_client_max_body_size(std::map<const std::string, std::string>& config_info);
+	void	  _parse_allowed_methods(std::map<const std::string, std::string>& config_info);
+	void	  _parseRoot(std::map<const std::string, std::string>& config_info);
+	void	  _parse_index(std::map<const std::string, std::string>& config_info);
+	void	  _parse_auto_index(std::map<const std::string, std::string>& config_info);
+	void	  _parse_location(std::map<const std::string, std::string>& config_info);
+	void	  _parse_cgi(std::map<const std::string, std::string>& config_info);
+	void	  _print_class();
+	void	  _config_parser(int argc, char** argv);
+	void	  _safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);
+	void	  _add_methods(const std::string& methods_str, std::vector<std::string>& methods);
+	bool	  _inside_server;
+	bool	  _inside_location;
 };
 
 std::ostream& operator<<(std::ostream& stream, Config const& config);

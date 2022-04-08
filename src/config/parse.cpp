@@ -116,10 +116,8 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 		else
 			_servers[_servers.size() - 1].ip.push_back("0.0.0.0");
 	}
-	if (_inside_location)
-		last_location().port.push_back(port);
-	else
-		_servers[_servers.size() - 1].port.push_back(port);
+	// TODO: validate this
+	_servers[_servers.size() - 1].port.push_back(port);
 }
 
 void Config::_parse_error_page(std::map<const std::string, std::string>& config_info) {

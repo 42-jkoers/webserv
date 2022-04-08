@@ -35,7 +35,7 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 	for (size_t i = 0; i < options.size(); i++) {
 		if (line.find("server") != std::string::npos && line.find("{") != std::string::npos) {
 			_servers.push_back(Server());
-			_inside_server = false;
+			_inside_server = true;
 			return;
 		}
 		if (line.find(options[i]) != std::string::npos) {
@@ -49,6 +49,8 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 				_inside_location = false;
 			else if (_inside_server)
 				_inside_server = false;
+			else	
+				exit_with::e_perror("config: syntx");
 			return;
 		}
 	}

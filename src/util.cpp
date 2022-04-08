@@ -55,3 +55,19 @@ std::vector<const char*> vector_to_c_array(const std::vector<const std::string>&
 	cv.push_back(NULL);
 	return cv;
 }
+
+// splits s in any of the delimiters in delim
+std::vector<std::string> ft_split(const std::string& s, const std::string& delim) {
+	std::vector<std::string> out;
+	size_t					 start;
+	size_t					 end = 0;
+
+	while ((start = s.find_first_not_of(delim, end)) != std::string::npos) {
+		end = std::string::npos;
+		for (size_t i = 0; i < delim.size(); i++)
+			end = std_ft::min(end, s.find(delim[i], start));
+
+		out.push_back(s.substr(start, end - start));
+	}
+	return out;
+}

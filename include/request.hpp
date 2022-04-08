@@ -9,12 +9,15 @@ class Request {
 	~Request();
 	void							   parse_header(const pollfd& pfd, const std::string& raw);
 	void							   append_to_body(std::vector<char>::const_iterator begin, std::vector<char>::const_iterator end);
-	bool							   has_name(const std::string& name) const;
-	size_t							   get_content_length() const;
-	std::map<std::string, std::string> get_request_line() const;
-	std::string						   get_value(const std::string& name) const;
-	std::string						   get_value(const std::string& name, size_t index) const;
-	bool							   has_value(const std::string& name, const std::string& value) const;
+
+	bool							   field_exits(const std::string& field) const;
+	const Header_field&				   field(const std::string& field) const;
+	const std::string&				   field_value(const std::string& _field, size_t index = 0) const;
+	bool							   field_is(const std::string& field, const std::string& value) const;
+	bool							   field_contains(const std::string& field, const std::string& part) const;
+	size_t							   field_content_length() const;
+
+	std::map<std::string, std::string> get_request_line() const { return _request_line; };
 	void							   reset();
 	// read-only variables
 	std::map<std::string, Header_field> header_fields;

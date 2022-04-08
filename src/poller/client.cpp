@@ -79,15 +79,15 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 		_buf.erase(_buf.begin(), _buf.begin() + header_end(_buf));
 		_parse_status = HEADER_DONE;
 
-		if (request.has_value("content-type", "application/x-www-form-urlencoded")) {
+		if (request.field_is("content-type", "application/x-www-form-urlencoded")) {
 			_body_type = MULTIPART;
 			_bytes_to_read = 99999999; // TODO
 		}							   //
-		else if (request.has_name("content-length")) {
+		else if (request.field_exits("content-length")) {
 			_body_type = MULTIPART;
-			_bytes_to_read = request.get_content_length();
+			_bytes_to_read = request.field_content_length();
 		} //
-		else if (request.has_value("transfer-encoding", "chunked")) {
+		else if (request.field_is("transfer-encoding", "chunked")) {
 			_body_type = CHUNKED;
 		} //
 		else {

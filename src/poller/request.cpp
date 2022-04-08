@@ -27,7 +27,7 @@ void Request::parse_header(const pollfd& pfd, const std::string& raw) {
 	if (_parse_field_values() == 1)
 		return;
 	// TODO: some checks to another class; only request error codes here
-	if (has_name("content-length") && get_content_length() < 0) {
+	if (field_exits("content-length") && field_content_length() < 0) {
 		response_code = 400;
 		return;
 	}
@@ -80,7 +80,7 @@ Host header field with an invalid field-value
 int Request::_parse_host() {
 	size_t colon;
 
-	if (!has_name("host"))
+	if (!field_exits("host"))
 		return _set_response_code(400);
 	std::map<std::string, Header_field>::iterator it = header_fields.find("host");
 	// check valid field-value
@@ -133,7 +133,7 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 		name = line.substr(0, colon); // if colon is string::npos, all characters until the end of the string
 		name = to_lower(name);
 		if (name.compare("host") == 0) {
-			if (has_name(name)) // if there is already a host in the header class, error
+			if (field_exits(name)) // if there is already a host in the header class, error
 				return _set_response_code(400);
 		}
 		if (colon == std::string::npos) { // skip line without ':'
@@ -227,46 +227,42 @@ int Request::_parse_request_line() {
 	return 0;
 }
 
-bool Request::has_name(const std::string& name) const { // is the name in one of the Header_fields
-	return header_fields.find(to_lower(name)) != header_fields.end();
+bool Request::field_exits(const std::string& field) const {
+	return header_fields.find(to_lower(field)) != header_fields.end();
 }
 
-bool Request::has_value(const std::string& name, const std::string& value) const { // is the value in one of the values of the Header_field's name
-	const std::string name_lower = to_lower(name);
-	if (!has_name(name_lower))
+const Header_field& Request::field(const std::string& _field) const {
+	assert(field_exits(_field));
+	return header_fields.find(to_lower(_field))->second;
+}
+
+const std::string& Request::field_value(const std::string& _field, size_t index) const {
+	return field(_field).raw_value;
+}
+
+bool Request::field_is(const std::string& field, const std::string& value) const {
+	std::map<std::string, Header_field>::const_iterator it = header_fields.find(to_lower(field));
+	if (it->second.values.size() != 1)
 		return false;
-	for (std::vector<std::string>::const_iterator it = header_fields.find(name_lower)->second.values.begin(); it != header_fields.find(name_lower)->second.values.end(); ++it) {
-		if (*it == value)
+	return it->second.raw_value == value;
+}
+
+bool Request::field_contains(const std::string& _field, const std::string& part) const {
+	if (!field_exits(_field))
+		return false;
+
+	const std::vector<std::string>& values = field(_field).values;
+	for (std::vector<std::string>::const_iterator it = values.begin(); it != values.end(); ++it)
+		if (it->find(part) != std::string::npos)
 			return true;
-	}
+
 	return false;
 }
 
-std::string Request::get_value(const std::string& name) const {
-	std::map<std::string, Header_field>::const_iterator it = header_fields.find(name);
-	assert(it != header_fields.end());
-	return it->second.values[0];
-}
-
-std::string Request::get_value(const std::string& name, size_t index) const {
-	std::map<std::string, Header_field>::const_iterator it = header_fields.find(name);
-	assert(it != header_fields.end());
-	assert(index < it->second.size_values);
-	return it->second.values[index];
-}
-
-size_t Request::get_content_length() const {
+size_t Request::field_content_length() const {
 	size_t content_length;
-	content_length = 0;
-	std::map<std::string, Header_field>::const_iterator it = header_fields.find("content-length");
-	assert(it != header_fields.end());
-	assert(parse_int(content_length, it->second.values[0]));
+	assert(parse_int(content_length, field_value("content-length")));
 	return content_length;
-}
-
-// getters
-std::map<std::string, std::string> Request::get_request_line() const {
-	return _request_line;
 }
 
 void Request::append_to_body(std::vector<char>::const_iterator begin, std::vector<char>::const_iterator end) {

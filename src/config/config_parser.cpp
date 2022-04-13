@@ -81,6 +81,11 @@ void Config::_config_parser(int argc, char** argv) {
 	if (!config_file.is_open())
 		exit_with::e_perror("Cannot open config file");
 	while (getline(config_file, buffer)) {
+		if (buffer.find_first_of("#") != std::string::npos)
+			buffer = buffer.substr(0, buffer.find_first_of("#"));
+		if(buffer.length() == 0)
+			continue;
+		std::cout << buffer << std::endl;
 		_safe_info(buffer, config_info, options);
 	}
 	config_file.close();

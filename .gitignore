@@ -1,6 +1,6 @@
 a.out
 obj/
-test.cpp
+/test.*
 .DS_Store
 /webserv
 *.dSYM

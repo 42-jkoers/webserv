@@ -180,7 +180,7 @@ int Request::_parse_URI() {
 		if (prev == std::string::npos)
 			return 0;
 		prev++;
-		queries = uri.substr(prev);
+		query = uri.substr(prev);
 	} else if (uri.find(":") != std::string::npos && uri[0] != ':') { // absolute form
 		absolute_form += uri;
 	} else {
@@ -273,7 +273,7 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 	output << "method:        [" << rhs.method << "]" << std::endl;
 	output << "path:          [" << rhs.path << "]" << std::endl;
 	output << "port:          [" << rhs.port << "]" << std::endl;
-	output << "queries:       [" << rhs.queries << "]" << std::endl;
+	output << "queries:       [" << rhs.query << "]" << std::endl;
 	output << "absolute_form: [" << rhs.absolute_form << "]" << std::endl;
 	output << "http_version:  [" << rhs.http_version << "]" << std::endl;
 

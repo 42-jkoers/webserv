@@ -19,15 +19,16 @@ const Constants g_constants;
 void on_request(Client& client) {
 	// client.print();
 	std::cout << client.request << std::endl;
+	const Request& req = client.request;
 
-	if (client.request.uri.find("/cgi/input") != std::string::npos)
-		Response::cgi(client.request, "./cgi/input", "", "");
-	else if (client.request.uri.find("/cgi/index.sh") != std::string::npos)
-		Response::cgi(client.request, "./cgi/index.sh", "", "");
-	else if (client.request.field_value("user-agent").find("curl") != std::string::npos)
-		Response::text(client.request, 200, "Hello curl\n");
+	if (req.uri.find("/cgi/input") != std::string::npos)
+		Response::cgi(req, "./cgi/input", "", req.queries);
+	else if (req.uri.find("/cgi/index.sh") != std::string::npos)
+		Response::cgi(req, "./cgi/index.sh", "", req.queries);
+	else if (req.field_value("user-agent").find("curl") != std::string::npos)
+		Response::text(req, 200, "Hello curl\n");
 	else
-		Response::file(client.request, "./html/upload.html");
+		Response::file(req, "./html/upload.html");
 }
 
 int main(int argc, char** argv) {

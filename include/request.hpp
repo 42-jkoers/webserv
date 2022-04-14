@@ -26,7 +26,7 @@ class Request {
 	std::string		  http_version;
 	std::string		  path;
 	std::string		  absolute_form;
-	std::string		  queries;
+	std::string		  query;
 	std::vector<char> body;
 
   protected:

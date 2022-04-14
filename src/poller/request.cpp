@@ -1,4 +1,5 @@
 #include "request.hpp"
+#include "constants.hpp"
 
 Request::Request() {
 	// std::cout << "Request constructor called" << std::endl;
@@ -168,20 +169,20 @@ https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 */
 int Request::_parse_URI() {
 	method = _request_line["method"];
-	uri_raw = _request_line["URI"];
+	uri = _request_line["URI"];
 	http_version = _request_line["HTTP_version"];
 	size_t prev;
 
 	prev = 0;
-	if (uri_raw.find("/") != std::string::npos && uri_raw[0] == '/') { // origin form
-		prev = uri_raw.find_first_of("?");
-		path = uri_raw.substr(0, prev);
+	if (uri.find("/") != std::string::npos && uri[0] == '/') { // origin form
+		prev = uri.find_first_of("?");
+		path = uri.substr(0, prev);
 		if (prev == std::string::npos)
 			return 0;
 		prev++;
-		queries = uri_raw.substr(prev);
-	} else if (uri_raw.find(":") != std::string::npos && uri_raw[0] != ':') { // absolute form
-		absolute_form += uri_raw;
+		query = uri.substr(prev);
+	} else if (uri.find(":") != std::string::npos && uri[0] != ':') { // absolute form
+		absolute_form += uri;
 	} else {
 		return _set_response_code(400);
 	}
@@ -195,14 +196,10 @@ int Request::_parse_request_line() {
 	size_t					 delimiter;
 	std::string				 line;
 	std::vector<std::string> components;
-	std::vector<std::string> methods;
 
 	components.push_back("method");
 	components.push_back("URI");
 	components.push_back("HTTP_version");
-	methods.push_back("GET");
-	methods.push_back("POST");
-	methods.push_back("DELETE");
 	prev = 0;
 	end = _raw.find(_crlf);
 	if (end == std::string::npos)
@@ -218,7 +215,7 @@ int Request::_parse_request_line() {
 	}
 	if (delimiter != end)
 		return _set_response_code(301);
-	if (std::find(methods.begin(), methods.end(), _request_line["method"]) == methods.end()) // TODO: invalid request line, decide: 400 bad request/301 moved permanently
+	if (!g_constants.is_valid_method(_request_line["method"])) // TODO: invalid request line, decide: 400 bad request/301 moved permanently
 		return _set_response_code(301);
 	if (_request_line["HTTP_version"].compare("HTTP/1.1") != 0)
 		return _set_response_code(505); // TODO: generate representation why version is not supported & what is supported [RFC7231; 6.6.6]
@@ -270,26 +267,17 @@ void Request::append_to_body(std::vector<char>::const_iterator begin, std::vecto
 }
 
 std::ostream& operator<<(std::ostream& output, Request const& rhs) {
-	std::map<std::string, std::string> request_line = rhs.get_request_line();
+	std::cout << "================== REQUEST ==================" << std::endl;
 
-	output << "Request line-------------" << std::endl;
-	for (std::map<std::string, std::string>::const_iterator it = request_line.begin(); it != request_line.end(); ++it) {
-		output << "[" << it->first << "]: "
-			   << "[" << it->second << "]" << std::endl;
-	}
-	if (!rhs.path.empty()) {
-		output << "Path: ";
-		output << "[" << rhs.path << "]" << std::endl;
-	}
-	if (!rhs.queries.empty()) {
-		output << "Queries: ";
-		output << "[" << rhs.queries << "]" << std::endl;
-	}
-	if (!rhs.absolute_form.empty()) {
-		output << "Absolute form: ";
-		output << "[" << rhs.absolute_form << "]" << std::endl;
-	}
-	output << "Request header fields----" << std::endl;
+	output << "uri:           [" << rhs.uri << "]" << std::endl;
+	output << "method:        [" << rhs.method << "]" << std::endl;
+	output << "path:          [" << rhs.path << "]" << std::endl;
+	output << "port:          [" << rhs.port << "]" << std::endl;
+	output << "query:         [" << rhs.query << "]" << std::endl;
+	output << "absolute_form: [" << rhs.absolute_form << "]" << std::endl;
+	output << "http_version:  [" << rhs.http_version << "]" << std::endl;
+
+	output << "\n=== HEADERS ===" << std::endl;
 	for (std::map<std::string, Header_field>::const_iterator it = rhs.header_fields.begin(); it != rhs.header_fields.end(); ++it) {
 		output << "[" << it->first << "]:";
 		for (std::vector<std::string>::const_iterator it2 = it->second.values.begin(); it2 != it->second.values.end(); ++it2) {
@@ -297,9 +285,9 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 		}
 		output << std::endl;
 	}
-	output << "Request body-------------" << std::endl;
+	output << "==== BODY =====" << std::endl;
 	print_escaped(rhs.body.data(), rhs.body.size());
-	output << "End----------------------" << std::endl;
+	output << "================ REQUEST END ================\n " << std::endl;
 
 	return output;
 }

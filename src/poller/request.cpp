@@ -1,4 +1,5 @@
 #include "request.hpp"
+#include "constants.hpp"
 
 Request::Request() {
 	// std::cout << "Request constructor called" << std::endl;
@@ -195,14 +196,10 @@ int Request::_parse_request_line() {
 	size_t					 delimiter;
 	std::string				 line;
 	std::vector<std::string> components;
-	std::vector<std::string> methods;
 
 	components.push_back("method");
 	components.push_back("URI");
 	components.push_back("HTTP_version");
-	methods.push_back("GET");
-	methods.push_back("POST");
-	methods.push_back("DELETE");
 	prev = 0;
 	end = _raw.find(_crlf);
 	if (end == std::string::npos)
@@ -218,7 +215,7 @@ int Request::_parse_request_line() {
 	}
 	if (delimiter != end)
 		return _set_response_code(301);
-	if (std::find(methods.begin(), methods.end(), _request_line["method"]) == methods.end()) // TODO: invalid request line, decide: 400 bad request/301 moved permanently
+	if (!g_constants.is_valid_method(_request_line["method"])) // TODO: invalid request line, decide: 400 bad request/301 moved permanently
 		return _set_response_code(301);
 	if (_request_line["HTTP_version"].compare("HTTP/1.1") != 0)
 		return _set_response_code(505); // TODO: generate representation why version is not supported & what is supported [RFC7231; 6.6.6]

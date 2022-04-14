@@ -58,9 +58,7 @@ static ssize_t header_end(const std::vector<char>& buf) {
 	static const char	end_sequence[] = "\r\n\r\n";
 	static const size_t len = strlen(end_sequence);
 
-	if (buf.size() < len)
-		return -1;
-	for (size_t i = buf.size() - len; i; i--) {
+	for (size_t i = 0; i + len <= buf.size(); i++) {
 		if (!memcmp(&buf.data()[i], end_sequence, len))
 			return i + len;
 	}
@@ -79,11 +77,7 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 		_buf.erase(_buf.begin(), _buf.begin() + header_end(_buf));
 		_parse_status = HEADER_DONE;
 
-		if (request.field_is("content-type", "application/x-www-form-urlencoded")) {
-			_body_type = MULTIPART;
-			_bytes_to_read = 99999999; // TODO
-		}							   //
-		else if (request.field_exits("content-length")) {
+		if (request.field_exits("content-length")) {
 			_body_type = MULTIPART;
 			_bytes_to_read = request.field_content_length();
 		} //
@@ -94,7 +88,8 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 			_body_type = EMPTY;
 			_parse_status = FINISHED;
 		}
-		return;
+		if (_buf.size() == 0 || _parse_status == FINISHED)
+			return;
 	}
 
 	if (_parse_status == HEADER_DONE || _parse_status == READING_BODY) {
@@ -102,8 +97,8 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 
 		if (_body_type == MULTIPART) {
 			request.append_to_body(_buf.begin(), _buf.end());
+			_bytes_to_read -= _buf.size();
 			_buf.clear();
-			_bytes_to_read -= bytes_read;
 			if (_bytes_to_read <= 0) { // TODO: what the fuck
 				_parse_status = FINISHED;
 				return;

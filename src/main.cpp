@@ -18,13 +18,19 @@ const Constants g_constants;
 
 void on_request(Client& client) {
 	// client.print();
-	std::cout << client.request << std::endl;
 	const Request& req = client.request;
+	if (req.uri.find("favicon.ico") != std::string::npos) {
+		Response::text(req, 404, "");
+		return;
+	}
+	std::cout << req << std::endl;
 
 	if (req.uri.find("/cgi/input") != std::string::npos)
 		Response::cgi(req, "./cgi/input", "", req.query);
 	else if (req.uri.find("/cgi/index.sh") != std::string::npos)
 		Response::cgi(req, "./cgi/index.sh", "", req.query);
+	else if (req.uri.find("/form") != std::string::npos)
+		Response::file(req, "./html/form.html");
 	else if (req.field_value("user-agent").find("curl") != std::string::npos)
 		Response::text(req, 200, "Hello curl\n");
 	else
@@ -40,6 +46,7 @@ int main(int argc, char** argv) {
 			poller.add_server(mode_ipv6, *port);
 		}
 	}
+	std::cout << "started" << std::endl;
 	poller.start(on_request);
 	return 0;
 }

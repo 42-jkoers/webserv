@@ -267,25 +267,17 @@ void Request::append_to_body(std::vector<char>::const_iterator begin, std::vecto
 }
 
 std::ostream& operator<<(std::ostream& output, Request const& rhs) {
+	std::cout << "================== REQUEST ==================" << std::endl;
 
-	output << "Request line-------------" << std::endl;
-	for (std::map<std::string, std::string>::const_iterator it = rhs._request_line.begin(); it != rhs._request_line.end(); ++it) {
-		output << "[" << it->first << "]: "
-			   << "[" << it->second << "]" << std::endl;
-	}
-	if (!rhs.path.empty()) {
-		output << "Path: ";
-		output << "[" << rhs.path << "]" << std::endl;
-	}
-	if (!rhs.queries.empty()) {
-		output << "Queries: ";
-		output << "[" << rhs.queries << "]" << std::endl;
-	}
-	if (!rhs.absolute_form.empty()) {
-		output << "Absolute form: ";
-		output << "[" << rhs.absolute_form << "]" << std::endl;
-	}
-	output << "Request header fields----" << std::endl;
+	output << "uri:           [" << rhs.uri << "]" << std::endl;
+	output << "method:        [" << rhs.method << "]" << std::endl;
+	output << "path:          [" << rhs.path << "]" << std::endl;
+	output << "port:          [" << rhs.port << "]" << std::endl;
+	output << "queries:       [" << rhs.queries << "]" << std::endl;
+	output << "absolute_form: [" << rhs.absolute_form << "]" << std::endl;
+	output << "http_version:  [" << rhs.http_version << "]" << std::endl;
+
+	output << "\n=== HEADERS ===" << std::endl;
 	for (std::map<std::string, Header_field>::const_iterator it = rhs.header_fields.begin(); it != rhs.header_fields.end(); ++it) {
 		output << "[" << it->first << "]:";
 		for (std::vector<std::string>::const_iterator it2 = it->second.values.begin(); it2 != it->second.values.end(); ++it2) {
@@ -293,9 +285,9 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 		}
 		output << std::endl;
 	}
-	output << "Request body-------------" << std::endl;
+	output << "==== BODY =====" << std::endl;
 	print_escaped(rhs.body.data(), rhs.body.size());
-	output << "End----------------------" << std::endl;
+	output << "================ REQUEST END ================\n " << std::endl;
 
 	return output;
 }

@@ -168,20 +168,20 @@ https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 */
 int Request::_parse_URI() {
 	method = _request_line["method"];
-	uri_raw = _request_line["URI"];
+	uri = _request_line["URI"];
 	http_version = _request_line["HTTP_version"];
 	size_t prev;
 
 	prev = 0;
-	if (uri_raw.find("/") != std::string::npos && uri_raw[0] == '/') { // origin form
-		prev = uri_raw.find_first_of("?");
-		path = uri_raw.substr(0, prev);
+	if (uri.find("/") != std::string::npos && uri[0] == '/') { // origin form
+		prev = uri.find_first_of("?");
+		path = uri.substr(0, prev);
 		if (prev == std::string::npos)
 			return 0;
 		prev++;
-		queries = uri_raw.substr(prev);
-	} else if (uri_raw.find(":") != std::string::npos && uri_raw[0] != ':') { // absolute form
-		absolute_form += uri_raw;
+		queries = uri.substr(prev);
+	} else if (uri.find(":") != std::string::npos && uri[0] != ':') { // absolute form
+		absolute_form += uri;
 	} else {
 		return _set_response_code(400);
 	}
@@ -270,10 +270,9 @@ void Request::append_to_body(std::vector<char>::const_iterator begin, std::vecto
 }
 
 std::ostream& operator<<(std::ostream& output, Request const& rhs) {
-	std::map<std::string, std::string> request_line = rhs.get_request_line();
 
 	output << "Request line-------------" << std::endl;
-	for (std::map<std::string, std::string>::const_iterator it = request_line.begin(); it != request_line.end(); ++it) {
+	for (std::map<std::string, std::string>::const_iterator it = rhs._request_line.begin(); it != rhs._request_line.end(); ++it) {
 		output << "[" << it->first << "]: "
 			   << "[" << it->second << "]" << std::endl;
 	}

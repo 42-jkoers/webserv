@@ -20,7 +20,7 @@ void Client::read_pollfd(const pollfd& pfd) {
 		for (ssize_t i = 0; i < bytes_read; i++)
 			_buf.push_back(buf[i]);
 		_parse(bytes_read, pfd);
-		if (_parse_status <= HEADER_DONE)
+		if (_parse_status == HEADER_DONE)
 			break;
 		if (_parse_status == FINISHED)
 			return;
@@ -29,8 +29,8 @@ void Client::read_pollfd(const pollfd& pfd) {
 		pfd.revents & POLLOUT) {
 		std::string resp = "HTTP/1.1 100 Continue\r\nHTTP/1.1 200 OK\r\n\r\n";
 		write(pfd.fd, resp.data(), resp.length());
-		_parse_status = WAITING_FOR_BODY;
 	}
+	_parse_status = READING_BODY;
 }
 
 Client::Chunk_status Client::_append_chunk(size_t bytes_read) {
@@ -54,24 +54,52 @@ Client::Chunk_status Client::_append_chunk(size_t bytes_read) {
 // void write_body_to_file(const std::string& root, const std::vector<char>& data) {
 // }
 
+static ssize_t header_end(const std::vector<char>& buf) {
+	static const char	end_sequence[] = "\r\n\r\n";
+	static const size_t len = strlen(end_sequence);
+
+	if (buf.size() < len)
+		return -1;
+	for (size_t i = buf.size() - len; i; i--) {
+		if (!memcmp(&buf.data()[i], end_sequence, len))
+			return i + len;
+	}
+	return -1;
+}
+
 void Client::_parse(size_t bytes_read, const pollfd& pfd) {
-	if (_parse_status <= HEADER_IN_PROGRESS &&
-		_buf.size() > 4 &&
-		!strncmp(&_buf.data()[_buf.size() - 4], "\r\n\r\n", 4)) {
+	if (_parse_status <= READING_HEADER) {
+		_parse_status = READING_HEADER;
+		if (header_end(_buf) != -1)
+			_parse_status = READING_HEADER_DONE;
+	}
+
+	if (_parse_status == READING_HEADER_DONE) {
 		request.parse_header(pfd, _buf.data());
-		_buf.clear();
+		_buf.erase(_buf.begin(), _buf.begin() + header_end(_buf));
 		_parse_status = HEADER_DONE;
-		if (request.has_name("content-length")) {
+
+		if (request.field_is("content-type", "application/x-www-form-urlencoded")) {
 			_body_type = MULTIPART;
-			_bytes_to_read = request.get_content_length();
-		} else if (request.has_name("transfer-encoding") && request.has_value("transfer-encoding", "chunked"))
+			_bytes_to_read = 99999999; // TODO
+		}							   //
+		else if (request.field_exits("content-length")) {
+			_body_type = MULTIPART;
+			_bytes_to_read = request.field_content_length();
+		} //
+		else if (request.field_is("transfer-encoding", "chunked")) {
 			_body_type = CHUNKED;
+		} //
 		else {
+			_body_type = EMPTY;
 			_parse_status = FINISHED;
 		}
 		return;
 	}
-	if (_parse_status >= WAITING_FOR_BODY) {
+
+	if (_parse_status == HEADER_DONE || _parse_status == READING_BODY) {
+		_parse_status = READING_BODY;
+
 		if (_body_type == MULTIPART) {
 			request.append_to_body(_buf.begin(), _buf.end());
 			_buf.clear();
@@ -89,8 +117,6 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 		}
 		return;
 	}
-	_body_type = EMPTY;
-	_parse_status = HEADER_IN_PROGRESS;
 }
 
 void Client::reset() {

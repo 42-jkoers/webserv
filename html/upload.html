@@ -1,7 +1,7 @@
 <html>
 
 <head>
-	<title>Test</title>
+	<title>File upload</title>
 	<style>
 		html {
 			color-scheme: dark;
@@ -10,9 +10,14 @@
 </head>
 
 <body>
-	<form action="/upload" method="POST">
-		<input type="file" id="fileID" name="filename.ext">
-		<input type="submit">
+	<form action="/upload" method="post" enctype="multipart/form-data">
+		<div>
+			<label for="file">file</label>
+			<input type="file" name="file" id="file" multiple>
+		</div>
+		<div>
+			<button>submit</button>
+		</div>
 	</form>
 </body>
 

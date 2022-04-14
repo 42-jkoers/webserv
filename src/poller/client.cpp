@@ -20,7 +20,6 @@ void Client::read_pollfd(const pollfd& pfd) {
 		for (ssize_t i = 0; i < bytes_read; i++)
 			_buf.push_back(buf[i]);
 		_parse(bytes_read, pfd);
-		print_escaped(buf, bytes_read);
 		if (_parse_status == HEADER_DONE)
 			break;
 		if (_parse_status == FINISHED)
@@ -59,7 +58,7 @@ static ssize_t header_end(const std::vector<char>& buf) {
 	static const char	end_sequence[] = "\r\n\r\n";
 	static const size_t len = strlen(end_sequence);
 
-	for (size_t i = 0; i + len < buf.size(); i++) {
+	for (size_t i = 0; i + len <= buf.size(); i++) {
 		if (!memcmp(&buf.data()[i], end_sequence, len))
 			return i + len;
 	}
@@ -89,7 +88,7 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 			_body_type = EMPTY;
 			_parse_status = FINISHED;
 		}
-		if (_buf.size() == 0)
+		if (_buf.size() == 0 || _parse_status == FINISHED)
 			return;
 	}
 

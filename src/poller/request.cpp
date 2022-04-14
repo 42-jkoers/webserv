@@ -273,7 +273,7 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 	output << "method:        [" << rhs.method << "]" << std::endl;
 	output << "path:          [" << rhs.path << "]" << std::endl;
 	output << "port:          [" << rhs.port << "]" << std::endl;
-	output << "queries:       [" << rhs.query << "]" << std::endl;
+	output << "query:         [" << rhs.query << "]" << std::endl;
 	output << "absolute_form: [" << rhs.absolute_form << "]" << std::endl;
 	output << "http_version:  [" << rhs.http_version << "]" << std::endl;
 

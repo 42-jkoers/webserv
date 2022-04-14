@@ -237,7 +237,7 @@ const Header_field& Request::field(const std::string& _field) const {
 }
 
 const std::string& Request::field_value(const std::string& _field, size_t index) const {
-	return field(_field).raw_value;
+	return field(_field).values[index];
 }
 
 bool Request::field_is(const std::string& field, const std::string& value) const {

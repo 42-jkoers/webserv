@@ -114,8 +114,6 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 			_servers[_servers.size() - 1].ip.push_back("0.0.0.0");
 	}
 	// TODO: validate this
-	if (_inside_location)
-		exit_with::e_perror("config: listen");
 	_servers[_servers.size() - 1].port.push_back(port);
 }
 

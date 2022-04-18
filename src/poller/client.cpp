@@ -83,7 +83,7 @@ void Client::_parse(size_t bytes_read) {
 		_buf.erase(_buf.begin(), _buf.begin() + header_end(_buf));
 		_parse_status = HEADER_DONE;
 
-		if (request.field_exits("content-length")) {
+		if (request.field_exists("content-length")) {
 			_body_type = MULTIPART;
 			_bytes_to_read = request.field_content_length();
 		} //

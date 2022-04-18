@@ -19,7 +19,7 @@ void Request::parse_header(const std::string& raw) {
 	if (_parse_field_values() == 1)
 		return;
 	// TODO: some checks to another class; only request error codes here
-	if (field_exits("content-length") && field_content_length() < 0) {
+	if (field_exists("content-length") && field_content_length() < 0) {
 		response_code = 400;
 		return;
 	}
@@ -72,7 +72,7 @@ Host header field with an invalid field-value
 int Request::_parse_host() {
 	size_t colon;
 
-	if (!field_exits("host"))
+	if (!field_exists("host"))
 		return _set_response_code(400);
 	std::map<std::string, Header_field>::iterator it = header_fields.find("host");
 	// check valid field-value
@@ -125,7 +125,7 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 		name = line.substr(0, colon); // if colon is string::npos, all characters until the end of the string
 		name = to_lower(name);
 		if (name.compare("host") == 0) {
-			if (field_exits(name)) // if there is already a host in the header class, error
+			if (field_exists(name)) // if there is already a host in the header class, error
 				return _set_response_code(400);
 		}
 		if (colon == std::string::npos) { // skip line without ':'
@@ -215,12 +215,12 @@ int Request::_parse_request_line() {
 	return 0;
 }
 
-bool Request::field_exits(const std::string& field) const {
+bool Request::field_exists(const std::string& field) const {
 	return header_fields.find(to_lower(field)) != header_fields.end();
 }
 
 const Header_field& Request::field(const std::string& _field) const {
-	assert(field_exits(_field));
+	assert(field_exists(_field));
 	return header_fields.find(to_lower(_field))->second;
 }
 
@@ -236,7 +236,7 @@ bool Request::field_is(const std::string& field, const std::string& value) const
 }
 
 bool Request::field_contains(const std::string& _field, const std::string& part) const {
-	if (!field_exits(_field))
+	if (!field_exists(_field))
 		return false;
 
 	const std::vector<std::string>& values = field(_field).values;

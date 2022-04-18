@@ -9,7 +9,7 @@ class Request {
 	Request(uint16_t port);
 	~Request(){};
 
-	bool				field_exits(const std::string& field) const;
+	bool				field_exists(const std::string& field) const;
 	const Header_field& field(const std::string& field) const;
 
 	const std::string&	field_value(const std::string& _field, size_t index = 0) const;

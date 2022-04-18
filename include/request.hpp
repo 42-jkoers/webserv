@@ -16,6 +16,7 @@ class Request {
 	bool				field_is(const std::string& field, const std::string& value) const;
 	bool				field_contains(const std::string& field, const std::string& part) const;
 	size_t				field_content_length() const;
+	std::string			field_multipart_boundary() const;
 
 	void				set_fd(fd_t f) { this->fd = f; }
 	// read-only variables

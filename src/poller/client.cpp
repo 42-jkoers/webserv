@@ -36,7 +36,6 @@ void Client::read_pollfd(const pollfd& pfd) {
 		std::string resp = "HTTP/1.1 100 Continue\r\nHTTP/1.1 200 OK\r\n\r\n";
 		write(pfd.fd, resp.data(), resp.length());
 	}
-	_parse_status = READING_BODY;
 }
 
 Client::Chunk_status Client::_append_chunk(size_t bytes_read) {
@@ -60,27 +59,16 @@ Client::Chunk_status Client::_append_chunk(size_t bytes_read) {
 // void write_body_to_file(const std::string& root, const std::vector<char>& data) {
 // }
 
-static ssize_t header_end(const std::vector<char>& buf) {
-	static const char	end_sequence[] = "\r\n\r\n";
-	static const size_t len = strlen(end_sequence);
-
-	for (size_t i = 0; i + len <= buf.size(); i++) {
-		if (!memcmp(&buf.data()[i], end_sequence, len))
-			return i + len;
-	}
-	return -1;
-}
-
 void Client::_parse(size_t bytes_read) {
 	if (_parse_status <= READING_HEADER) {
 		_parse_status = READING_HEADER;
-		if (header_end(_buf) != -1)
+		if (_buf.find("\r\n\r\n") != std::string::npos)
 			_parse_status = READING_HEADER_DONE;
 	}
 
 	if (_parse_status == READING_HEADER_DONE) {
 		request.parse_header(_buf.data());
-		_buf.erase(_buf.begin(), _buf.begin() + header_end(_buf));
+		_buf.erase(_buf.begin(), _buf.begin() + _buf.find("\r\n\r\n") + 4);
 		_parse_status = HEADER_DONE;
 
 		if (request.field_exits("content-length")) {
@@ -98,14 +86,20 @@ void Client::_parse(size_t bytes_read) {
 			return;
 	}
 
-	if (_parse_status == HEADER_DONE || _parse_status == READING_BODY) {
+	if (_parse_status == HEADER_DONE) {
+		// TODO: parse body header instead of just removing it
+		static const std::string suffix = "\r\n\r\n";
+		_buf.erase(_buf.begin(), _buf.begin() + _buf.find(suffix) + suffix.size());
 		_parse_status = READING_BODY;
+	}
 
+	if (_parse_status == READING_BODY) {
 		if (_body_type == MULTIPART) {
-			request.append_to_body(_buf.begin(), _buf.end());
+			size_t boundary = _buf.find(request.field_multipart_boundary());
+			request.append_to_body(_buf.begin(), _buf.begin() + std_ft::min(_buf.size(), boundary));
 			_bytes_to_read -= _buf.size();
 			_buf.clear();
-			if (_bytes_to_read <= 0) { // TODO: what the fuck
+			if (_bytes_to_read <= 0 || boundary != std::string::npos) {
 				_parse_status = FINISHED;
 				return;
 			}

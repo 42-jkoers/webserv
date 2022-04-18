@@ -253,6 +253,14 @@ size_t Request::field_content_length() const {
 	return content_length;
 }
 
+std::string Request::field_multipart_boundary() const {
+	static const std::string prefix = "boundary=";
+	assert(field_contains("content-type", prefix));
+	size_t start = field_value("content-type").find(prefix) + prefix.size();
+	size_t length = field_value("content-type").find("\r\n", start);
+	return field_value("content-type").substr(start, length);
+}
+
 void Request::append_to_body(std::vector<char>::const_iterator begin, std::vector<char>::const_iterator end) {
 	body.insert(body.end(), begin, end);
 }
@@ -266,6 +274,7 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 	output << "port:          [" << rhs.port << "]" << std::endl;
 	output << "query:         [" << rhs.query << "]" << std::endl;
 	output << "absolute_form: [" << rhs.absolute_form << "]" << std::endl;
+	output << "boundary       [" << (rhs.field_exits("content-type") ? rhs.field_multipart_boundary() : "") << "]" << std::endl;
 	output << "http_version:  [" << rhs.http_version << "]" << std::endl;
 
 	output << "\n=== HEADERS ===" << std::endl;

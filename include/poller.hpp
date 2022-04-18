@@ -26,6 +26,7 @@ class Poller {
 	void					   _on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client));
 	size_t					   _n_servers;
 	std::vector<struct pollfd> _pollfds;
+	std::vector<uint16_t>	   _server_ports;
 	std::map<fd_t, Client>	   _clients;
 
 	// disabled

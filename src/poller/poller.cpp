@@ -13,8 +13,11 @@ Poller::Poller() {
 }
 
 void Poller::add_server(IP_mode ip_mode, uint16_t port) {
-	fd_t server_socket = constructors::server_socket(ip_mode, port);
-	_pollfds.push_back(constructors::pollfd(server_socket, POLLIN | POLLOUT));
+	fd_t				server_socket = constructors::server_socket(ip_mode, port);
+	const struct pollfd pfd = constructors::pollfd(server_socket, POLLIN | POLLOUT);
+
+	_pollfds.push_back(pfd);
+	_server_ports.push_back(port);
 	_n_servers++;
 }
 
@@ -27,25 +30,25 @@ void Poller::_accept_clients() {
 			if (newfd < 0)
 				break;
 
-			// New incoming connection
-			_pollfds.push_back(constructors::pollfd(newfd, POLLIN | POLLOUT));
+			const struct pollfd client_pfd = constructors::pollfd(newfd, POLLIN | POLLOUT);
+			_pollfds.push_back(client_pfd);
+			if (_clients.find(client_pfd.fd) == _clients.end())
+				_clients[client_pfd.fd] = Client(_server_ports[i]);
 		}
 	}
 }
 
 #define FD_CLOSED -1
 void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client)) {
-	if (_clients.find(pfd.fd) == _clients.end())
-		_clients[pfd.fd] = Client();
 	Client& client = _clients[pfd.fd];
 
 	client.read_pollfd(pfd);
 	if (client.parse_status() == Client::FINISHED) {
-		if (client.request.response_code >= 203) {
-			Response::text(client.request, client.request.response_code, "Error!\n"); // TODO
-		} else
-			on_request(client);
-		client.reset();
+		on_request(client);
+	}
+	if (client.parse_status() == Client::FINISHED ||
+		client.parse_status() == Client::ERROR) {
+		_clients.erase(pfd.fd);
 		close(pfd.fd); // TODO: only when keepalive is true
 		pfd.fd = FD_CLOSED;
 	}

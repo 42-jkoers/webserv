@@ -4,7 +4,9 @@
 
 class Client {
   public:
-	Client();
+	Client(){};
+	Client(uint16_t port);
+	~Client() {}
 
 	enum Body_type {
 		EMPTY,
@@ -43,6 +45,6 @@ class Client {
 	ssize_t			  _bytes_to_read;
 	std::vector<char> _buf;
 
-	void			  _parse(size_t bytes_read, const pollfd& pfd);
+	void			  _parse(size_t bytes_read);
 	Chunk_status	  _append_chunk(size_t bytes_read);
 };

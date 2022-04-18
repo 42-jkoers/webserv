@@ -1,25 +1,16 @@
 #include "request.hpp"
 #include "constants.hpp"
 
-Request::Request() {
-	// std::cout << "Request constructor called" << std::endl;
-	reset();
-}
-
-Request::~Request() {
-}
-
-void Request::reset() {
+Request::Request(uint16_t port) {
 	response_code = 200;
-	port = 8080; // default if no port is specified in host header field
+	fd = -1;
+	this->port = port;
 	_crlf = "\r\n";
 	_whitespaces = " \t";
 	header_fields.clear();
 }
 
-void Request::parse_header(const pollfd& pfd, const std::string& raw) {
-	reset();
-	fd = pfd.fd;
+void Request::parse_header(const std::string& raw) {
 	_raw = raw;
 	if (_parse_request_line() == 1)
 		return;

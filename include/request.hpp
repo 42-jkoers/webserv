@@ -5,9 +5,9 @@
 
 class Request {
   public:
-	Request();
-	~Request();
-	void				reset();
+	Request(){};
+	Request(uint16_t port);
+	~Request(){};
 
 	bool				field_exits(const std::string& field) const;
 	const Header_field& field(const std::string& field) const;
@@ -17,8 +17,9 @@ class Request {
 	bool				field_contains(const std::string& field, const std::string& part) const;
 	size_t				field_content_length() const;
 
+	void				set_fd(fd_t f) { this->fd = f; }
 	// read-only variables
-	uint32_t		  port;
+	uint16_t		  port;
 	uint32_t		  response_code;
 	fd_t			  fd;
 	std::string		  method;
@@ -30,7 +31,7 @@ class Request {
 	std::vector<char> body;
 
   protected:
-	void								parse_header(const pollfd& pfd, const std::string& raw);
+	void								parse_header(const std::string& raw);
 	void								append_to_body(std::vector<char>::const_iterator begin, std::vector<char>::const_iterator end);
 	std::map<std::string, Header_field> header_fields;
 	std::map<std::string, std::string>	_request_line;

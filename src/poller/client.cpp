@@ -1,13 +1,19 @@
 #include "client.hpp"
 
-Client::Client() { // TODO: disable
-	reset();
+Client::Client(uint16_t port) {
+	_parse_status = INCOMPLETE;
+	_body_type = EMPTY;
+	_bytes_to_read = -1;
+	_buf.clear();
+	request = Request(port);
 }
 
 Client::Parse_status Client::parse_status() const { return _parse_status; }
 
 // TODO: fix this horrible unstable abomination of what is not even allowed to be called "code"
 void Client::read_pollfd(const pollfd& pfd) {
+	request.set_fd(pfd.fd);
+
 	ssize_t		bytes_read;
 	static char buf[4096];
 
@@ -19,7 +25,7 @@ void Client::read_pollfd(const pollfd& pfd) {
 			return;
 		for (ssize_t i = 0; i < bytes_read; i++)
 			_buf.push_back(buf[i]);
-		_parse(bytes_read, pfd);
+		_parse(bytes_read);
 		if (_parse_status == HEADER_DONE)
 			break;
 		if (_parse_status == FINISHED)
@@ -65,7 +71,7 @@ static ssize_t header_end(const std::vector<char>& buf) {
 	return -1;
 }
 
-void Client::_parse(size_t bytes_read, const pollfd& pfd) {
+void Client::_parse(size_t bytes_read) {
 	if (_parse_status <= READING_HEADER) {
 		_parse_status = READING_HEADER;
 		if (header_end(_buf) != -1)
@@ -73,7 +79,7 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 	}
 
 	if (_parse_status == READING_HEADER_DONE) {
-		request.parse_header(pfd, _buf.data());
+		request.parse_header(_buf.data());
 		_buf.erase(_buf.begin(), _buf.begin() + header_end(_buf));
 		_parse_status = HEADER_DONE;
 
@@ -112,11 +118,4 @@ void Client::_parse(size_t bytes_read, const pollfd& pfd) {
 		}
 		return;
 	}
-}
-
-void Client::reset() {
-	_parse_status = INCOMPLETE;
-	_body_type = EMPTY;
-	_bytes_to_read = -1;
-	_buf.clear();
 }

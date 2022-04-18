@@ -13,6 +13,10 @@ Poller::Poller() {
 }
 
 void Poller::add_server(IP_mode ip_mode, uint16_t port) {
+	for (size_t i = 0; i < _server_ports.size(); i++)
+		if (_server_ports[i] == port)
+			return;
+
 	fd_t				server_socket = constructors::server_socket(ip_mode, port);
 	const struct pollfd pfd = constructors::pollfd(server_socket, POLLIN | POLLOUT);
 

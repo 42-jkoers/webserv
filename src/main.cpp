@@ -31,7 +31,7 @@ void on_request(Client& client) {
 		Response::cgi(req, "./cgi/index.sh", "", req.query);
 	else if (req.uri.find("/form") != std::string::npos)
 		Response::file(req, "./html/form.html");
-	else if (req.field_value("user-agent").find("curl") != std::string::npos)
+	else if (req.field_contains("user-agent", "curl"))
 		Response::text(req, 200, "Hello curl\n");
 	else
 		Response::file(req, "./html/upload.html");

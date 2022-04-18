@@ -96,6 +96,8 @@ void Client::_parse(size_t bytes_read) {
 	if (_parse_status == READING_BODY) {
 		if (_body_type == MULTIPART) {
 			size_t boundary = _buf.find(request.field_multipart_boundary());
+			if (boundary != std::string::npos && boundary >= 4)
+				boundary -= 4; // the boundary is prefixed with "\r\n--", remove that here
 			request.append_to_body(_buf.begin(), _buf.begin() + std_ft::min(_buf.size(), boundary));
 			_bytes_to_read -= _buf.size();
 			_buf.clear();

@@ -5,3 +5,4 @@ obj/
 /webserv
 *.dSYM
 /cgi/input
+/file_uploads/

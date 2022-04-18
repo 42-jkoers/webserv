@@ -5,6 +5,7 @@
 #include "poller.hpp"
 #include "request.hpp"
 #include "response.hpp"
+#include "router.hpp"
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <sstream>
@@ -17,9 +18,13 @@ const Constants g_constants;
 //
 
 void on_request(Client& client) {
-	// client.print();
+	Router router;
+
+	router.route(client);
+	// some responses:
 	const Request& req = client.request;
-	if (req.uri.find("favicon.ico") != std::string::npos) {
+
+	if (req.path.compare("favicon.ico") == 0) {
 		Response::text(req, 404, "");
 		return;
 	}

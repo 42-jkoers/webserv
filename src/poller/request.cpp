@@ -156,6 +156,8 @@ int Request::_set_response_code(int code) {
 URI = scheme ":" ["//" authority] path ["?" query] ["#" fragment]
 authority = [userinfo "@"] host [":" port]
 request-URI: path ["?" query]
+origin form: URI from path onwards
+absolute form: URI including scheme onwards
 https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 */
 int Request::_parse_URI() {

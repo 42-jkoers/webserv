@@ -45,6 +45,7 @@ void Router::_link_client_server(Client& client) {
 		}
 		i++;
 	}
+	std::cout << "correct server is found to be " << client.server_index << std::endl;
 }
 
 /*

@@ -87,9 +87,21 @@ void Client::_parse(size_t bytes_read) {
 	}
 
 	if (_parse_status == HEADER_DONE) {
-		// TODO: parse body header instead of just removing it
-		static const std::string suffix = "\r\n\r\n";
-		_buf.erase(_buf.begin(), _buf.begin() + _buf.find(suffix) + suffix.size());
+		static const std::string header_end_str = "\r\n\r\n";
+		size_t					 header_end = _buf.find(header_end_str);
+		size_t					 start = 0;
+		size_t					 end;
+		std::string				 line;
+
+		assert(header_end != std::string::npos);
+		while ((end = _buf.find("\r\n", start)) != header_end) {
+			line = _buf.substr(start, end - start);
+			if (line.find("Content-Type") == std::string::npos) // do not overwrite
+				request.parse_line(line);
+			start = end + 2;
+		}
+
+		_buf.erase(_buf.begin(), _buf.begin() + header_end + header_end_str.size());
 		_parse_status = READING_BODY;
 	}
 

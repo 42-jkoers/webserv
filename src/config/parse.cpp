@@ -103,7 +103,7 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 		else
 			_servers[_servers.size() - 1].ip.push_back(listen.substr(0, pos));
 		if (!strchr(listen.c_str(), ':'))
-			port = 80;
+			port = 8080;
 		else
 			parse_int(port, &config_info["listen"][pos + 1]);
 	} else {

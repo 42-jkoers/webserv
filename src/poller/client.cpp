@@ -28,7 +28,7 @@ void Client::read_pollfd(const pollfd& pfd) {
 		_parse(bytes_read);
 		if (_parse_status == HEADER_DONE)
 			break;
-		if (_parse_status == FINISHED)
+		if (_parse_status >= FINISHED)
 			return;
 	}
 	if (_parse_status == HEADER_DONE &&
@@ -82,7 +82,10 @@ void Client::_parse(size_t bytes_read) {
 		request.parse_header(_buf.data());
 		_buf.erase(_buf.begin(), _buf.begin() + header_end(_buf));
 		_parse_status = HEADER_DONE;
-
+		if (request.response_code != 200) {
+			_parse_status = ERROR;
+			return;
+		}
 		if (request.field_exists("content-length")) {
 			_body_type = MULTIPART;
 			_bytes_to_read = request.field_content_length();

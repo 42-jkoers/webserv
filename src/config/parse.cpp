@@ -204,7 +204,6 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 	_servers[_servers.size() - 1].location.push_back(Location());
 	last_location() = (Location());
 	last_location()._path = location;
-	std::cout << "size of location array" << _servers[_servers.size() - 1].location.size() << std::endl;
 }
 
 void Config::_parse_index(std::map<const std::string, std::string>& config_info) {

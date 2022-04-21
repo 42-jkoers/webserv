@@ -48,7 +48,7 @@ Client::Chunk_status Client::_append_chunk(size_t bytes_read) {
 		return CS_NULL_BLOCK_REACHED;
 	}
 	if (block_size <= _buf.size() - hex_len) {
-		request.append_to_body(_buf.begin() + hex_len, _buf.begin() + hex_len + block_size);
+		request.body.insert(request.body.end(), _buf.begin() + hex_len, _buf.begin() + hex_len + block_size);
 		_buf.erase(_buf.begin(), _buf.begin() + hex_len + block_size + 2); // also remove \r\n suffix
 	}
 	if (_buf.size())
@@ -110,7 +110,7 @@ void Client::_parse(size_t bytes_read) {
 			size_t boundary = _buf.find(request.field_multipart_boundary());
 			if (boundary != std::string::npos && boundary >= 4)
 				boundary -= 4; // the boundary is prefixed with "\r\n--", remove that here
-			request.append_to_body(_buf.begin(), _buf.begin() + std_ft::min(_buf.size(), boundary));
+			request.body.insert(request.body.end(), _buf.begin(), _buf.begin() + std_ft::min(_buf.size(), boundary));
 			_bytes_to_read -= _buf.size();
 			_buf.clear();
 			if (_bytes_to_read <= 0 || boundary != std::string::npos) {

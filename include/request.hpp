@@ -22,20 +22,19 @@ class Request {
 
 	void				set_fd(fd_t f) { this->fd = f; }
 	// read-only variables
-	uint16_t		  port;
-	uint32_t		  response_code;
-	fd_t			  fd;
-	std::string		  method;
-	std::string		  uri;
-	std::string		  http_version;
-	std::string		  path;
-	std::string		  absolute_form;
-	std::string		  query;
-	std::vector<char> body;
+	uint16_t	port;
+	uint32_t	response_code;
+	fd_t		fd;
+	std::string method;
+	std::string uri;
+	std::string http_version;
+	std::string path;
+	std::string absolute_form;
+	std::string query;
+	std::string body;
 
   protected:
 	void								parse_header(const std::string& raw);
-	void								append_to_body(std::vector<char>::const_iterator begin, std::vector<char>::const_iterator end);
 	int									parse_line(const std::string& line);
 	std::map<std::string, Header_field> header_fields;
 	std::map<std::string, std::string>	_request_line;

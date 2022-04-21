@@ -1,4 +1,5 @@
 #include "main.hpp"
+#include <cstring>
 #include <fcntl.h>
 #include <fstream>
 #include <iostream>
@@ -49,7 +50,7 @@ void print_escaped(const char* s, size_t n, std::string label) {
 
 // Returns null terminated array of pointers to strings
 // Can be used like this: char **env = vector_to_c_array(v).data();
-std::vector<const char*> vector_to_c_array(const std::vector<const std::string>& v) {
+std::vector<const char*> vector_to_c_array(const std::vector<std::string>& v) {
 	std::vector<const char*> cv;
 	cv.reserve(v.size() + 1);
 	for (size_t i = 0; i < v.size(); i++)

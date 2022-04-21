@@ -274,10 +274,6 @@ std::string Request::field_filename() const {
 	return field_value("content-disposition").substr(start, length - start);
 }
 
-void Request::append_to_body(std::vector<char>::const_iterator begin, std::vector<char>::const_iterator end) {
-	body.insert(body.end(), begin, end);
-}
-
 std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 	std::cout << "================== REQUEST ==================" << std::endl;
 

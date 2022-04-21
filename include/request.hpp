@@ -9,7 +9,7 @@ class Request {
 	Request(uint16_t port);
 	~Request(){};
 
-	bool				field_exits(const std::string& field) const;
+	bool				field_exists(const std::string& field) const;
 	const Header_field& field(const std::string& field) const;
 
 	const std::string&	field_value(const std::string& _field) const;
@@ -31,6 +31,7 @@ class Request {
 	std::string		  path;
 	std::string		  absolute_form;
 	std::string		  query;
+	int				  server_index;
 	std::vector<char> body;
 
   protected:

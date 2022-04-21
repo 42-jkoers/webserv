@@ -10,6 +10,7 @@ Request::Request(uint16_t port) {
 	header_fields.clear();
 }
 
+// TODO: add absolute form checker: should start with http://, otherwise: bad request
 void Request::parse_header(const std::string& raw) {
 	_raw = raw;
 	if (_parse_request_line() == 1)
@@ -18,10 +19,12 @@ void Request::parse_header(const std::string& raw) {
 		return;
 	if (_parse_field_values() == 1)
 		return;
-	// TODO: some checks to another class; only request error codes here
-	if (field_exits("content-length") && field_content_length() < 0) {
-		response_code = 400;
-		return;
+	if (field_exists("content-length")) {
+		size_t content_length;
+		if (!parse_int(content_length, field_value("content-length")) || content_length < 0) {
+			response_code = 400;
+			return;
+		}
 	}
 	if (_parse_host() == 1)
 		return;
@@ -72,7 +75,7 @@ Host header field with an invalid field-value
 int Request::_parse_host() {
 	size_t colon;
 
-	if (!field_exits("host"))
+	if (!field_exists("host"))
 		return _set_response_code(400);
 	std::map<std::string, Header_field>::iterator it = header_fields.find("host");
 	// check valid field-value
@@ -102,7 +105,7 @@ int Request::parse_line(const std::string& line) {
 	name = line.substr(0, colon); // if colon is string::npos, all characters until the end of the string
 	name = to_lower(name);
 	if (name.compare("host") == 0) {
-		if (field_exits(name)) // if there is already a host in the header class, error
+		if (field_exists(name)) // if there is already a host in the header class, error
 			return _set_response_code(400);
 	}
 	if (colon == std::string::npos) { // skip line without ':'
@@ -163,6 +166,9 @@ int Request::_set_response_code(int code) {
 URI = scheme ":" ["//" authority] path ["?" query] ["#" fragment]
 authority = [userinfo "@"] host [":" port]
 request-URI: path ["?" query]
+origin form: URI from path onwards
+absolute form: URI including scheme onwards
+for HTTP // are required
 https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 */
 int Request::_parse_URI() {
@@ -214,7 +220,7 @@ int Request::_parse_request_line() {
 	if (delimiter != end)
 		return _set_response_code(301);
 	if (!g_constants.is_valid_method(_request_line["method"])) // TODO: invalid request line, decide: 400 bad request/301 moved permanently
-		return _set_response_code(301);
+		return _set_response_code(400);
 	if (_request_line["HTTP_version"].compare("HTTP/1.1") != 0)
 		return _set_response_code(505); // TODO: generate representation why version is not supported & what is supported [RFC7231; 6.6.6]
 	if (_parse_URI() == 1)
@@ -222,12 +228,13 @@ int Request::_parse_request_line() {
 	return 0;
 }
 
-bool Request::field_exits(const std::string& field) const {
+bool Request::field_exists(const std::string& field) const {
 	return header_fields.find(to_lower(field)) != header_fields.end();
 }
 
+// only call this function if you know field_exists
 const Header_field& Request::field(const std::string& _field) const {
-	assert(field_exits(_field));
+	assert(field_exists(_field));
 	return header_fields.find(to_lower(_field))->second;
 }
 
@@ -235,18 +242,20 @@ const std::string& Request::field_value(const std::string& _field) const {
 	return field(_field).raw_value;
 }
 
+// only call this function if you know field_exists
 const std::string& Request::field_value(const std::string& _field, size_t index) const {
 	return field(_field).values.at(index);
 }
 
 bool Request::field_is(const std::string& _field, const std::string& value) const {
-	if (!field_exits(value))
+	if (!field_exists(value))
 		return false;
 	return field(_field).raw_value == value;
 }
 
+// can be called if field does not exists
 bool Request::field_contains(const std::string& _field, const std::string& part) const {
-	if (!field_exits(_field))
+	if (!field_exists(_field))
 		return false;
 
 	return field(_field).raw_value.find(part) != std::string::npos;
@@ -254,7 +263,7 @@ bool Request::field_contains(const std::string& _field, const std::string& part)
 
 size_t Request::field_content_length() const {
 	size_t content_length;
-	assert(parse_int(content_length, field_value("content-length")));
+	assert(parse_int(content_length, field_value("content-length"))); // parse int true on success
 	return content_length;
 }
 
@@ -289,6 +298,7 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 	output << "absolute_form: [" << rhs.absolute_form << "]" << std::endl;
 	output << "boundary       [" << (rhs.field_contains("content-type", "boundary=") ? rhs.field_multipart_boundary() : "") << "]" << std::endl;
 	output << "http_version:  [" << rhs.http_version << "]" << std::endl;
+	output << "response_code: [" << rhs.response_code << "]" << std::endl;
 
 	output << "\n=== HEADERS ===" << std::endl;
 	for (std::map<std::string, Header_field>::const_iterator it = rhs.header_fields.begin(); it != rhs.header_fields.end(); ++it) {

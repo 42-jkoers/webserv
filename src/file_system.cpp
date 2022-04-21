@@ -1,6 +1,9 @@
 #include "file_system.hpp"
 #include <dirent.h>
 #include <fstream>
+#include <sys/stat.h>
+
+namespace fs {
 
 std::string exception_str(const std::string& path) {
 	std::string err;
@@ -11,7 +14,21 @@ std::string exception_str(const std::string& path) {
 	return err;
 }
 
-namespace fs {
+// make directory recursively
+void mkdir(const std::string& path) {
+	size_t slash_pos = 0;
+	while (slash_pos < path.size()) {
+		slash_pos = std_ft::min(path.find("/", slash_pos), path.size());
+		const std::string dir = path.substr(0, slash_pos);
+		slash_pos++;
+		if (dir == "/" || dir == "." || dir == "..")
+			continue;
+		if (path_exists(dir))
+			continue;
+		if (::mkdir(dir.c_str(), 0777))
+			exit_with::e_perror("mkdir");
+	}
+}
 
 std::string read_file(const std::string& path) {
 	std::ifstream	  file;

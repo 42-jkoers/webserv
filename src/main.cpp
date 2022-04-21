@@ -25,7 +25,10 @@ void on_request(Client& client) {
 	}
 	std::cout << req << std::endl;
 
-	if (req.uri.find("/cgi/input") != std::string::npos)
+	if (req.method == "POST" && req.uri.find("/upload") != std::string::npos) {
+		fs::write_file("./file_uploads/" + req.field_filename(), req.body); // TODO: read filename from Request class
+		Response::text(req, 200, "File upload successful");
+	} else if (req.uri.find("/cgi/input") != std::string::npos)
 		Response::cgi(req, "./cgi/input", "", req.query);
 	else if (req.uri.find("/cgi/index.sh") != std::string::npos)
 		Response::cgi(req, "./cgi/index.sh", "", req.query);

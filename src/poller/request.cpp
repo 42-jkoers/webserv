@@ -91,6 +91,38 @@ int Request::_parse_host() {
 	return 0; // TODO: not sure if correct server name is needed
 }
 
+int Request::parse_line(const std::string& line) {
+	size_t		colon;
+	std::string name;
+	std::string value;
+	size_t		start;
+
+	// get name
+	colon = line.find_first_of(":");
+	name = line.substr(0, colon); // if colon is string::npos, all characters until the end of the string
+	name = to_lower(name);
+	if (name.compare("host") == 0) {
+		if (field_exits(name)) // if there is already a host in the header class, error
+			return _set_response_code(400);
+	}
+	if (colon == std::string::npos) { // skip line without ':'
+		return 0;
+	}
+	if (line.find_first_of(_whitespaces) < colon) { // check for whitespace in between field name and ":": 400 (Bad Request)
+		return _set_response_code(400);
+	}
+	// get value
+	start = line.find_first_not_of(_whitespaces, colon + 1); // skip optional whitespaces
+	if (start == std::string::npos) {						 // skip line without value
+		return 0;
+	}
+	value = line.substr(start, line.find_last_not_of(_whitespaces) - start + 1); // remove trailing whitespaces, values can be case-sensitive
+	// save name and value
+	Header_field new_header_field(name, value);
+	header_fields[name] = new_header_field;
+	return 0;
+}
+
 /*
 A recipient that receives whitespace between the start-line and the first header field MUST either reject
 the message as invalid or consume each whitespace-preceded line without further processing of it
@@ -104,15 +136,11 @@ ows = optional whitespaces = *(SP / HTAB)
 */
 int Request::_parse_header_fields() { // TODO: set return code and return in case of error
 	size_t		start;
-	size_t		colon;
 	size_t		end;
 	std::string line;
-	std::string name;
-	std::string value;
 
 	end = _raw.find(_crlf);					  // skip request line
 	while (end != _raw.find(_crlf + _crlf)) { // until last line
-		// get line
 		_whitespaces = " \t";
 		start = end + 2;
 		end = _raw.find(_crlf, start);
@@ -120,29 +148,8 @@ int Request::_parse_header_fields() { // TODO: set return code and return in cas
 		if (line[0] == ' ' || line[0] == '\t') { // skip whitespace-preceded line
 			continue;
 		}
-		// get name
-		colon = line.find_first_of(":");
-		name = line.substr(0, colon); // if colon is string::npos, all characters until the end of the string
-		name = to_lower(name);
-		if (name.compare("host") == 0) {
-			if (field_exits(name)) // if there is already a host in the header class, error
-				return _set_response_code(400);
-		}
-		if (colon == std::string::npos) { // skip line without ':'
-			continue;
-		}
-		if (line.find_first_of(_whitespaces) < colon) { // check for whitespace in between field name and ":": 400 (Bad Request)
-			return _set_response_code(400);
-		}
-		// get value
-		start = line.find_first_not_of(_whitespaces, colon + 1); // skip optional whitespaces
-		if (start == std::string::npos) {						 // skip line without value
-			continue;
-		}
-		value = line.substr(start, line.find_last_not_of(_whitespaces) - start + 1); // remove trailing whitespaces, values can be case-sensitive
-		// save name and value
-		Header_field new_header_field(name, value);
-		header_fields[name] = new_header_field;
+		if (parse_line(line))
+			return 1;
 	}
 	return 0;
 }
@@ -224,33 +231,47 @@ const Header_field& Request::field(const std::string& _field) const {
 	return header_fields.find(to_lower(_field))->second;
 }
 
-const std::string& Request::field_value(const std::string& _field, size_t index) const {
-	return field(_field).values[index];
+const std::string& Request::field_value(const std::string& _field) const {
+	return field(_field).raw_value;
 }
 
-bool Request::field_is(const std::string& field, const std::string& value) const {
-	std::map<std::string, Header_field>::const_iterator it = header_fields.find(to_lower(field));
-	if (it->second.values.size() != 1)
+const std::string& Request::field_value(const std::string& _field, size_t index) const {
+	return field(_field).values.at(index);
+}
+
+bool Request::field_is(const std::string& _field, const std::string& value) const {
+	if (!field_exits(value))
 		return false;
-	return it->second.raw_value == value;
+	return field(_field).raw_value == value;
 }
 
 bool Request::field_contains(const std::string& _field, const std::string& part) const {
 	if (!field_exits(_field))
 		return false;
 
-	const std::vector<std::string>& values = field(_field).values;
-	for (std::vector<std::string>::const_iterator it = values.begin(); it != values.end(); ++it)
-		if (it->find(part) != std::string::npos)
-			return true;
-
-	return false;
+	return field(_field).raw_value.find(part) != std::string::npos;
 }
 
 size_t Request::field_content_length() const {
 	size_t content_length;
 	assert(parse_int(content_length, field_value("content-length")));
 	return content_length;
+}
+
+std::string Request::field_multipart_boundary() const {
+	static const std::string prefix = "boundary=";
+	assert(field_contains("content-type", prefix));
+	size_t start = field_value("content-type").find(prefix) + prefix.size();
+	size_t length = field_value("content-type").find("\r\n", start);
+	return field_value("content-type").substr(start, length);
+}
+
+std::string Request::field_filename() const {
+	static const std::string prefix = "filename=\"";
+	assert(field_contains("content-disposition", prefix));
+	size_t start = field_value("content-disposition").find(prefix) + prefix.size();
+	size_t length = field_value("content-disposition").find("\"", start);
+	return field_value("content-disposition").substr(start, length - start);
 }
 
 void Request::append_to_body(std::vector<char>::const_iterator begin, std::vector<char>::const_iterator end) {
@@ -266,6 +287,7 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 	output << "port:          [" << rhs.port << "]" << std::endl;
 	output << "query:         [" << rhs.query << "]" << std::endl;
 	output << "absolute_form: [" << rhs.absolute_form << "]" << std::endl;
+	output << "boundary       [" << (rhs.field_contains("content-type", "boundary=") ? rhs.field_multipart_boundary() : "") << "]" << std::endl;
 	output << "http_version:  [" << rhs.http_version << "]" << std::endl;
 
 	output << "\n=== HEADERS ===" << std::endl;

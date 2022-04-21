@@ -4,11 +4,6 @@
 set -e
 export TERM=xterm-256color
 
-test_upload () {
-	curl -X POST -F "upfile=@$1" localhost:8081 &> /dev/null
-	curl -H transfer-encoding:chunked -X POST -F "upfile=@$1" -v localhost:8081 &> /dev/null
-}
-
 runner () {
 	clear
 	echo "$@"

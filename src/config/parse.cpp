@@ -65,6 +65,7 @@ void Config::_parse_server_name(std::map<const std::string, std::string>& config
  if there is no port the port will be set to 8080
  if there is no ip the ip will be set to 0.0.0.0
  */
+// don't connect to a port when IP adress is not localhost
 void Config::_parse_listen(std::map<const std::string, std::string>& config_info) {
 	std::string listen = config_info["listen"];
 	size_t		i = 0;
@@ -180,8 +181,15 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 	std::string location = config_info["location"];
 	size_t		equal_sign;
 
-	_inside_location = true;
+	_inside_location++;
+	if (location[0] != '/' || location[0] != '.')
+		location.insert(0, "/");
+	if (_what_location[_inside_location].empty())
+		_what_location[_inside_location] = last_location()._path;
 	cut_till_bracket(location);
+	if (_inside_location > 1) {
+		location = _what_location[_inside_location] + location;
+	}
 	if (strchr(location.c_str(), '=')) {
 		_servers[_servers.size() - 1].equal = 1;
 		equal_sign = location.find_first_of("=") + 1;
@@ -193,24 +201,19 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 		location.insert(0, ".");
 	else
 		location.insert(0, "./");
-	if (!fs::path_exists(location))
-		exit_with::e_perror("config error: location");
 	_servers[_servers.size() - 1].location.push_back(Location());
 	last_location() = (Location());
 	last_location()._path = location;
+	std::cout << "size of location array" << _servers[_servers.size() - 1].location.size() << std::endl;
 }
-// TODO: multiple indexes
+
 void Config::_parse_index(std::map<const std::string, std::string>& config_info) {
 	std::string	  index = config_info["index"];
 	std::ifstream try_file;
 	std::string	  path_to_file;
 
 	cut_till_collon(index);
-	path_to_file = last_location()._path + "/" + index;
-	try_file.open(path_to_file);
-	if (!try_file.is_open())
-		exit_with::e_perror("config error: index");
-	try_file.close();
+	last_location().indexes = ft_split(index, " \t");
 }
 
 void Config::_parse_auto_index(std::map<const std::string, std::string>& config_info) {

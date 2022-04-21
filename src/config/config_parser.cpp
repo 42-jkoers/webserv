@@ -45,15 +45,16 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 		} else if (line.find_first_not_of("\t ") == std::string::npos)
 			return;
 		else if (line.find_first_of("}") != std::string::npos) {
-			if (_inside_location)
-				_inside_location = false;
+			if (_inside_location > 0)
+				_inside_location--;
 			else if (_inside_server)
 				_inside_server = false;
-			else	
+			else
 				exit_with::e_perror("config: syntx");
 			return;
 		}
 	}
+	std::cout << line << std::endl;
 	exit_with::e_perror("config error: invalid line");
 }
 
@@ -74,6 +75,7 @@ void Config::_config_parser(int argc, char** argv) {
 	options.push_back("autoindex");
 	options.push_back("index");
 	options.push_back("cgi");
+	_inside_location = 0;
 	if (argc == 2)
 		config_file.open(argv[1]);
 	else
@@ -81,6 +83,10 @@ void Config::_config_parser(int argc, char** argv) {
 	if (!config_file.is_open())
 		exit_with::e_perror("Cannot open config file");
 	while (getline(config_file, buffer)) {
+		if (buffer.find_first_of("#") != std::string::npos)
+			buffer = buffer.substr(0, buffer.find_first_of("#"));
+		if (buffer.length() == 0)
+			continue;
 		_safe_info(buffer, config_info, options);
 	}
 	config_file.close();

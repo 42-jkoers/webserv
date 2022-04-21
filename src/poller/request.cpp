@@ -252,8 +252,8 @@ bool Request::field_contains(const std::string& _field, const std::string& part)
 	return field(_field).raw_value.find(part) != std::string::npos;
 }
 
-size_t Request::field_content_length() const {
-	size_t content_length;
+ssize_t Request::field_content_length() const {
+	ssize_t content_length;
 	assert(parse_int(content_length, field_value("content-length")));
 	return content_length;
 }

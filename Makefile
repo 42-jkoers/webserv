@@ -17,7 +17,6 @@ LIBS			=
 INCLUDES		= -I$(HEADERDIR)
 LINK			=
 
-OBJ_IN_DIR 		= $(BUILDDIR)/*.$(OBJEXT)
 SRC 			= $(shell find $(SRCDIR) -name '*.$(SRCEXT)')
 HEADERS 		= $(shell find $(HEADERDIR) -name '*.$(HEADEREXT)')
 OBJ				= $(foreach src,$(SRC),$(BUILDDIR)/$(notdir $(src:.$(SRCEXT)=.$(OBJEXT))))
@@ -29,7 +28,7 @@ VPATH 			= $(shell find $(SRCDIR) -type d | tr '\n' ':' | sed -E 's/(.*):/\1/')
 all: $(NAME) cgi/input
 
 $(NAME): $(BUILDDIR)/ $(OBJ) $(HEADERS)
-	$(CC) $(CFLAGS) $(INCLUDES) $(OBJ_IN_DIR) $(LIBS) -o $(NAME) $(LINK)
+	$(CC) $(CFLAGS) $(INCLUDES) $(OBJ) $(LIBS) -o $(NAME) $(LINK)
 
 $(BUILDDIR)/%.$(OBJEXT): %.$(SRCEXT) $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $(BUILDDIR)/$(notdir $@)

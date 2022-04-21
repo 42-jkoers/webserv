@@ -21,7 +21,7 @@ runner () {
 runner curl -v localhost:8081
 runner curl -v localhost:8081/cgi/input
 runner curl -v -X POST -F "upfile=@webserv" localhost:8081
-runner curl -H transfer-encoding:chunked -X POST -F "upfile=@webserv" -v localhost:8081
+runner curl -v -H transfer-encoding:chunked -X POST -F "upfile=@webserv" -v localhost:8081
 # END TESTS
 
 clear

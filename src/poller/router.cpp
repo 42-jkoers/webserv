@@ -25,7 +25,7 @@ void Router::_link_client_server(Request& request) {
 
 	// std::cout << "connected port is " << request.port << std::endl;
 	for (std::vector<Config::Server>::iterator it = g_config._servers.begin(); it != g_config._servers.end(); ++it) { // loop over servers
-		for (std::vector<uint32_t>::iterator it2 = it->port.begin(); it2 != it->port.end(); ++it2) {				  // loop over ports
+		for (std::vector<uint16_t>::iterator it2 = it->port.begin(); it2 != it->port.end(); ++it2) {				  // loop over ports
 			// std::cout << "checking port[" << *it2 << "]" << std::endl;
 			if (*it2 == request.port) {
 				// std::cout << *it2 << " found at server " << i << std::endl;

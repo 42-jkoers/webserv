@@ -30,8 +30,8 @@ int main(int argc, char** argv) {
 	Poller poller;
 
 	for (std::vector<Config::Server>::iterator server = g_config._servers.begin(); server != g_config._servers.end(); ++server) {
-		for (std::vector<uint32_t>::iterator port = server->port.begin(); port != server->port.end(); ++port) {
-			poller.add_server(mode_ipv4, "127.0.0.1", *port); // TODO: do not put localhost, if listen directive provides different ip address in config file
+		for (size_t i = 0; i < server->port.size(); ++i) {
+			poller.add_server(mode_ipv4, server->ip[i].c_str(), server->port[i]); // TODO: do not put localhost, if listen directive provides different ip address in config file
 		}
 	}
 	std::cout << "started" << std::endl;

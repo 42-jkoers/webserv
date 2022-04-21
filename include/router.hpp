@@ -15,7 +15,7 @@ class Router {
 	// Router(const Router& cp); // TODO
 	// Router& operator=(const Router& cp);
 	bool _has_server_name(std::vector<Config::Server>::iterator server, std::string server_name);
-	void _link_client_server(Client& client);
+	void _link_client_server(Request& request);
 };
 
 std::ostream& operator<<(std::ostream& output, Router const& rhs);

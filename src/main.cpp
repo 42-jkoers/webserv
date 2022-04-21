@@ -18,28 +18,11 @@ const Constants g_constants;
 //
 
 void on_request(Client& client) {
-	Router router;
-
-	router.route(client);
-	// some responses:
+	Router		   router;
 	const Request& req = client.request;
 
-	if (req.path.compare("favicon.ico") == 0) {
-		Response::text(req, 404, "");
-		return;
-	}
 	std::cout << req << std::endl;
-
-	if (req.uri.find("/cgi/input") != std::string::npos)
-		Response::cgi(req, "./cgi/input", "", req.query);
-	else if (req.uri.find("/cgi/index.sh") != std::string::npos)
-		Response::cgi(req, "./cgi/index.sh", "", req.query);
-	else if (req.uri.find("/form") != std::string::npos)
-		Response::file(req, "./html/form.html");
-	else if (req.field_contains("user-agent", "curl"))
-		Response::text(req, 200, "Hello curl\n");
-	else
-		Response::file(req, "./html/upload.html");
+	router.route(client);
 }
 
 int main(int argc, char** argv) {

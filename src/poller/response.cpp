@@ -36,7 +36,7 @@ void cgi(const Request& request, const std::string& path, const std::string& pat
 		dup2(request.fd, STDOUT_FILENO);
 		dup2(request.fd, STDERR_FILENO);
 
-		std::vector<const std::string> env;
+		std::vector<std::string> env;
 		env.push_back("GATEWAY_INTERFACE=CGI/1.1");	 // TODO: what value
 		env.push_back("REMOTE_ADDR=127.0.0.1");		 // TODO: IP of the client
 		env.push_back("REQUEST_METHOD=GET");		 // TODO: allow POST
@@ -48,8 +48,9 @@ void cgi(const Request& request, const std::string& path, const std::string& pat
 		env.push_back("PATH_INFO=" + path_info);
 		env.push_back("QUERY_STRING=" + query_string);
 
+		char* const				 args[] = {NULL};
 		std::vector<const char*> envp = vector_to_c_array(env);
-		if (execve(path.c_str(), NULL, (char* const*)envp.data()))
+		if (execve(path.c_str(), args, (char* const*)envp.data()))
 			exit_with::e_errno("Could not start cgi script"); // TODO pipe to parent?
 
 		close(pipe_in[0]);

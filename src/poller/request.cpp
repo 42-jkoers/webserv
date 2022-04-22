@@ -261,9 +261,9 @@ bool Request::field_contains(const std::string& _field, const std::string& part)
 	return field(_field).raw_value.find(part) != std::string::npos;
 }
 
-size_t Request::field_content_length() const {
-	size_t content_length;
-	assert(parse_int(content_length, field_value("content-length"))); // parse int true on success
+ssize_t Request::field_content_length() const {
+	ssize_t content_length;
+	assert(parse_int(content_length, field_value("content-length")));
 	return content_length;
 }
 
@@ -281,10 +281,6 @@ std::string Request::field_filename() const {
 	size_t start = field_value("content-disposition").find(prefix) + prefix.size();
 	size_t length = field_value("content-disposition").find("\"", start);
 	return field_value("content-disposition").substr(start, length - start);
-}
-
-void Request::append_to_body(std::vector<char>::const_iterator begin, std::vector<char>::const_iterator end) {
-	body.insert(body.end(), begin, end);
 }
 
 std::ostream& operator<<(std::ostream& output, Request const& rhs) {

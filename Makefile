@@ -2,7 +2,7 @@
 NAME      		= webserv
 
 CC          	= clang++
-CFLAGS      	= -Wall -Wextra  -Wpedantic -std=c++98 -Wshadow -O0 -g
+CFLAGS      	= -Wall -Wextra -Werror -Wpedantic -std=c++11 -O0 -g
 # -Wsign-conversion
 # CFLAGS      	= -Wall -Wextra -Werror -Wuninitialized -O3
 
@@ -17,7 +17,6 @@ LIBS			=
 INCLUDES		= -I$(HEADERDIR)
 LINK			=
 
-OBJ_IN_DIR 		= $(BUILDDIR)/*.$(OBJEXT)
 SRC 			= $(shell find $(SRCDIR) -name '*.$(SRCEXT)')
 HEADERS 		= $(shell find $(HEADERDIR) -name '*.$(HEADEREXT)')
 OBJ				= $(foreach src,$(SRC),$(BUILDDIR)/$(notdir $(src:.$(SRCEXT)=.$(OBJEXT))))
@@ -29,7 +28,7 @@ VPATH 			= $(shell find $(SRCDIR) -type d | tr '\n' ':' | sed -E 's/(.*):/\1/')
 all: $(NAME) cgi/input
 
 $(NAME): $(BUILDDIR)/ $(OBJ) $(HEADERS)
-	$(CC) $(CFLAGS) $(INCLUDES) $(OBJ_IN_DIR) $(LIBS) -o $(NAME) $(LINK)
+	$(CC) $(CFLAGS) $(INCLUDES) $(OBJ) $(LIBS) -o $(NAME) $(LINK)
 
 $(BUILDDIR)/%.$(OBJEXT): %.$(SRCEXT) $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $(BUILDDIR)/$(notdir $@)

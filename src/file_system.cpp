@@ -42,6 +42,19 @@ std::string read_file(const std::string& path) {
 	return ss.str();
 }
 
+void write_file(const std::string& path, const std::string& data) {
+	size_t slash = path.find_last_of("/");
+	if (slash != std::string::npos)
+		fs::mkdir(path.substr(0, slash));
+
+	std::fstream file;
+	file.open(path.c_str(), std::ios::out);
+	if (!file.is_open())
+		throw std::runtime_error(fs::exception_str(path).c_str());
+	file.write(data.data(), data.size());
+	file.close();
+}
+
 std::vector<std::string> list_dir(const std::string& path) {
 	std::vector<std::string> files;
 	DIR*					 dir = opendir(path.c_str());

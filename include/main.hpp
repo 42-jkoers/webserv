@@ -2,11 +2,13 @@
 #include "config_parser.hpp"
 #include <arpa/inet.h>
 #include <array>
+#include <cassert>
 #include <cstdlib>
 #include <errno.h>
 #include <iostream>
 #include <map>
 #include <sstream>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <string>
@@ -36,7 +38,7 @@ void message(const std::string& msg);
 
 } // namespace exit_with
 void					 print_escaped(const char* s, size_t n, std::string label = "");
-std::vector<const char*> vector_to_c_array(const std::vector<const std::string>& v);
+std::vector<const char*> vector_to_c_array(const std::vector<std::string>& v);
 std::string				 to_lower(const std::string& s);
 std::vector<std::string> ft_split(const std::string& s, const std::string& delim);
 

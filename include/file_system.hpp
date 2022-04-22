@@ -9,6 +9,7 @@ std::string exception_str(const std::string& path);
 void		mkdir(const std::string& path);
 std::string read_file(const std::string& path);
 
+void		write_file(const std::string& path, const std::string& data);
 template <typename T>
 void write_file(const std::string& path, const std::vector<T>& data) {
 	size_t slash = path.find_last_of("/");

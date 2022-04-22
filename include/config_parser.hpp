@@ -47,6 +47,7 @@ class Config {
 		std::vector<uint32_t>				port;
 		std::vector<std::string>			ip;
 		std::map<size_t, std::string>		error_pages;
+		std::string							redirect;
 
 	  private:
 	};
@@ -89,12 +90,14 @@ class Config {
 	void						  _parse_auto_index(std::map<const std::string, std::string>& config_info);
 	void						  _parse_location(std::map<const std::string, std::string>& config_info);
 	void						  _parse_cgi(std::map<const std::string, std::string>& config_info);
+	void						  _parse_return(std::map<const std::string, std::string>& config_info);
 	void						  _print_class();
 	void						  _config_parser(int argc, char** argv);
 	void						  _safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);
 	void						  _add_methods(const std::string& methods_str, std::vector<std::string>& methods);
 	bool						  _inside_server;
 	int							  _inside_location;
+	bool						  _safe_new_path_location;
 	std::map<size_t, std::string> _what_location;
 };
 

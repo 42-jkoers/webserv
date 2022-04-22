@@ -31,7 +31,8 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 		&Config::_parse_location,
 		&Config::_parse_auto_index,
 		&Config::_parse_index,
-		&Config::_parse_cgi};
+		&Config::_parse_cgi,
+		&Config::_parse_return};
 	for (size_t i = 0; i < options.size(); i++) {
 		if (line.find("server") != std::string::npos && line.find("{") != std::string::npos) {
 			_servers.push_back(Server());
@@ -45,9 +46,10 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 		} else if (line.find_first_not_of("\t ") == std::string::npos)
 			return;
 		else if (line.find_first_of("}") != std::string::npos) {
-			if (_inside_location > 0)
+			if (_inside_location > 0) {
 				_inside_location--;
-			else if (_inside_server)
+				_safe_new_path_location = true;
+			} else if (_inside_server)
 				_inside_server = false;
 			else
 				exit_with::e_perror("config: syntx");
@@ -75,7 +77,9 @@ void Config::_config_parser(int argc, char** argv) {
 	options.push_back("autoindex");
 	options.push_back("index");
 	options.push_back("cgi");
+	options.push_back("return");
 	_inside_location = 0;
+	_safe_new_path_location = false;
 	if (argc == 2)
 		config_file.open(argv[1]);
 	else

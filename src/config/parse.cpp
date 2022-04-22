@@ -63,8 +63,10 @@ void Config::_parse_server_name(std::map<const std::string, std::string>& config
  then sets the right position to actually safe the ip adress and the port
  checks if it should be safed in location or in _server
  if there is no port the port will be set to 8080
- if there is no ip the ip will be set to 0.0.0.0
+ if there is no ip the ip will be set to 127.0.0.1
  */
+
+// TODO: What if no port is specified Range of ip ports
 // don't connect to a port when IP adress is not localhost
 void Config::_parse_listen(std::map<const std::string, std::string>& config_info) {
 	std::string listen = config_info["listen"];
@@ -72,7 +74,7 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 	size_t		check_dots = 0;
 	size_t		check_ip = 0;
 
-	// std::cout << "hello I am here" << _servers.size() - 1 << std::endl;
+	// std::cout << "hello I am here" << listen << std::endl;
 	cut_till_collon(listen);
 	if (strchr(listen.c_str(), '.') || strchr(listen.c_str(), ':')) {
 		while (i < listen.size()) {
@@ -99,22 +101,20 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 	else
 		pos = listen.size();
 	if (check_ip != 0) {
-		if (_inside_location)
-			last_location().ip.push_back(listen.substr(0, pos));
-		else
-			_servers[_servers.size() - 1].ip.push_back(listen.substr(0, pos));
+		_servers[_servers.size() - 1].ip.push_back(listen.substr(0, pos));
 		if (!strchr(listen.c_str(), ':'))
-			port = 80;
+			port = 8080;
 		else
 			parse_int(port, &config_info["listen"][pos + 1]);
 	} else {
 		parse_int(port, &config_info["listen"][0]);
-		if (_inside_location)
-			last_location().ip.push_back("0.0.0.0");
-		else
-			_servers[_servers.size() - 1].ip.push_back("0.0.0.0");
+		_servers[_servers.size() - 1].ip.push_back("127.0.0.1");
 	}
 	// TODO: validate this
+	if (port < ntohs(32768) || port > ntohs(61000)) {
+			std::cout << port << std::endl;
+			exit_with::e_perror("config error: invalid port");
+	}
 	_servers[_servers.size() - 1].port.push_back(port);
 }
 
@@ -182,7 +182,7 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 	_inside_location++;
 	if (location[0] != '/' || location[0] != '.')
 		location.insert(0, "/");
-	if (_what_location[_inside_location].empty())
+	if (_safe_new_path_location == false)
 		_what_location[_inside_location] = last_location()._path;
 	cut_till_bracket(location);
 	if (_inside_location > 1) {
@@ -202,6 +202,8 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 	_servers[_servers.size() - 1].location.push_back(Location());
 	last_location() = (Location());
 	last_location()._path = location;
+	// std::cout << _inside_location << "  | " << last_location()._path << std::endl;
+	_safe_new_path_location = false;
 }
 
 void Config::_parse_index(std::map<const std::string, std::string>& config_info) {
@@ -238,4 +240,17 @@ void Config::_parse_cgi(std::map<const std::string, std::string>& config_info) {
 	} else
 		exit_with::e_perror("config error: cgi");
 	// std::cout << _server[_server.size() - 1].location[_server[_server.size() - 1].location.size() - 1].cgi_path.first << " | " << _server[_server.size() - 1].location[_server[_server.size() - 1].location.size() - 1].cgi_path.second << std::endl;
+}
+
+void Config::_parse_return(std::map<const std::string, std::string>& config_info) {
+	std::string ret = config_info["return"];
+
+	cut_till_collon(ret);
+	size_t found_redirect = ret.find("301");
+	if (found_redirect == std::string::npos)
+		exit_with::e_perror("config error: redirect");
+	last_location().redirect = ret.substr(ret.find_first_not_of("301 \t", found_redirect, ret.length() - found_redirect));
+	std::cout << found_redirect << std::endl;
+
+	std::cout << last_location().redirect << std::endl;
 }

@@ -20,7 +20,7 @@ void Request::parse_header(const std::string& raw) {
 	if (_parse_field_values() == 1)
 		return;
 	if (field_exists("content-length")) {
-		size_t content_length;
+		ssize_t content_length;
 		if (!parse_int(content_length, field_value("content-length")) || content_length < 0) {
 			response_code = 400;
 			return;

@@ -5,9 +5,9 @@ set -e
 export TERM=xterm-256color
 
 runner () {
-	clear
 	echo "$@"
 	eval "$@"
+	clear
 }
 
 ./webserv config_file.conf > /tmp/webserv.out &

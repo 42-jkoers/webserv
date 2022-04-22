@@ -38,13 +38,14 @@ class Client {
 	void		 reset();
 
 	Request		 request;
+	int			 server_index;
 
   private:
-	Parse_status	  _parse_status;
-	Body_type		  _body_type;
-	ssize_t			  _bytes_to_read;
-	std::vector<char> _buf;
+	Parse_status _parse_status;
+	Body_type	 _body_type;
+	ssize_t		 _bytes_to_read;
+	std::string	 _buf;
 
-	void			  _parse(size_t bytes_read);
-	Chunk_status	  _append_chunk(size_t bytes_read);
+	void		 _parse(size_t bytes_read);
+	Chunk_status _append_chunk(size_t bytes_read);
 };

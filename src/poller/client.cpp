@@ -28,7 +28,7 @@ void Client::read_pollfd(const pollfd& pfd) {
 		_parse(bytes_read);
 		if (_parse_status == HEADER_DONE)
 			break;
-		if (_parse_status == FINISHED)
+		if (_parse_status >= FINISHED)
 			return;
 	}
 	if (_parse_status == HEADER_DONE &&
@@ -36,7 +36,6 @@ void Client::read_pollfd(const pollfd& pfd) {
 		std::string resp = "HTTP/1.1 100 Continue\r\nHTTP/1.1 200 OK\r\n\r\n";
 		write(pfd.fd, resp.data(), resp.length());
 	}
-	_parse_status = READING_BODY;
 }
 
 Client::Chunk_status Client::_append_chunk(size_t bytes_read) {
@@ -60,30 +59,22 @@ Client::Chunk_status Client::_append_chunk(size_t bytes_read) {
 // void write_body_to_file(const std::string& root, const std::vector<char>& data) {
 // }
 
-static ssize_t header_end(const std::vector<char>& buf) {
-	static const char	end_sequence[] = "\r\n\r\n";
-	static const size_t len = strlen(end_sequence);
-
-	for (size_t i = 0; i + len <= buf.size(); i++) {
-		if (!memcmp(&buf.data()[i], end_sequence, len))
-			return i + len;
-	}
-	return -1;
-}
-
 void Client::_parse(size_t bytes_read) {
 	if (_parse_status <= READING_HEADER) {
 		_parse_status = READING_HEADER;
-		if (header_end(_buf) != -1)
+		if (_buf.find("\r\n\r\n") != std::string::npos)
 			_parse_status = READING_HEADER_DONE;
 	}
 
 	if (_parse_status == READING_HEADER_DONE) {
 		request.parse_header(_buf.data());
-		_buf.erase(_buf.begin(), _buf.begin() + header_end(_buf));
+		_buf.erase(_buf.begin(), _buf.begin() + _buf.find("\r\n\r\n") + 4);
 		_parse_status = HEADER_DONE;
-
-		if (request.field_exits("content-length")) {
+		if (request.response_code != 200) {
+			_parse_status = ERROR;
+			return;
+		}
+		if (request.field_exists("content-length")) {
 			_body_type = MULTIPART;
 			_bytes_to_read = request.field_content_length();
 		} //
@@ -98,14 +89,34 @@ void Client::_parse(size_t bytes_read) {
 			return;
 	}
 
-	if (_parse_status == HEADER_DONE || _parse_status == READING_BODY) {
-		_parse_status = READING_BODY;
+	if (_parse_status == HEADER_DONE) {
+		static const std::string header_end_str = "\r\n\r\n";
+		size_t					 header_end = _buf.find(header_end_str);
+		size_t					 start = 0;
+		size_t					 end;
+		std::string				 line;
 
+		assert(header_end != std::string::npos);
+		while ((end = _buf.find("\r\n", start)) != header_end) {
+			line = _buf.substr(start, end - start);
+			if (line.find("Content-Type") == std::string::npos) // do not overwrite
+				request.parse_line(line);
+			start = end + 2;
+		}
+
+		_buf.erase(_buf.begin(), _buf.begin() + header_end + header_end_str.size());
+		_parse_status = READING_BODY;
+	}
+
+	if (_parse_status == READING_BODY) {
 		if (_body_type == MULTIPART) {
-			request.append_to_body(_buf.begin(), _buf.end());
+			size_t boundary = _buf.find(request.field_multipart_boundary());
+			if (boundary != std::string::npos && boundary >= 4)
+				boundary -= 4; // the boundary is prefixed with "\r\n--", remove that here
+			request.append_to_body(_buf.begin(), _buf.begin() + std_ft::min(_buf.size(), boundary));
 			_bytes_to_read -= _buf.size();
 			_buf.clear();
-			if (_bytes_to_read <= 0) { // TODO: what the fuck
+			if (_bytes_to_read <= 0 || boundary != std::string::npos) {
 				_parse_status = FINISHED;
 				return;
 			}

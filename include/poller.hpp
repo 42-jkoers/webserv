@@ -7,8 +7,8 @@
 namespace constructors {
 
 struct sockaddr_in6 sockaddr6(uint16_t port);
-struct sockaddr_in	sockaddr(uint16_t port);
-fd_t				server_socket(IP_mode ip_mode, uint16_t port);
+struct sockaddr_in	sockaddr(const char* str_addr, uint16_t port);
+fd_t				server_socket(IP_mode ip_mode, const char* str_addr, uint16_t port);
 struct pollfd		pollfd(int fd, short events);
 
 } // namespace constructors
@@ -16,7 +16,7 @@ struct pollfd		pollfd(int fd, short events);
 class Poller {
   public:
 	Poller();
-	void add_server(IP_mode ip_mode, uint16_t port);
+	void add_server(IP_mode ip_mode, const char* str_addr, uint16_t port);
 	void start(void (*on_request)(Client& client));
 	~Poller();
 

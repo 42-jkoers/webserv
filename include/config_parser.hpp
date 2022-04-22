@@ -60,7 +60,7 @@ class Config {
 		~Server(){};
 
 		// READONLY
-		std::vector<uint32_t>		  port;
+		std::vector<uint16_t>		  port;
 		std::vector<std::string>	  ip;
 		std::vector<std::string>	  server_name;
 		std::string					  server_url;

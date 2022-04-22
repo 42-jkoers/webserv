@@ -9,13 +9,16 @@ class Request {
 	Request(uint16_t port);
 	~Request(){};
 
-	bool				field_exits(const std::string& field) const;
+	bool				field_exists(const std::string& field) const;
 	const Header_field& field(const std::string& field) const;
 
-	const std::string&	field_value(const std::string& _field, size_t index = 0) const;
+	const std::string&	field_value(const std::string& _field) const;
+	const std::string&	field_value(const std::string& _field, size_t index) const;
 	bool				field_is(const std::string& field, const std::string& value) const;
 	bool				field_contains(const std::string& field, const std::string& part) const;
 	size_t				field_content_length() const;
+	std::string			field_multipart_boundary() const;
+	std::string			field_filename() const;
 
 	void				set_fd(fd_t f) { this->fd = f; }
 	// read-only variables
@@ -28,11 +31,13 @@ class Request {
 	std::string		  path;
 	std::string		  absolute_form;
 	std::string		  query;
+	int				  server_index;
 	std::vector<char> body;
 
   protected:
 	void								parse_header(const std::string& raw);
 	void								append_to_body(std::vector<char>::const_iterator begin, std::vector<char>::const_iterator end);
+	int									parse_line(const std::string& line);
 	std::map<std::string, Header_field> header_fields;
 	std::map<std::string, std::string>	_request_line;
 

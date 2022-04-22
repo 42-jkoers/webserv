@@ -5,6 +5,7 @@
 #include "poller.hpp"
 #include "request.hpp"
 #include "response.hpp"
+#include "router.hpp"
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <sstream>
@@ -17,24 +18,11 @@ const Constants g_constants;
 //
 
 void on_request(Client& client) {
-	// client.print();
+	Router		   router;
 	const Request& req = client.request;
-	if (req.uri.find("favicon.ico") != std::string::npos) {
-		Response::text(req, 404, "");
-		return;
-	}
-	std::cout << req << std::endl;
 
-	if (req.uri.find("/cgi/input") != std::string::npos)
-		Response::cgi(req, "./cgi/input", "", req.query);
-	else if (req.uri.find("/cgi/index.sh") != std::string::npos)
-		Response::cgi(req, "./cgi/index.sh", "", req.query);
-	else if (req.uri.find("/form") != std::string::npos)
-		Response::file(req, "./html/form.html");
-	else if (req.field_contains("user-agent", "curl"))
-		Response::text(req, 200, "Hello curl\n");
-	else
-		Response::file(req, "./html/upload.html");
+	std::cout << req << std::endl;
+	router.route(client);
 }
 
 int main(int argc, char** argv) {
@@ -42,8 +30,8 @@ int main(int argc, char** argv) {
 	Poller poller;
 
 	for (std::vector<Config::Server>::iterator server = g_config._servers.begin(); server != g_config._servers.end(); ++server) {
-		for (std::vector<uint32_t>::iterator port = server->port.begin(); port != server->port.end(); ++port) {
-			poller.add_server(mode_ipv6, *port);
+		for (size_t i = 0; i < server->port.size(); ++i) {
+			poller.add_server(mode_ipv4, server->ip[i].c_str(), server->port[i]); // TODO: do not put localhost, if listen directive provides different ip address in config file
 		}
 	}
 	std::cout << "started" << std::endl;

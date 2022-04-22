@@ -14,22 +14,25 @@ struct sockaddr_in6 sockaddr6(uint16_t port) {
 	struct sockaddr_in6 address;
 	memset(&address, 0, sizeof(address));
 	address.sin6_family = AF_INET6;
-	memcpy(&address.sin6_addr, &in6addr_any, sizeof(in6addr_any));
 	address.sin6_port = htons(port);
+	memcpy(&address.sin6_addr, &in6addr_any, sizeof(in6addr_any));
 	return address;
 }
 
-struct sockaddr_in sockaddr(uint16_t port) {
+struct sockaddr_in sockaddr(const char* str_addr, uint16_t port) {
 	struct sockaddr_in address;
 	bzero(&address, sizeof(address));
 	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = INADDR_ANY;
 	address.sin_port = htons(port);
+	in_addr_t addr = inet_addr(str_addr);
+	if (addr == (in_addr_t)(-1))
+		exit_with::e_perror("Error creating socket address");
+	address.sin_addr.s_addr = addr;
 	return address;
 }
 
 // returns fd to socket
-fd_t server_socket(IP_mode ip_mode, uint16_t port) {
+fd_t server_socket(IP_mode ip_mode, const char* str_addr, uint16_t port) {
 	fd_t fd = socket(ip_mode == mode_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
 		exit_with::e_perror("Cannot create socket");
@@ -44,7 +47,7 @@ fd_t server_socket(IP_mode ip_mode, uint16_t port) {
 		struct sockaddr_in6 address = sockaddr6(port);
 		rc = bind(fd, (struct sockaddr*)&address, sizeof(address));
 	} else {
-		struct sockaddr_in address = sockaddr(port);
+		struct sockaddr_in address = sockaddr(str_addr, port);
 		rc = bind(fd, (struct sockaddr*)&address, sizeof(address));
 	}
 	if (rc < 0)

@@ -12,12 +12,12 @@ Poller::Poller() {
 	_n_servers = 0;
 }
 
-void Poller::add_server(IP_mode ip_mode, uint16_t port) {
+void Poller::add_server(IP_mode ip_mode, const char* str_addr, uint16_t port) {
 	for (size_t i = 0; i < _server_ports.size(); i++)
 		if (_server_ports[i] == port)
 			return;
 
-	fd_t				server_socket = constructors::server_socket(ip_mode, port);
+	fd_t				server_socket = constructors::server_socket(ip_mode, str_addr, port);
 	const struct pollfd pfd = constructors::pollfd(server_socket, POLLIN | POLLOUT);
 
 	_pollfds.push_back(pfd);
@@ -29,7 +29,7 @@ void Poller::_accept_clients() {
 	for (size_t i = 0; i < _n_servers; i++) {
 		while (true) {
 			int newfd = accept(_pollfds[i].fd, NULL, NULL);
-			if (newfd < 0 && errno != EWOULDBLOCK) // TODO errno is not allowed
+			if (newfd < 0 && errno != EWOULDBLOCK)
 				exit_with::e_perror("accept() failed");
 			if (newfd < 0)
 				break;
@@ -47,11 +47,10 @@ void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client)) {
 	Client& client = _clients[pfd.fd];
 
 	client.read_pollfd(pfd);
-	if (client.parse_status() == Client::FINISHED) {
+	if (client.parse_status() >= Client::FINISHED) {
 		on_request(client);
 	}
-	if (client.parse_status() == Client::FINISHED ||
-		client.parse_status() == Client::ERROR) {
+	if (client.parse_status() >= Client::FINISHED) {
 		_clients.erase(pfd.fd);
 		close(pfd.fd); // TODO: only when keepalive is true
 		pfd.fd = FD_CLOSED;

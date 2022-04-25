@@ -10,6 +10,11 @@ runner () {
 	clear
 }
 
+start=$(date +%s)
+
+make fclean
+make -j $(grep -c ^processor /proc/cpuinfo)
+
 ./webserv config_file.conf > /tmp/webserv.out &
 
 # START TESTS
@@ -21,4 +26,11 @@ runner curl -v -H transfer-encoding:chunked -X POST -F "upfile=@webserv" -v loca
 
 clear
 pkill webserv
+
+end=$(date +%s)
+seconds=$(echo "$end - $start" | bc)
+echo
+echo
+echo "All tests successful in $(awk -v t=$seconds 'BEGIN{t=int(t*1000); printf "%02d hours, %02d minutes, %02d seconds\n", t/3600000, t/60000%60, t/1000%60}')"
+
 exit 0

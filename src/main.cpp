@@ -27,8 +27,8 @@ void on_request(Client& client) {
 
 int main(int argc, char** argv) {
 	if (argc == 1 || (argc == 2 && !strcmp(argv[1], "-t"))) {
-		std::cout << "Using default.conf" << std::endl;
-		g_config = Config("default.conf");
+		std::cout << "No conf file provided, using ./testing/default.conf" << std::endl;
+		g_config = Config("testing/default.conf");
 	} //
 	else if (argc == 2 && strcmp(argv[1], "-t"))
 		g_config = Config(argv[1]);

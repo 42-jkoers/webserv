@@ -15,7 +15,7 @@ start=$(date +%s)
 make fclean
 make -j $(grep -c ^processor /proc/cpuinfo)
 
-./webserv config_file.conf > /tmp/webserv.out &
+./webserv testing/config_file.conf > /tmp/webserv.out &
 
 # START TESTS
 runner curl -v localhost:8081

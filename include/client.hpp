@@ -8,12 +8,6 @@ class Client {
 	Client(uint16_t port);
 	~Client() {}
 
-	enum Body_type {
-		EMPTY,
-		MULTIPART,
-		CHUNKED
-	};
-
 	enum Parse_status {
 		INCOMPLETE,
 		READING_HEADER,
@@ -21,6 +15,7 @@ class Client {
 
 		HEADER_DONE,
 		// send 100-continue
+		READING_BODY_HEADER,
 		READING_BODY,
 		FINISHED,
 
@@ -42,8 +37,7 @@ class Client {
 
   private:
 	Parse_status _parse_status;
-	Body_type	 _body_type;
-	ssize_t		 _bytes_to_read;
+	size_t		 _body_size;
 	std::string	 _buf;
 
 	void		 _parse(size_t bytes_read);

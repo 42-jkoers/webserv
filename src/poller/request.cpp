@@ -94,7 +94,7 @@ int Request::_parse_host() {
 	return 0; // TODO: not sure if correct server name is needed
 }
 
-int Request::parse_line(const std::string& line) {
+int Request::parse_line(const std::string& line, bool overwrite) {
 	size_t		colon;
 	std::string name;
 	std::string value;
@@ -114,6 +114,8 @@ int Request::parse_line(const std::string& line) {
 	if (line.find_first_of(_whitespaces) < colon) { // check for whitespace in between field name and ":": 400 (Bad Request)
 		return _set_response_code(400);
 	}
+	if (!overwrite && field_exists(name))
+		return 0;
 	// get value
 	start = line.find_first_not_of(_whitespaces, colon + 1); // skip optional whitespaces
 	if (start == std::string::npos) {						 // skip line without value

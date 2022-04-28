@@ -32,6 +32,7 @@ class Request {
 	std::string absolute_form;
 	std::string query;
 	int			server_index;
+	int			location_index;
 	std::string body;
 
   protected:

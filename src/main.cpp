@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
 
 	for (std::vector<Config::Server>::iterator server = g_config._servers.begin(); server != g_config._servers.end(); ++server) {
 		for (size_t i = 0; i < server->port.size(); ++i) {
-			poller.add_server(mode_ipv4, server->ip[i].c_str(), server->port[i]); // TODO: do not put localhost, if listen directive provides different ip address in config file
+			poller.add_server(mode_ipv4, server->ip[i].c_str(), server->port[i]);
 		}
 	}
 	std::cout << "started" << std::endl;

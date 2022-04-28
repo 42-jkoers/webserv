@@ -23,13 +23,11 @@ void Router::_link_client_server(Request& request) {
 	int found = 0;
 	int i = 0;
 
-	// std::cout << "connected port is " << request.port << std::endl;
+	// TODO: cpp11 iterators
 	for (std::vector<Config::Server>::iterator it = g_config._servers.begin(); it != g_config._servers.end(); ++it) { // loop over servers
 		for (std::vector<uint16_t>::iterator it2 = it->port.begin(); it2 != it->port.end(); ++it2) {				  // loop over ports
-			// std::cout << "checking port[" << *it2 << "]" << std::endl;
 			if (*it2 == request.port) {
-				// std::cout << *it2 << " found at server " << i << std::endl;
-				if (_has_server_name(it, request.field_value("host", 0))) {
+				if (_has_server_name(it, request.field_value("host"))) {
 					found = 1;
 					request.server_index = i;
 				} else if (found == 0) {
@@ -42,11 +40,33 @@ void Router::_link_client_server(Request& request) {
 		}
 		i++;
 	}
-	// std::cout << "correct server is found to be " << request.server_index << std::endl;
 }
 
-// TODO: check the locations
-// allowed methods -> method not allowed
+// TODO: check the locations -> 404 not found
+// server class has a vector of locations
+// first most specific prefix location
+// /html is more specific than /
+// location is prefix of URI; if URI starts with location -> this location is selected
+void Router::_check_location(Request& request) {
+	int				i = 0;
+	int				location_index = 0;
+	std::string		last_path = "";
+	Config::Server& server = g_config._servers[request.server_index];
+
+	location_index = 0;
+	for (std::vector<Config::Location>::iterator it = server.location.begin(); it != server.location.end(); it++) {
+		size_t found = request.path.find(it->_path);
+		if (found != std::string::npos && found == 0) {
+			if (last_path.size() < it->_path.size()) {
+				request.location_index = i;
+				last_path = it->_path;
+			}
+		}
+		i++;
+	}
+}
+
+// TODO: Check allowed methods -> method not allowed
 
 /*
 Routes request to the right server
@@ -60,7 +80,9 @@ int Router::route(Client& client) {
 		return 1;
 	}
 	_link_client_server(request);
-	if (request.path.compare("favicon.ico") == 0)
+	_check_location(request);
+	std::cout << request.server_index << "|" << request.location_index << std::endl;
+	if (request.path.compare("favicon.ico") == 0) // our server does not provide a favicon
 		Response::text(request, 404, "");
 	else if (request.uri.find("/cgi/input") != std::string::npos)
 		Response::cgi(request, "./cgi/input", "", request.query);

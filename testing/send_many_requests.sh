@@ -15,8 +15,8 @@ start=$(date +%s)
 
 make fclean
 
-if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-	make -j $(grep -c ^processor /proc/cpuinfo)
+if [ "$(uname -s)" = "Linux" ]; then
+	make -j $(nproc --all)
 else
 	make -j $(sysctl -n hw.ncpu)
 fi

@@ -15,14 +15,14 @@
 
 Config			g_config;
 const Constants g_constants;
+Router			g_router;
 //
 
 void on_request(Client& client) {
-	Router		   router;
 	const Request& req = client.request;
 
 	std::cout << req << std::endl;
-	router.route(client);
+	g_router.route(client);
 }
 
 int main(int argc, char** argv) {

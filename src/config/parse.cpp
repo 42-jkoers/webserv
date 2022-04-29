@@ -112,8 +112,8 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 	}
 	// TODO: validate this
 	if (port < ntohs(32768) || port > ntohs(61000)) {
-			std::cout << port << std::endl;
-			exit_with::e_perror("config error: invalid port");
+		std::cout << port << std::endl;
+		exit_with::e_perror("config error: invalid port");
 	}
 	_servers[_servers.size() - 1].port.push_back(port);
 }
@@ -169,7 +169,10 @@ void Config::_parseRoot(std::map<const std::string, std::string>& config_info) {
 	std::string root = config_info["root"];
 
 	cut_till_collon(root);
-	_servers[_servers.size() - 1].root = root;
+	if (_inside_location)
+		last_location().root = root;
+	else
+		_servers[_servers.size() - 1].root = root;
 }
 /*
 if there is a '=' a match if the requestif the request URI exactly matches the location given
@@ -182,7 +185,7 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 	_inside_location++;
 	if (location[0] != '/' || location[0] != '.')
 		location.insert(0, "/");
-	if (_safe_new_path_location == false)
+	if (_safe_new_path_location == false && !_servers[_servers.size() - 1].location.empty())
 		_what_location[_inside_location] = last_location()._path;
 	cut_till_bracket(location);
 	if (_inside_location > 1) {

@@ -126,6 +126,7 @@ std::ostream& operator<<(std::ostream& stream, Config const& config) {
 			stream << "AUTOINDEX = " << config._servers[server].location[location].auto_index << std::endl;
 			stream << "DEFAULT = " << config._servers[server].location[location]._defaultfile << std::endl;
 			stream << "CGI = " << config._servers[server].location[location].cgi_path.first << config._servers[server].location[location].cgi_path.second << std::endl;
+			stream << "ROOT = " << config._servers[server].location[location].root << std::endl;
 			for (size_t j = 0; j < config._servers[server].location[location].port.size(); j++) {
 				stream << "PORTS = " << config._servers[server].location[location].port[j] << std::endl;
 			}

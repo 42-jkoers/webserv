@@ -2,9 +2,8 @@
 #include "main.hpp"
 #include <sstream>
 
-Config::Config(int argc, char** argv) {
-	_config_parser(argc, argv);
-	(void)argc;
+Config::Config(const std::string& config_file_path) {
+	_config_parser(config_file_path);
 }
 
 Config::~Config() {
@@ -61,7 +60,7 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 }
 
 // TODO: work with comments
-void Config::_config_parser(int argc, char** argv) {
+void Config::_config_parser(const std::string& config_file_path) {
 	std::ifstream							 config_file;
 	std::string								 buffer;
 	std::map<const std::string, std::string> config_info;
@@ -80,10 +79,7 @@ void Config::_config_parser(int argc, char** argv) {
 	options.push_back("return");
 	_inside_location = 0;
 	_safe_new_path_location = false;
-	if (argc == 2)
-		config_file.open(argv[1]);
-	else
-		config_file.open("default.conf");
+	config_file.open(config_file_path);
 	if (!config_file.is_open())
 		exit_with::e_perror("Cannot open config file");
 	while (getline(config_file, buffer)) {

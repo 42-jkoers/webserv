@@ -9,7 +9,7 @@
 			"request": "launch",
 			"program": "${workspaceFolder}/webserv",
 			"args": [
-				"config_file.conf"
+				"default.conf"
 			],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}",
@@ -24,7 +24,7 @@
 			"request": "launch",
 			"program": "${workspaceFolder}/webserv",
 			"args": [
-				"config_file.conf"
+				"default.conf"
 			],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}",

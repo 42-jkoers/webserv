@@ -210,18 +210,18 @@ int Request::_parse_request_line() {
 	prev = 0;
 	end = _raw.find(_crlf);
 	if (end == std::string::npos)
-		return _set_response_code(301);
+		return _set_response_code(400);
 	for (size_t i = 0; i < components.size(); i++) {
 		delimiter = _raw.find_first_of(" \r", prev);
 		if (components[i] != "HTTP_version" && delimiter == end)
-			return _set_response_code(301);
+			return _set_response_code(400);
 		if (delimiter - prev <= 0)
 			return _set_response_code(400); // TODO: if URI is empty -> error; but this should probably be checked later
 		_request_line[components[i]] = _raw.substr(prev, delimiter - prev);
 		prev = delimiter + 1;
 	}
 	if (delimiter != end)
-		return _set_response_code(301);
+		return _set_response_code(400);
 	if (!g_constants.is_valid_method(_request_line["method"])) // TODO: invalid request line, decide: 400 bad request/301 moved permanently
 		return _set_response_code(400);
 	if (_request_line["HTTP_version"].compare("HTTP/1.1") != 0)

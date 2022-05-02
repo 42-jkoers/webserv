@@ -46,6 +46,7 @@ endif
 
 fclean: | clean
 	/bin/rm -f $(NAME)
+	/bin/rm -f cgi/input
 
 re: | fclean all
 

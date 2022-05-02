@@ -40,7 +40,7 @@ class Request {
 
   protected:
 	void								parse_header(const std::string& raw);
-	int									parse_line(const std::string& line);
+	int									parse_line(const std::string& line, bool overwrite = true);
 	std::map<std::string, Header_field> header_fields;
 	std::map<std::string, std::string>	_request_line;
 

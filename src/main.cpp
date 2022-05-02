@@ -26,7 +26,17 @@ void on_request(Client& client) {
 }
 
 int main(int argc, char** argv) {
-	g_config = Config(argc, argv);
+	if (argc == 1 || (argc == 2 && !strcmp(argv[1], "-t"))) {
+		std::cout << "No conf file provided, using ./testing/default.conf" << std::endl;
+		g_config = Config("testing/default.conf");
+	} //
+	else if (argc == 2 && strcmp(argv[1], "-t"))
+		g_config = Config(argv[1]);
+	else if (argc == 3 && !strcmp(argv[1], "-t"))
+		g_config = Config(argv[2]);
+	else
+		exit_with::message("Usage: ./webserv [-t] [config_file.conf]");
+
 	Poller poller;
 
 	for (std::vector<Config::Server>::iterator server = g_config._servers.begin(); server != g_config._servers.end(); ++server) {
@@ -34,7 +44,10 @@ int main(int argc, char** argv) {
 			poller.add_server(mode_ipv4, server->ip[i].c_str(), server->port[i]);
 		}
 	}
-	std::cout << "started" << std::endl;
-	poller.start(on_request);
+
+	if (argc == 1 || (argc > 1 && strcmp(argv[1], "-t"))) {
+		std::cout << "started" << std::endl;
+		poller.start(on_request);
+	}
 	return 0;
 }

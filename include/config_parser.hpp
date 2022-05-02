@@ -23,7 +23,7 @@ so it will be either:
 */
 class Config {
   public:
-	Config(int argc, char** argv);
+	Config(const std::string& config_file_path);
 	Config(){};
 	~Config();
 
@@ -92,7 +92,7 @@ class Config {
 	void						  _parse_cgi(std::map<const std::string, std::string>& config_info);
 	void						  _parse_return(std::map<const std::string, std::string>& config_info);
 	void						  _print_class();
-	void						  _config_parser(int argc, char** argv);
+	void						  _config_parser(const std::string& config_file_path);
 	void						  _safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);
 	void						  _add_methods(const std::string& methods_str, std::vector<std::string>& methods);
 	bool						  _inside_server;

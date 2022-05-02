@@ -19,9 +19,11 @@ Router			g_router;
 //
 
 void on_request(Client& client) {
-	const Request& req = client.request;
-
-	std::cout << req << std::endl;
+	std::cout << client.request << std::endl;
+	if (client.request.response_code != 200) { // do not route if error has happened
+		Response::text(client.request, client.request.response_code, "");
+		return;
+	}
 	g_router.route(client);
 }
 

@@ -18,6 +18,7 @@ bool Router::_has_server_name(std::vector<Config::Server>::iterator server, std:
 
 /*
 first server with correct port is the default server
+if correct server name is found -> this server is returned
 */
 const Config::Server& Router::find_server(uint16_t port, const std::string& hostname) {
 	int	   found = 0;
@@ -41,11 +42,11 @@ const Config::Server& Router::find_server(uint16_t port, const std::string& host
 	return g_config._servers[server_index];
 }
 
-// TODO: check the locations -> 404 not found
-// server class has a vector of locations
-// first most specific prefix location
-// /html is more specific than /
-// location is prefix of URI; if URI starts with location -> this location is selected
+/*
+first location is the default location
+location is prefix of URI
+location with most specific prefix is selected
+*/
 const Config::Location& Router::find_location(const std::string& path, const Config::Server& server) {
 	int			i = 0;
 	int			location_index = 0;
@@ -66,23 +67,51 @@ const Config::Location& Router::find_location(const std::string& path, const Con
 }
 
 // TODO: Check allowed methods -> method not allowed
+bool Router::_method_allowed(const Request& request, const Config::Location& location) {
+	if (location.methods.empty())
+		return true;
+	for (std::vector<std::string>::const_iterator it = location.methods.begin(); it != location.methods.end(); it++) {
+		if (to_upper(*it) == request.method)
+			return true;
+	}
+	return false;
+}
 
 /*
 Routes request to the right server
-connected port -> server names
+How the server processes request:
+1. find the right server
+2. find the right location
+3. check allowed methods -> error if not allowed
+4. add root to path
+5. find URI matches file-> if not 404
+6. if it is a directory -> defaultfile?
 */
-int Router::route(Client& client) {
-	Request& request = client.request;
+void Router::route(Client& client) { // t
+	const Request&			request = client.request;
+	const Config::Server&	server = request.associated_server();
+	const Config::Location& location = request.associated_location();
 
-	if (client.request.response_code != 200) {
-		Response::text(request, request.response_code, "");
-		return 1;
+	std::cout << "server: " << server.server_name[0] << " location: " << location._path << std::endl;
+	std::cout << "root: " << server.root << std::endl;
+	std::cout << "autoindex: " << location.auto_index << std::endl;
+	std::cout << location.cgi_path.first << " " << location.cgi_path.second << std::endl;
+	if (!_method_allowed(request, location)) {
+		Response::text(request, 405, "");
+		return;
 	}
-	if (request.path.compare("favicon.ico") == 0) // our server does not provide a favicon
+	if (request.path.compare("favicon.ico") == 0) { // our server does not provide a favicon
 		Response::text(request, 404, "");
-	else if (request.uri.find("/cgi/input") != std::string::npos)
-		Response::cgi(request, "./cgi/input", "", request.query);
-	else if (request.uri.find("/cgi/index.sh") != std::string::npos)
+		return;
+	}
+	// http://example.com/cgi-bin/printenv.pl/with/additional/path?and=a&query=string
+	// if (location.cgi_path.first.size()) {
+	// 	std::string path;
+	// 	std::vector<std::string> bocks = ft_split(request.)
+
+	// 	Response::cgi(request, "./cgi/input", "", request.query);
+	// }
+	if (request.uri.find("/cgi/index.sh") != std::string::npos)
 		Response::cgi(request, "./cgi/index.sh", "", request.query);
 	else if (request.uri.find("/form") != std::string::npos)
 		Response::file(request, "./html/form.html");
@@ -90,5 +119,4 @@ int Router::route(Client& client) {
 		Response::text(request, 200, "Hello curl\n");
 	else
 		Response::file(request, "./html/upload.html");
-	return 0;
 }

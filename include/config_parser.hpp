@@ -71,7 +71,7 @@ class Config {
 		std::vector<Location>		  location;
 		std::size_t					  equal;
 		std::vector<std::string>	  methods;
-		size_t						  number_methods;
+		size_t						  number_methods; // TODO: what is this??
 		std::string					  cgi_path;
 
 	  private:

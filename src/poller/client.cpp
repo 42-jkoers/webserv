@@ -139,6 +139,6 @@ void Client::_parse(size_t bytes_read) {
 		_buf.clear();
 		return;
 	}
-
-	std::cout << "body type not supported" << std::endl;
+	if (_parse_status >= HEADER_DONE)
+		std::cout << "body type not supported" << std::endl;
 }

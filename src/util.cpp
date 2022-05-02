@@ -67,6 +67,14 @@ std::string to_lower(const std::string& s) {
 	return out;
 }
 
+std::string to_upper(const std::string& s) {
+	std::string out;
+	out.reserve(s.size());
+	for (size_t i = 0; i < s.size(); i++)
+		out += std::toupper(s[i]);
+	return out;
+}
+
 // splits s in any of the delimiters in delim
 std::vector<std::string> ft_split(const std::string& s, const std::string& delim) {
 	std::vector<std::string> out;

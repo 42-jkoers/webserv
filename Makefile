@@ -25,7 +25,7 @@ SILECE_MAKE 	= | grep -v -E ".*Leaving directory|.*Entering directory"
 VPATH 			= $(shell find $(SRCDIR) -type d | tr '\n' ':' | sed -E 's/(.*):/\1/')
 .SUFFIXES:
 
-all: $(NAME) cgi/input
+all: $(NAME) www/cgi/input
 
 $(NAME): $(BUILDDIR)/ $(OBJ) $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(OBJ) $(LIBS) -o $(NAME) $(LINK)
@@ -33,7 +33,7 @@ $(NAME): $(BUILDDIR)/ $(OBJ) $(HEADERS)
 $(BUILDDIR)/%.$(OBJEXT): %.$(SRCEXT) $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $(BUILDDIR)/$(notdir $@)
 
-cgi/input: cgi/input.c
+www/cgi/input: www/cgi/input.c
 	gcc -Wall -Wextra cgi/input.c -o cgi/input
 
 # sources

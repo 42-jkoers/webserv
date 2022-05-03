@@ -34,7 +34,7 @@ $(BUILDDIR)/%.$(OBJEXT): %.$(SRCEXT) $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $(BUILDDIR)/$(notdir $@)
 
 www/cgi/input: www/cgi/input.c
-	gcc -Wall -Wextra cgi/input.c -o cgi/input
+	gcc -Wall -Wextra www/cgi/input.c -o www/cgi/input
 
 # sources
 

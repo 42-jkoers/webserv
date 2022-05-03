@@ -4,15 +4,16 @@
 #include "file_system.hpp"
 #include "main.hpp"
 
+// getting rid of the ';' and its precending whitespace
 void cut_till_collon(std::string& line) {
-	size_t find_collon;
-	size_t end;
-
-	find_collon = line.find_last_not_of("\t ");
-	if (line[find_collon] != ';')
-		exit_with::e_perror("config error: line");
-	end = line.find_last_not_of("\t ;");
-	line = line.substr(0, end + 1); // getting rid of the ';' and whitespace
+	size_t end = line.find(";");
+	if (end == std::string::npos)
+		exit_with::message("config error: line \"" + line + "\" missing semicolon");
+	while (end > 1 && std::iswspace(line[end - 1]))
+		end--;
+	if (end == 0)
+		exit_with::message("config error: line \"" + line + "\" is empty");
+	line = line.substr(0, end);
 }
 
 void cut_till_bracket(std::string& line) {
@@ -112,8 +113,8 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 	}
 	// TODO: validate this
 	if (port < ntohs(32768) || port > ntohs(61000)) {
-			std::cout << port << std::endl;
-			exit_with::e_perror("config error: invalid port");
+		std::cout << port << std::endl;
+		exit_with::e_perror("config error: invalid port");
 	}
 	_servers[_servers.size() - 1].port.push_back(port);
 }
@@ -165,7 +166,7 @@ void Config::_parse_allowed_methods(std::map<const std::string, std::string>& co
 		_add_methods(methods_str, _servers[_servers.size() - 1].methods);
 }
 
-void Config::_parseRoot(std::map<const std::string, std::string>& config_info) {
+void Config::_parse_root(std::map<const std::string, std::string>& config_info) {
 	std::string root = config_info["root"];
 
 	cut_till_collon(root);

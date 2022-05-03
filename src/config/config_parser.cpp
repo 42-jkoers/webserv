@@ -26,7 +26,7 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 		&Config::_parse_error_page,
 		&Config::_parse_client_max_body_size,
 		&Config::_parse_allowed_methods,
-		&Config::_parseRoot,
+		&Config::_parse_root,
 		&Config::_parse_location,
 		&Config::_parse_auto_index,
 		&Config::_parse_index,

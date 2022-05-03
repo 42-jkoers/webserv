@@ -85,7 +85,7 @@ class Config {
 	void						  _parse_error_page(std::map<const std::string, std::string>& config_info);
 	void						  _parse_client_max_body_size(std::map<const std::string, std::string>& config_info);
 	void						  _parse_allowed_methods(std::map<const std::string, std::string>& config_info);
-	void						  _parseRoot(std::map<const std::string, std::string>& config_info);
+	void						  _parse_root(std::map<const std::string, std::string>& config_info);
 	void						  _parse_index(std::map<const std::string, std::string>& config_info);
 	void						  _parse_auto_index(std::map<const std::string, std::string>& config_info);
 	void						  _parse_location(std::map<const std::string, std::string>& config_info);

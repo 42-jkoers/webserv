@@ -25,6 +25,10 @@ SILECE_MAKE 	= | grep -v -E ".*Leaving directory|.*Entering directory"
 VPATH 			= $(shell find $(SRCDIR) -type d | tr '\n' ':' | sed -E 's/(.*):/\1/')
 .SUFFIXES:
 
+ifdef DEBUG
+CFLAGS += -fsanitize=address
+endif
+
 all: $(NAME) www/cgi/input
 
 $(NAME): $(BUILDDIR)/ $(OBJ) $(HEADERS)
@@ -46,7 +50,7 @@ endif
 
 fclean: | clean
 	/bin/rm -f $(NAME)
-	/bin/rm -f cgi/input
+	/bin/rm -f www/cgi/input
 
 re: | fclean all
 

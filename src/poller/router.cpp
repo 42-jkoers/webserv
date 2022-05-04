@@ -1,4 +1,5 @@
 #include "router.hpp"
+#include "file_system.hpp"
 
 Router::~Router() {
 }
@@ -92,10 +93,6 @@ void Router::route(Client& client) { // t
 	const Config::Server&	server = request.associated_server();
 	const Config::Location& location = request.associated_location();
 
-	std::cout << "server: " << server.server_name[0] << " location: " << location._path << std::endl;
-	std::cout << "root: " << server.root << std::endl;
-	std::cout << "autoindex: " << location.auto_index << std::endl;
-	std::cout << location.cgi_path.first << " " << location.cgi_path.second << std::endl;
 	if (!_method_allowed(request, location)) {
 		Response::text(request, 405, "");
 		return;
@@ -104,13 +101,29 @@ void Router::route(Client& client) { // t
 		Response::text(request, 404, "");
 		return;
 	}
-	// http://example.com/cgi-bin/printenv.pl/with/additional/path?and=a&query=string
-	// if (location.cgi_path.first.size()) {
-	// 	std::string path;
-	// 	std::vector<std::string> bocks = ft_split(request.)
 
-	// 	Response::cgi(request, "./cgi/input", "", request.query);
-	// }
+	if (location.cgi_path.first.size()) {
+		// parse http://example.com/cgi-bin/printenv.pl/with/additional/path?and=a&query=string to:
+		// request.uri     : "/cgi-bin/printenv.pl/with/additional/path"
+		// exectutable_path: "/cgi-bin/printenv.pl"
+		// path_info	   : "/with/additional/path"
+		// request.query   : "and=a&query=string"
+
+		std::string				 executable_path = server.root + "/" + location._path;
+		std::vector<std::string> blocks = ft_split(request.uri, "/");
+		bool					 found = false;
+		while (blocks.size() && fs::path_exists(executable_path + "/" + blocks[0])) {
+			executable_path += "/" + blocks[0];
+			blocks.erase(blocks.begin());
+			found = true;
+		}
+		if (!found)
+			return Response::text(request, 404, ""); // TODO: error page
+		std::string path_info;
+		for (size_t i = 0; i < blocks.size(); i++)
+			path_info += "/" + blocks[i];
+		Response::cgi(request, executable_path, path_info, request.query); // todo should we read the cgi executable from the config?
+	}
 	if (request.uri.find("/cgi/index.sh") != std::string::npos)
 		Response::cgi(request, "./cgi/index.sh", "", request.query);
 	else if (request.uri.find("/form") != std::string::npos)

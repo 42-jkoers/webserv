@@ -10,7 +10,7 @@ int	main(void) {
 	char buf[10000];
 	bzero(buf, sizeof(buf));
 	read(0, buf, sizeof(buf));
-	printf("Hello world\n");
+	printf("Hello from cgi\n");
 
 	return 0;
 }

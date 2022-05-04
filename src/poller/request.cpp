@@ -1,5 +1,6 @@
 #include "request.hpp"
 #include "constants.hpp"
+#include "router.hpp"
 
 Request::Request(uint16_t port) {
 	response_code = 200;
@@ -283,6 +284,15 @@ std::string Request::field_filename() const {
 	size_t start = field_value("content-disposition").find(prefix) + prefix.size();
 	size_t length = field_value("content-disposition").find("\"", start);
 	return field_value("content-disposition").substr(start, length - start);
+}
+
+const Config::Server& Request::associated_server() const {
+	assert(field_exists("host"));
+	return g_router.find_server(port, field_value("host"));
+}
+
+const Config::Location& Request::associated_location() const {
+	return g_router.find_location(path, associated_server());
 }
 
 std::ostream& operator<<(std::ostream& output, Request const& rhs) {

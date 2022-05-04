@@ -21,6 +21,11 @@ class Request {
 	std::string			field_filename() const;
 
 	void				set_fd(fd_t f) { this->fd = f; }
+
+	// associations
+	const Config::Server&	associated_server() const;
+	const Config::Location& associated_location() const;
+
 	// read-only variables
 	uint16_t	port;
 	uint32_t	response_code;
@@ -31,7 +36,6 @@ class Request {
 	std::string path;
 	std::string absolute_form;
 	std::string query;
-	int			server_index;
 	std::string body;
 
   protected:

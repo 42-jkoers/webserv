@@ -78,14 +78,26 @@ bool Router::_method_allowed(const Request& request, const Config::Location& loc
 	return false;
 }
 
-void Router::_search_path(const Request& request, const Config::Server& server, const Config::Location& location) {
+// TODO; fix this
+void Router::_search_path(Request& request, const Config::Server& server, const Config::Location& location) {
 	if (!server.root.empty() || !location.root.empty()) {
 		if (!location.root.empty()) {
-			// add location root
-		}
-		// add server root
+			request.path.insert(0, location.root);
+		} else
+			request.path.insert(0, server.root);
+		// std::cout << request.path << std::endl;
+		// std::cout << request.path[request.path.size() - 1] << std::endl;
 	}
-	(void)request;
+	if (request.path[request.path.size() - 1] == '/') {
+		std::string path = request.path + "index.html";
+		// std::cout << fs::path_exists(path) << std::endl;
+		if (location.indexes.size() != 0) {
+
+		} else if (fs::path_exists(path)) {
+			Response::file(request, path);
+			return;
+		}
+	}
 	// If a request ends with a slash, NGINX treats it as a request for a directory and tries to find an index file in the directory
 	// search for index.html or index if specified
 	// if not found-> if autoindex on -> dir listing
@@ -103,7 +115,7 @@ How the server processes request:
 6. if it is a directory -> defaultfile?
 */
 void Router::route(Client& client) {
-	const Request&			request = client.request;
+	Request&				request = client.request;
 	const Config::Server&	server = request.associated_server();
 	const Config::Location& location = request.associated_location();
 
@@ -117,7 +129,6 @@ void Router::route(Client& client) {
 	}
 
 	if (location.cgi_path.first.size()) {
-		std::cout << "cgi" << std::endl;
 		// parse http://example.com/cgi-bin/printenv.pl/with/additional/path?and=a&query=string to:
 		// request.uri     : "/cgi-bin/printenv.pl/with/additional/path"
 		// exectutable_path: "/cgi-bin/printenv.pl"

@@ -189,6 +189,7 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 	servers[servers.size() - 1].locations.push_back(Location());
 	last_location() = (Location());
 	last_location().path = location;
+	std::cout << _inside_location << "  | " << last_location().path << std::endl;
 	_safe_new_path_location = false;
 }
 

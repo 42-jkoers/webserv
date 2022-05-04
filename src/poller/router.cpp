@@ -85,6 +85,7 @@ void Router::_search_path(const Request& request, const Config::Server& server, 
 		}
 		// add server root
 	}
+	(void)request;
 	// If a request ends with a slash, NGINX treats it as a request for a directory and tries to find an index file in the directory
 	// search for index.html or index if specified
 	// if not found-> if autoindex on -> dir listing
@@ -116,6 +117,7 @@ void Router::route(Client& client) {
 	}
 
 	if (location.cgi_path.first.size()) {
+		std::cout << "cgi" << std::endl;
 		// parse http://example.com/cgi-bin/printenv.pl/with/additional/path?and=a&query=string to:
 		// request.uri     : "/cgi-bin/printenv.pl/with/additional/path"
 		// exectutable_path: "/cgi-bin/printenv.pl"

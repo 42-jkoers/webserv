@@ -21,6 +21,7 @@ class Router {
 	// Router& operator=(const Router& cp);
 	bool _has_server_name(std::vector<Config::Server>::iterator server, std::string server_name);
 	bool _method_allowed(const Request& request, const Config::Location& location);
+	void _search_path(const Request& request, const Config::Server& server, const Config::Location& location);
 };
 
 std::ostream& operator<<(std::ostream& output, Router const& rhs);

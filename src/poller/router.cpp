@@ -55,11 +55,11 @@ const Config::Location& Router::find_location(const std::string& path, const Con
 
 	location_index = 0;
 	for (std::vector<Config::Location>::const_iterator it = server.location.begin(); it != server.location.end(); it++) {
-		size_t found = path.find(it->_path);
+		size_t found = path.find(it->path);
 		if (found != std::string::npos && found == 0) {
-			if (last_path.size() < it->_path.size()) {
+			if (last_path.size() < it->path.size()) {
 				location_index = i;
-				last_path = it->_path;
+				last_path = it->path;
 			}
 		}
 		i++;
@@ -109,7 +109,7 @@ void Router::route(Client& client) { // t
 		// path_info	   : "/with/additional/path"
 		// request.query   : "and=a&query=string"
 
-		std::string				 executable_path = server.root + "/" + location._path;
+		std::string				 executable_path = server.root + "/" + location.path;
 		std::vector<std::string> blocks = ft_split(request.uri, "/");
 		bool					 found = false;
 		while (blocks.size() && fs::path_exists(executable_path + "/" + blocks[0])) {

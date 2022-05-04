@@ -191,7 +191,7 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 	// location.erase(remove(location.begin(), location.end(), '.'), location.end());
 	// std::cout << "location now is === " << location << std::endl;
 	if (_safe_new_path_location == false && !_servers[_servers.size() - 1].location.empty())
-		_what_location[_inside_location] = last_location()._path;
+		_what_location[_inside_location] = last_location().path;
 	cut_till_bracket(location);
 	if (_inside_location > 1) {
 		location = _what_location[_inside_location] + location;
@@ -211,7 +211,7 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 
 	_servers[_servers.size() - 1].location.push_back(Location());
 	last_location() = (Location());
-	last_location()._path = location;
+	last_location().path = location;
 	// std::cout << _inside_location << "  | " << last_location()._path << std::endl;
 	_safe_new_path_location = false;
 }

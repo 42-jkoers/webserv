@@ -36,13 +36,13 @@ class Config {
 		~Location(){};
 
 		// READONLY
-		std::string							_path;
+		std::string							path;
 		std::vector<std::string>			indexes;
 		std::string							root;
 		std::vector<std::string>			methods;
 		size_t								number_methods;
 		std::string							auto_index;
-		std::string							_defaultfile;
+		std::string							defaultfile;
 		std::pair<std::string, std::string> cgi_path;
 		std::vector<uint32_t>				port;
 		std::vector<std::string>			ip;

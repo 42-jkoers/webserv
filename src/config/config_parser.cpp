@@ -105,7 +105,7 @@ std::ostream& operator<<(std::ostream& stream, Config const& config) {
 			std::cout << "SERVER NAME = " << config._servers[server].server_name[j] << std::endl;
 		}
 		stream << "SEVERURL = " << config._servers[server].server_url << std::endl;
-		stream << "ROOT = " << config._servers[server].auto_index << std::endl;
+		stream << "ROOT = " << config._servers[server].root << std::endl;
 		stream << "CLIENT_MAX_BODY_SIZE = " << config._servers[server].client_max_body_size << std::endl;
 		for (std::map<size_t, std::string>::const_iterator it = config._servers[server].error_pages.begin(); it != config._servers[server].error_pages.end(); it++) {
 			stream << "ERROR_PAGES = " << it->first << " | " << it->second << std::endl;
@@ -114,14 +114,14 @@ std::ostream& operator<<(std::ostream& stream, Config const& config) {
 			stream << "METHODS = " << config._servers[server].methods[m] << std::endl;
 		}
 		for (size_t location = 0; location < config._servers[server].location.size(); location++) {
-			stream << "ALL LOCATION INFO FROM LOCATION " << location << std::endl;
-			stream << "PATH = " << config._servers[server].location[location]._path << std::endl;
+			stream << "\nALL LOCATION INFO " << location << std::endl;
+			stream << "PATH = " << config._servers[server].location[location].path << std::endl;
 			for (size_t m = 0; m < config._servers[server].location[location].methods.size(); m++) {
 				stream << "METHODS = " << config._servers[server].location[location].methods[m] << std::endl;
 			}
 			stream << "AUTOINDEX = " << config._servers[server].location[location].auto_index << std::endl;
-			stream << "DEFAULT = " << config._servers[server].location[location]._defaultfile << std::endl;
-			stream << "CGI = " << config._servers[server].location[location].cgi_path.first << config._servers[server].location[location].cgi_path.second << std::endl;
+			stream << "DEFAULT = " << config._servers[server].location[location].defaultfile << std::endl;
+			stream << "CGI = " << config._servers[server].location[location].cgi_path.first << " | " << config._servers[server].location[location].cgi_path.second << std::endl;
 			stream << "ROOT = " << config._servers[server].location[location].root << std::endl;
 			for (size_t j = 0; j < config._servers[server].location[location].port.size(); j++) {
 				stream << "PORTS = " << config._servers[server].location[location].port[j] << std::endl;

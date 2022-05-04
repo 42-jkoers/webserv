@@ -180,28 +180,34 @@ you can see if this is the case with checking the equal variable. if it is 1 it 
 */
 void Config::_parse_location(std::map<const std::string, std::string>& config_info) {
 	std::string location = config_info["location"];
-	size_t		equal_sign;
+	// size_t		equal_sign;
 
 	_inside_location++;
-	if (location[0] != '/' || location[0] != '.')
-		location.insert(0, "/");
+	// if (location[0] != '/' || location[0] != '.')
+	// 	location.insert(0, "/");
+	// location.erase(remove(location.begin(), location.end(), '/'), location.end());
+	// std::cout << location << std::endl;
+	// location.erase(remove(location.begin(), location.end(), '.'), location.end());
+	// std::cout << "location now is === " << location << std::endl;
 	if (_safe_new_path_location == false && !_servers[_servers.size() - 1].location.empty())
 		_what_location[_inside_location] = last_location()._path;
 	cut_till_bracket(location);
 	if (_inside_location > 1) {
 		location = _what_location[_inside_location] + location;
 	}
-	if (strchr(location.c_str(), '=')) {
-		_servers[_servers.size() - 1].equal = 1;
-		equal_sign = location.find_first_of("=") + 1;
-		equal_sign = location.find_first_not_of(" \t", equal_sign);
-		location = location.substr(equal_sign, location.length() - equal_sign);
-	} else
-		_servers[_servers.size() - 1].equal = 0;
-	if (location[0] == '/')
-		location.insert(0, ".");
-	else
-		location.insert(0, "./");
+	// if (strchr(location.c_str(), '=')) {
+	// 	_servers[_servers.size() - 1].equal = 1;
+	// 	equal_sign = location.find_first_of("=") + 1;
+	// 	equal_sign = location.find_first_not_of(" \t", equal_sign);
+	// 	location = location.substr(equal_sign, location.length() - equal_sign);
+	// } else
+	// 	_servers[_servers.size() - 1].equal = 0;
+	// if (location[0] == '/')
+	// 	location.insert(0, ".");
+	// else
+	// 	location.insert(0, "./");
+	// location.insert(location.length(), "/");
+
 	_servers[_servers.size() - 1].location.push_back(Location());
 	last_location() = (Location());
 	last_location()._path = location;

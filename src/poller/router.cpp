@@ -9,7 +9,7 @@ Router::Router() {
 }
 
 bool Router::_has_server_name(std::vector<Config::Server>::iterator server, std::string server_name) {
-	for (std::vector<std::string>::iterator it = server->server_name.begin(); it != server->server_name.end(); ++it) {
+	for (std::vector<std::string>::iterator it = server->server_names.begin(); it != server->server_names.end(); ++it) {
 		if (*it == server_name) {
 			return 1;
 		}
@@ -27,8 +27,8 @@ const Config::Server& Router::find_server(uint16_t port, const std::string& host
 	size_t server_index;
 
 	// TODO: cpp11 iterators
-	for (std::vector<Config::Server>::iterator it = g_config._servers.begin(); it != g_config._servers.end(); ++it) { // loop over servers
-		for (std::vector<uint16_t>::iterator it2 = it->port.begin(); it2 != it->port.end(); ++it2) {				  // loop over ports
+	for (std::vector<Config::Server>::iterator it = g_config.servers.begin(); it != g_config.servers.end(); ++it) { // loop over servers
+		for (std::vector<uint16_t>::iterator it2 = it->ports.begin(); it2 != it->ports.end(); ++it2) {				  // loop over ports
 			if (*it2 == port) {
 				if (_has_server_name(it, hostname)) {
 					return *it;
@@ -40,7 +40,7 @@ const Config::Server& Router::find_server(uint16_t port, const std::string& host
 		}
 		i++;
 	}
-	return g_config._servers[server_index];
+	return g_config.servers[server_index];
 }
 
 /*
@@ -54,7 +54,7 @@ const Config::Location& Router::find_location(const std::string& path, const Con
 	std::string last_path = "";
 
 	location_index = 0;
-	for (std::vector<Config::Location>::const_iterator it = server.location.begin(); it != server.location.end(); it++) {
+	for (std::vector<Config::Location>::const_iterator it = server.locations.begin(); it != server.locations.end(); it++) {
 		size_t found = path.find(it->path);
 		if (found != std::string::npos && found == 0) {
 			if (last_path.size() < it->path.size()) {
@@ -64,14 +64,14 @@ const Config::Location& Router::find_location(const std::string& path, const Con
 		}
 		i++;
 	}
-	return server.location[location_index];
+	return server.locations[location_index];
 }
 
 // TODO: Check allowed methods -> method not allowed
 bool Router::_method_allowed(const Request& request, const Config::Location& location) {
-	if (location.methods.empty())
+	if (location.allowed_methods.empty())
 		return true;
-	for (std::vector<std::string>::const_iterator it = location.methods.begin(); it != location.methods.end(); it++) {
+	for (std::vector<std::string>::const_iterator it = location.allowed_methods.begin(); it != location.allowed_methods.end(); it++) {
 		if (to_upper(*it) == request.method)
 			return true;
 	}

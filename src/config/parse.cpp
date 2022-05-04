@@ -28,11 +28,11 @@ void cut_till_bracket(std::string& line) {
 }
 
 Config::Location& Config::last_location() {
-	if (!_servers.size())
-		_servers.push_back(Server());
-	if (!_servers[_servers.size() - 1].location.size())
-		_servers[_servers.size() - 1].location.push_back(Location());
-	return _servers[_servers.size() - 1].location[_servers[_servers.size() - 1].location.size() - 1];
+	if (!servers.size())
+		servers.push_back(Server());
+	if (!servers[servers.size() - 1].locations.size())
+		servers[servers.size() - 1].locations.push_back(Location());
+	return servers[servers.size() - 1].locations[servers[servers.size() - 1].locations.size() - 1];
 }
 
 /* How to check which server to connect to through server name
@@ -47,7 +47,7 @@ void Config::_parse_server_name(std::map<const std::string, std::string>& config
 	cut_till_collon(serverName);
 	while (i < serverName.length() && i != std::string::npos) {
 		if (serverName[i] != ' ' && serverName[i] != '\t') {
-			_servers[_servers.size() - 1].server_name.push_back(serverName.substr(i, serverName.find_first_of(" \t", i) - i));
+			servers[servers.size() - 1].server_names.push_back(serverName.substr(i, serverName.find_first_of(" \t", i) - i));
 			i = serverName.find_first_of(" \t", i);
 			if (i == std::string::npos)
 				break;
@@ -102,21 +102,21 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 	else
 		pos = listen.size();
 	if (check_ip != 0) {
-		_servers[_servers.size() - 1].ip.push_back(listen.substr(0, pos));
+		servers[servers.size() - 1].ips.push_back(listen.substr(0, pos));
 		if (!strchr(listen.c_str(), ':'))
 			port = 8080;
 		else
 			parse_int(port, &config_info["listen"][pos + 1]);
 	} else {
 		parse_int(port, &config_info["listen"][0]);
-		_servers[_servers.size() - 1].ip.push_back("127.0.0.1");
+		servers[servers.size() - 1].ips.push_back("127.0.0.1");
 	}
 	// TODO: validate this
 	if (port < ntohs(32768) || port > ntohs(61000)) {
 		std::cout << port << std::endl;
 		exit_with::e_perror("config error: invalid port");
 	}
-	_servers[_servers.size() - 1].port.push_back(port);
+	servers[servers.size() - 1].ports.push_back(port);
 }
 
 void Config::_parse_error_page(std::map<const std::string, std::string>& config_info) {
@@ -133,7 +133,7 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 	if (_inside_location)
 		last_location().error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
 	else
-		_servers[_servers.size() - 1].error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
+		servers[servers.size() - 1].error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
 }
 
 void Config::_parse_client_max_body_size(std::map<const std::string, std::string>& config_info) {
@@ -141,7 +141,7 @@ void Config::_parse_client_max_body_size(std::map<const std::string, std::string
 	cut_till_collon(body_size);
 	if (body_size[body_size.size() - 1] != 'M' && body_size[body_size.size() - 1] != 'm')
 		exit_with::e_perror("config error: client_max_body_size");
-	_servers[_servers.size() - 1].client_max_body_size = body_size;
+	servers[servers.size() - 1].client_max_body_size = body_size;
 }
 
 void Config::_add_methods(const std::string& methods_str, std::vector<std::string>& methods) {
@@ -159,11 +159,10 @@ void Config::_parse_allowed_methods(std::map<const std::string, std::string>& co
 	std::string methods_str = config_info["allowed_methods"];
 
 	cut_till_collon(methods_str);
-	_servers[_servers.size() - 1].methods.push_back("");
 	if (_inside_location)
-		_add_methods(methods_str, last_location().methods);
+		_add_methods(methods_str, last_location().allowed_methods);
 	else
-		_add_methods(methods_str, _servers[_servers.size() - 1].methods);
+		exit_with::message("\"allowed_methods\" field only allowed in location scope");
 }
 
 void Config::_parse_root(std::map<const std::string, std::string>& config_info) {
@@ -171,55 +170,30 @@ void Config::_parse_root(std::map<const std::string, std::string>& config_info) 
 
 	cut_till_collon(root);
 	if (_inside_location)
-		last_location().root = root;
+		exit_with::message("\"root\" field only allowed in server scope");
 	else
-		_servers[_servers.size() - 1].root = root;
+		servers[servers.size() - 1].root = root;
 }
-/*
-if there is a '=' a match if the requestif the request URI exactly matches the location given
-you can see if this is the case with checking the equal variable. if it is 1 it should match if its 0 is doesn't
-*/
+
 void Config::_parse_location(std::map<const std::string, std::string>& config_info) {
 	std::string location = config_info["location"];
-	// size_t		equal_sign;
 
 	_inside_location++;
-	// if (location[0] != '/' || location[0] != '.')
-	// 	location.insert(0, "/");
-	// location.erase(remove(location.begin(), location.end(), '/'), location.end());
-	// std::cout << location << std::endl;
-	// location.erase(remove(location.begin(), location.end(), '.'), location.end());
-	// std::cout << "location now is === " << location << std::endl;
-	if (_safe_new_path_location == false && !_servers[_servers.size() - 1].location.empty())
+	if (_safe_new_path_location == false && !servers[servers.size() - 1].locations.empty())
 		_what_location[_inside_location] = last_location().path;
 	cut_till_bracket(location);
 	if (_inside_location > 1) {
 		location = _what_location[_inside_location] + location;
 	}
-	// if (strchr(location.c_str(), '=')) {
-	// 	_servers[_servers.size() - 1].equal = 1;
-	// 	equal_sign = location.find_first_of("=") + 1;
-	// 	equal_sign = location.find_first_not_of(" \t", equal_sign);
-	// 	location = location.substr(equal_sign, location.length() - equal_sign);
-	// } else
-	// 	_servers[_servers.size() - 1].equal = 0;
-	// if (location[0] == '/')
-	// 	location.insert(0, ".");
-	// else
-	// 	location.insert(0, "./");
-	// location.insert(location.length(), "/");
 
-	_servers[_servers.size() - 1].location.push_back(Location());
+	servers[servers.size() - 1].locations.push_back(Location());
 	last_location() = (Location());
 	last_location().path = location;
-	// std::cout << _inside_location << "  | " << last_location()._path << std::endl;
 	_safe_new_path_location = false;
 }
 
 void Config::_parse_index(std::map<const std::string, std::string>& config_info) {
-	std::string	  index = config_info["index"];
-	std::ifstream try_file;
-	std::string	  path_to_file;
+	std::string index = config_info["index"];
 
 	cut_till_collon(index);
 	last_location().indexes = ft_split(index, " \t");
@@ -234,7 +208,7 @@ void Config::_parse_auto_index(std::map<const std::string, std::string>& config_
 	if (_inside_location)
 		last_location().auto_index = autoIndex;
 	else
-		_servers[_servers.size() - 1].auto_index = autoIndex;
+		exit_with::message("\"auto_index\" field only allowed in location scope");
 }
 
 void Config::_parse_cgi(std::map<const std::string, std::string>& config_info) {

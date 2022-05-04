@@ -35,48 +35,35 @@ class Config {
 		Location(){};
 		~Location(){};
 
-		// READONLY
+		// READONLY // TODO: require all these to be defined in the block or set defaults
 		std::string							path;
 		std::vector<std::string>			indexes;
-		std::string							root;
-		std::vector<std::string>			methods;
-		size_t								number_methods;
+		std::vector<std::string>			allowed_methods;
 		std::string							auto_index;
-		std::string							defaultfile;
 		std::pair<std::string, std::string> cgi_path;
-		std::vector<uint32_t>				port;
-		std::vector<std::string>			ip;
+		std::vector<uint16_t>				ports;
 		std::map<size_t, std::string>		error_pages;
 		std::string							redirect;
-
-	  private:
 	};
+
 	class Server {
 		friend class Config;
 		friend class Location;
 
 	  public:
 		Server(){};
-		~Server(){};
 
 		// READONLY
-		std::vector<uint16_t>		  port;
-		std::vector<std::string>	  ip;
-		std::vector<std::string>	  server_name;
-		std::string					  server_url;
+		std::vector<uint16_t>		  ports;
+		std::vector<std::string>	  ips;
+		std::vector<std::string>	  server_names;
 		std::string					  root;
-		std::string					  auto_index;
-		std::string					  client_max_body_size;
+		std::string					  client_max_body_size; // TODO: parse as string
 		std::map<size_t, std::string> error_pages;
-		std::vector<Location>		  location;
-		std::size_t					  equal;
-		std::vector<std::string>	  methods;
-		size_t						  number_methods; // TODO: what is this??
-		std::string					  cgi_path;
-
-	  private:
+		std::vector<Location>		  locations;
 	};
-	std::vector<Server> _servers;
+
+	std::vector<Server> servers;
 
   private:
 	Location&					  last_location();

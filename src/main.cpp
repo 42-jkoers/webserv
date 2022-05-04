@@ -41,9 +41,9 @@ int main(int argc, char** argv) {
 
 	Poller poller;
 
-	for (std::vector<Config::Server>::iterator server = g_config._servers.begin(); server != g_config._servers.end(); ++server) {
-		for (size_t i = 0; i < server->port.size(); ++i) {
-			poller.add_server(mode_ipv4, server->ip[i].c_str(), server->port[i]);
+	for (std::vector<Config::Server>::iterator server = g_config.servers.begin(); server != g_config.servers.end(); ++server) {
+		for (size_t i = 0; i < server->ports.size(); ++i) {
+			poller.add_server(mode_ipv4, server->ips[i].c_str(), server->ports[i]);
 		}
 	}
 

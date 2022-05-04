@@ -51,12 +51,12 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 			} else if (_inside_server)
 				_inside_server = false;
 			else
-				exit_with::e_perror("config: syntx");
+				exit_with::message("config: syntx");
 			return;
 		}
 	}
 	std::cout << line << std::endl;
-	exit_with::e_perror("config error: invalid line");
+	exit_with::message("config error: invalid line");
 }
 
 // TODO: work with comments
@@ -81,7 +81,7 @@ void Config::_config_parser(const std::string& config_file_path) {
 	_safe_new_path_location = false;
 	config_file.open(config_file_path);
 	if (!config_file.is_open())
-		exit_with::e_perror("Cannot open config file");
+		exit_with::e_perror("Cannot open config file: \"" + config_file_path + "\"");
 	while (getline(config_file, buffer)) {
 		if (buffer.find_first_of("#") != std::string::npos)
 			buffer = buffer.substr(0, buffer.find_first_of("#"));

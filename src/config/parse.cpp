@@ -22,7 +22,7 @@ void cut_till_bracket(std::string& line) {
 
 	find_bracket = line.find_last_not_of("\t ");
 	if (line[find_bracket] != '{')
-		exit_with::e_perror("config error: line");
+		exit_with::message("config error: line");
 	end = line.find_last_not_of("\t {");
 	line = line.substr(0, end + 1); // getting rid of the ';' and whitespace
 }
@@ -80,15 +80,15 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 	if (strchr(listen.c_str(), '.') || strchr(listen.c_str(), ':')) {
 		while (i < listen.size()) {
 			if (listen[i] != '.' && !isdigit(listen[i]) && listen[i] != ':' && listen[i] != ';')
-				exit_with::e_perror("config error: listen");
+				exit_with::message("config error: listen");
 			if (listen[i] == '.') {
 				check_ip = 0;
 				if (check_dots > 2) // check if its a real ip address
-					exit_with::e_perror("config error: listen");
+					exit_with::message("config error: listen");
 				check_dots++;
 			}
 			if (check_ip > 2 && check_dots != 3) // check if its only 3 numbers long
-				exit_with::e_perror("config error: listen");
+				exit_with::message("config error: listen");
 			if (isdigit(listen[i]))
 				check_ip++;
 			i++;
@@ -114,7 +114,7 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 	// TODO: validate this
 	if (port < ntohs(32768) || port > ntohs(61000)) {
 		std::cout << port << std::endl;
-		exit_with::e_perror("config error: invalid port");
+		exit_with::message("config error: invalid port");
 	}
 	servers[servers.size() - 1].ports.push_back(port);
 }
@@ -127,7 +127,7 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 	size_t error_code;
 	space = error.find_first_of(" \t");
 	if (space == std::string::npos)
-		exit_with::e_perror("config error: error_page");
+		exit_with::message("config error: error_page");
 	std::stringstream sstream(error.substr(0, space).c_str());
 	sstream >> error_code;
 	if (_inside_location)
@@ -140,7 +140,7 @@ void Config::_parse_client_max_body_size(std::map<const std::string, std::string
 	std::string body_size = config_info["client_max_body_size"];
 	cut_till_collon(body_size);
 	if (body_size[body_size.size() - 1] != 'M' && body_size[body_size.size() - 1] != 'm')
-		exit_with::e_perror("config error: client_max_body_size");
+		exit_with::message("config error: client_max_body_size");
 	servers[servers.size() - 1].client_max_body_size = body_size;
 }
 
@@ -148,7 +148,7 @@ void Config::_add_methods(const std::string& methods_str, std::vector<std::strin
 	std::vector<std::string> methods_split = ft_split(methods_str, " \t");
 	for (size_t i = 0; i < methods_split.size(); i++) {
 		if (!g_constants.is_valid_method(methods_split[i]))
-			exit_with::e_perror("config error: wrong method");
+			exit_with::message("config error: wrong method");
 		else
 			methods.push_back(methods_split[i]);
 	}
@@ -204,7 +204,7 @@ void Config::_parse_auto_index(std::map<const std::string, std::string>& config_
 
 	cut_till_collon(autoIndex);
 	if (autoIndex.compare("on") != 0 && autoIndex.compare("off") != 0)
-		exit_with::e_perror("config error: autoindex");
+		exit_with::message("config error: autoindex");
 	if (_inside_location)
 		last_location().auto_index = autoIndex;
 	else
@@ -222,7 +222,7 @@ void Config::_parse_cgi(std::map<const std::string, std::string>& config_info) {
 		last_location().cgi_path.first = cgi.substr(0, space);
 		last_location().cgi_path.second = path;
 	} else
-		exit_with::e_perror("config error: cgi");
+		exit_with::message("config error: cgi");
 	// std::cout << _server[_server.size() - 1].location[_server[_server.size() - 1].location.size() - 1].cgi_path.first << " | " << _server[_server.size() - 1].location[_server[_server.size() - 1].location.size() - 1].cgi_path.second << std::endl;
 }
 
@@ -232,7 +232,7 @@ void Config::_parse_return(std::map<const std::string, std::string>& config_info
 	cut_till_collon(ret);
 	size_t found_redirect = ret.find("301");
 	if (found_redirect == std::string::npos)
-		exit_with::e_perror("config error: redirect");
+		exit_with::message("config error: redirect");
 	last_location().redirect = ret.substr(ret.find_first_not_of("301 \t", found_redirect, ret.length() - found_redirect));
 	std::cout << found_redirect << std::endl;
 

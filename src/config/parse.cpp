@@ -170,7 +170,7 @@ void Config::_parse_root(std::map<const std::string, std::string>& config_info) 
 
 	cut_till_collon(root);
 	if (_inside_location)
-		exit_with::message("\"root\" field only allowed in server scope");
+		last_location().root = root;
 	else
 		servers[servers.size() - 1].root = root;
 }

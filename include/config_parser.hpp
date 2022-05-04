@@ -44,6 +44,7 @@ class Config {
 		std::vector<uint16_t>				ports;
 		std::map<size_t, std::string>		error_pages;
 		std::string							redirect;
+		std::string							root;
 	};
 
 	class Server {

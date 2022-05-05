@@ -29,3 +29,9 @@ std::vector<std::string> list_dir(const std::string& path);
 bool					 path_exists(const std::string& path);
 
 } // namespace fs
+
+namespace path {
+
+std::string normalize(std::string path);
+
+} // namespace path

@@ -78,3 +78,34 @@ bool path_exists(const std::string& path) {
 }
 
 } // namespace fs
+
+namespace path {
+
+// "  ./aa//bb///  " -> "aa/bb"
+// "//a" -> "/a"
+// "/" -> "/"
+// "" -> ""
+std::string normalize(std::string path) {
+	size_t start = path.find_first_not_of("\t ");
+	path.erase(0, start);
+	if (path.substr(0, 2) == "./")
+		path.erase(0, 2);
+	size_t end = path.size();
+	while (end && std::iswspace(path[end - 1]))
+		end--;
+	path.erase(end, path.size());
+	std::vector<std::string> blocks = ft_split(path, "/");
+	std::string				 out;
+	if (path[0] == '/')
+		out += '/';
+	for (size_t i = 0; i < blocks.size(); i++) {
+		if (blocks[i] == ".")
+			continue;
+		if (i != 0)
+			out += '/';
+		out += blocks[i];
+	}
+	return out;
+}
+
+} // namespace path

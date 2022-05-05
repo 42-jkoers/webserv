@@ -58,7 +58,6 @@ class Config {
 		std::vector<uint16_t>		  ports;
 		std::vector<std::string>	  ips;
 		std::vector<std::string>	  server_names;
-		std::string					  root;
 		std::string					  client_max_body_size; // TODO: parse as string
 		std::map<size_t, std::string> error_pages;
 		std::vector<Location>		  locations;

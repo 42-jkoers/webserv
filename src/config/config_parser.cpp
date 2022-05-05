@@ -105,7 +105,6 @@ std::ostream& operator<<(std::ostream& stream, Config const& config) {
 			std::cout << "SERVER NAME = " << config.servers[server].server_names[j] << std::endl;
 		}
 
-		stream << "ROOT = " << config.servers[server].root << std::endl;
 		stream << "CLIENT_MAX_BODY_SIZE = " << config.servers[server].client_max_body_size << std::endl;
 		for (std::map<size_t, std::string>::const_iterator it = config.servers[server].error_pages.begin(); it != config.servers[server].error_pages.end(); it++) {
 			stream << "ERROR_PAGES = " << it->first << " | " << it->second << std::endl;

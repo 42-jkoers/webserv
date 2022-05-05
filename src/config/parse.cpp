@@ -172,7 +172,7 @@ void Config::_parse_root(std::map<const std::string, std::string>& config_info) 
 	if (_inside_location)
 		last_location().root = root;
 	else
-		servers[servers.size() - 1].root = root;
+		exit_with::message("Field \"root\" not allowed inside server scope");
 }
 
 void Config::_parse_location(std::map<const std::string, std::string>& config_info) {

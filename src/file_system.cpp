@@ -77,6 +77,14 @@ bool path_exists(const std::string& path) {
 	return stat(path.c_str(), &buffer) == 0;
 }
 
+bool is_direcory(const std::string& path) {
+	struct stat s;
+	if (stat(path.c_str(), &s) == 0)
+		if (s.st_mode & S_IFDIR)
+			return true;
+	return false;
+}
+
 } // namespace fs
 
 namespace path {

@@ -27,6 +27,7 @@ void					 write_file(const std::string& path, const std::string& content);
 
 std::vector<std::string> list_dir(const std::string& path);
 bool					 path_exists(const std::string& path);
+bool					 is_direcory(const std::string& path);
 
 } // namespace fs
 

@@ -108,4 +108,21 @@ std::string normalize(std::string path) {
 	return out;
 }
 
+bool is_same(const std::string& path1, const std::string& path2) {
+	return path::normalize(path1) == path::normalize(path2);
+}
+
+// this is easier than recursive template matching
+std::string join(const std::string& path1, const std::string& path2) {
+	return path::normalize(path1 + "/" + path2);
+}
+
+std::string join(const std::string& path1, const std::string& path2, const std::string& path3) {
+	return path::normalize(path1 + "/" + path2 + "/" + path3);
+}
+
+std::string join(const std::string& path1, const std::string& path2, const std::string& path3, const std::string& path4) {
+	return path::normalize(path1 + "/" + path2 + "/" + path3 + "/" + path4);
+}
+
 } // namespace path

@@ -34,4 +34,10 @@ namespace path {
 
 std::string normalize(std::string path);
 
+bool		is_same(const std::string& path1, const std::string& path2);
+
+std::string join(const std::string& path1, const std::string& path2);
+std::string join(const std::string& path1, const std::string& path2, const std::string& path3);
+std::string join(const std::string& path1, const std::string& path2, const std::string& path3, const std::string& path4);
+
 } // namespace path

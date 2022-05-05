@@ -113,6 +113,7 @@ std::ostream& operator<<(std::ostream& stream, Config const& config) {
 
 		for (size_t location = 0; location < config.servers[server].locations.size(); location++) {
 			stream << "\nALL LOCATION INFO " << location << std::endl;
+			stream << "ROOT = " << config.servers[server].locations[location].root << std::endl;
 			stream << "PATH = " << config.servers[server].locations[location].path << std::endl;
 			for (size_t m = 0; m < config.servers[server].locations[location].allowed_methods.size(); m++) {
 				stream << "METHODS = " << config.servers[server].locations[location].allowed_methods[m] << std::endl;

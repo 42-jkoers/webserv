@@ -28,7 +28,7 @@ const Config::Server& Router::find_server(uint16_t port, const std::string& host
 
 	// TODO: cpp11 iterators
 	for (std::vector<Config::Server>::iterator it = g_config.servers.begin(); it != g_config.servers.end(); ++it) { // loop over servers
-		for (std::vector<uint16_t>::iterator it2 = it->ports.begin(); it2 != it->ports.end(); ++it2) {				  // loop over ports
+		for (std::vector<uint16_t>::iterator it2 = it->ports.begin(); it2 != it->ports.end(); ++it2) {				// loop over ports
 			if (*it2 == port) {
 				if (_has_server_name(it, hostname)) {
 					return *it;
@@ -78,6 +78,32 @@ bool Router::_method_allowed(const Request& request, const Config::Location& loc
 	return false;
 }
 
+// TODO; fix this
+void Router::_search_path(Request& request, const Config::Server& server, const Config::Location& location) {
+	if (!server.root.empty() || !location.root.empty()) {
+		if (!location.root.empty()) {
+			request.path.insert(0, location.root);
+		} else
+			request.path.insert(0, server.root);
+		// std::cout << request.path << std::endl;
+		// std::cout << request.path[request.path.size() - 1] << std::endl;
+	}
+	if (request.path[request.path.size() - 1] == '/') {
+		std::string path = request.path + "index.html";
+		// std::cout << fs::path_exists(path) << std::endl;
+		if (location.indexes.size() != 0) {
+
+		} else if (fs::path_exists(path)) {
+			Response::file(request, path);
+			return;
+		}
+	}
+	// If a request ends with a slash, NGINX treats it as a request for a directory and tries to find an index file in the directory
+	// search for index.html or index if specified
+	// if not found-> if autoindex on -> dir listing
+	// if not exist and not autoindex on -> 404
+}
+
 /*
 Routes request to the right server
 How the server processes request:
@@ -88,8 +114,8 @@ How the server processes request:
 5. find URI matches file-> if not 404
 6. if it is a directory -> defaultfile?
 */
-void Router::route(Client& client) { // t
-	const Request&			request = client.request;
+void Router::route(Client& client) {
+	Request&				request = client.request;
 	const Config::Server&	server = request.associated_server();
 	const Config::Location& location = request.associated_location();
 
@@ -97,7 +123,7 @@ void Router::route(Client& client) { // t
 		Response::text(request, 405, "");
 		return;
 	}
-	if (request.path.compare("favicon.ico") == 0) { // our server does not provide a favicon
+	if (request.path.compare("/favicon.ico") == 0) { // our server does not provide a favicon
 		Response::text(request, 404, "");
 		return;
 	}
@@ -124,12 +150,17 @@ void Router::route(Client& client) { // t
 			path_info += "/" + blocks[i];
 		Response::cgi(request, executable_path, path_info, request.query); // todo should we read the cgi executable from the config?
 	}
-	if (request.uri.find("/cgi/index.sh") != std::string::npos)
-		Response::cgi(request, "./cgi/index.sh", "", request.query);
-	else if (request.uri.find("/form") != std::string::npos)
+	if (request.method.compare("GET") == 0) {
+		_search_path(request, server, location);
+		return;
+	}
+	if (request.uri.find("/form") != std::string::npos) {
 		Response::file(request, "./html/form.html");
-	else if (request.field_contains("user-agent", "curl"))
+		return;
+	}
+	if (request.field_contains("user-agent", "curl")) {
 		Response::text(request, 200, "Hello curl\n");
-	else
-		Response::file(request, "./html/upload.html");
+		return;
+	}
+	Response::file(request, "./html/upload.html");
 }

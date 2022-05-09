@@ -67,7 +67,6 @@ const Config::Location& Router::find_location(const std::string& path, const Con
 	return server.locations[location_index];
 }
 
-// TODO: Check allowed methods -> method not allowed
 bool Router::_method_allowed(const Request& request, const Config::Location& location) {
 	if (location.allowed_methods.empty())
 		return true;
@@ -78,47 +77,40 @@ bool Router::_method_allowed(const Request& request, const Config::Location& loc
 	return false;
 }
 
-void respond_with_file_not_found(Request& request) {
-	Response::text(request, 404, "Path \"" + request.path + "\" not found");
+void respond_with_file_not_found(const Request& request, std::string path) {
+	Response::text(request, 404, "Path \"" + path + "\" not found\n");
 }
 
-// If a request ends with a slash, NGINX treats it as a request for a directory and tries to find an index file in the directory
-// search for index.html or index if specified
-// if not found-> if autoindex on -> dir listing
-// if not exist and not autoindex on -> 404
+std::string find_index(const Config::Location& location, std::string path) {
+	for (std::string index : location.indexes) {
+		if (fs::path_exists(path + index))
+			return index;
+	}
+	return "";
+}
 
 // returns the path of the file on disk
 // returns "" when the path could not be found
-std::string get_path_on_disk(const Request& request) {
+std::string get_path_on_disk(const Request& request, const Config::Location& location) {
 	// The path where the server should start looking for files
 	// eg:  request.path = "/cgi/test"
 	//     location.path = "/cgi"
 	//     location.root = "www/cgi"
 	// Then mounted_path = "www/cgi/test"
 
-	const Config::Location& location = request.associated_location();
-	std::string				path = request.path.size() ? request.path : "/";
-
-	if (path.at(path.size() - 1) == '/')
-		path = path::join(path, location.indexes[0]); // TODO: should this be an array?
-	path = path.substr(location.path.size());
-	path = path::join(location.root, path);
-	path = path::normalize(path);
-	if (!fs::path_exists(path))
-		return "";
-	return path;
+	return location.root + request.path;
 }
 
-void rout_cgi(Request& request) {
+void route_cgi(Request& request, const Config::Location& location) {
 	// parse http://example.com/cgi-bin/printenv.pl/with/additional/path?and=a&query=string to:
 	// request.uri     : "/cgi-bin/printenv.pl/with/additional/path"
 	// exectutable_path: "/cgi-bin/printenv.pl"
 	// path_info	   : "/with/additional/path" // TODO: not implemented
 	// request.query   : "and=a&query=string"
 
-	const std::string path = get_path_on_disk(request);
-	if (path == "")
-		return respond_with_file_not_found(request);
+	const std::string path = get_path_on_disk(request, location);
+	if (!fs::path_exists(path))
+		return respond_with_file_not_found(request, path);
 	Response::cgi(request, path, "", request.query); // todo should we read the cgi executable from the config?
 }
 
@@ -131,40 +123,49 @@ How the server processes request:
 4. add root to path
 5. find URI matches file-> if not 404
 6. if it is a directory -> defaultfile?
+
+// If a request ends with a slash, NGINX treats it as a request for a directory and tries to find an index file in the directory
+// search for index.html or index if specified
+// if not found-> if autoindex on -> dir listing
+// if not exist and not autoindex on -> 404
 */
 void Router::route(Client& client) {
 	Request&				request = client.request;
 	const Config::Location& location = request.associated_location();
+	std::string				path = get_path_on_disk(request, location);
 
 	if (!_method_allowed(request, location)) {
 		Response::text(request, 405, "");
 		return;
 	}
-	if (request.path.compare("/favicon.ico") == 0) { // our server does not provide a favicon
+	if (path.compare("/favicon.ico") == 0) { // our server does not provide a favicon
 		Response::text(request, 404, "");
 		return;
 	}
 
-	if (location.auto_index == "on" &&
-		request.path.at(request.path.size() - 1) == '/')
-		return Response::text(request, 200, "Files: ..."); // TODO: read files in dir
-
-	if (location.auto_index == "off") {
-		std::string path = get_path_on_disk(request);
-		if (fs::is_direcory(path))
-			return Response::text(request, 403, "Cannot access directory"); // TODO: should this be a 404 not found?
+	if (path.at(path.size() - 1) == '/') { // directory -> find index or else dir listing if autoindex on
+		std::string index = find_index(location, path);
+		if (index.size())
+			return Response::file(request, path);
+		if (location.auto_index == "on")
+			return Response::text(request, 200, "Files: ..."); // TODO: read files in dir
+		return respond_with_file_not_found(request, path);
+		// if (fs::is_direcory(path))
+		// 	return Response::text(request, 403, "Cannot access directory"); // TODO: should this be a 404 not found?
+		// if (fs::is_direcory(path))
+		// 	return Response::text(request, 403, "Cannot access directory"); // TODO: should this be a 404 not found?
 	}
 
 	if (location.cgi_path.first.size())
-		return rout_cgi(request);
+		return route_cgi(request, location);
 
-	if (request.method == "GET") {
-		const std::string path = get_path_on_disk(request);
-		if (path == "")
-			return respond_with_file_not_found(request);
-		return Response::file(request, path);
-	}
+	// if (request.method == "GET") {
+	// 	const std::string path = get_path_on_disk(request, location);
+	// 	if (path == "")
+	// 		return respond_with_file_not_found(request);
+	// 	return Response::file(request, path);
+	// }
 	if (request.method == "POST") {
-		return Response::text(request, 200, "POST not jet implemented"); // TODO
+		return Response::text(request, 200, "POST not yet implemented"); // TODO
 	}
 }

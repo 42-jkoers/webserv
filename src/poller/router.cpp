@@ -87,7 +87,7 @@ std::string find_index(const Config::Location& location, std::string& path) {
 			return "index.html";
 	} else {
 		for (std::string index : location.indexes) {
-			if (fs::path_exists(path + index)) // TODO: add . or delete / or not???; otherwise request can only be rooted
+			if (fs::path_exists(path + index))
 				return index;
 		}
 	}
@@ -101,17 +101,30 @@ std::string get_path_on_disk(const Request& request, const Config::Location& loc
 	//     location.path = "/cgi"
 	//     location.root = "www/cgi"
 	// Then mounted_path = "www/cgi/test"
-
+	std::string default_root = ".";
+	if (location.root.size() == 0) {
+		return default_root + request.path; // TODO: del default_root and require root in each location instead?
+	}
 	return location.root + request.path;
 }
 
 // TODO: finish directory listing
-void dir_list(Request& request, const Config::Location& location, std::string& path) {
-	fs::write_file("dir_listing.html", "<html>\n<head><title>Index of [INSERT PATH HERE]</title></head>\n<body>\n<h1>Index of [INSERT PATH HERE]</h1><hr><pre>\n</pre><hr></body>\n</html>");
-	Response::file(request, "dir_listing.html");
-	(void)request;
-	(void)location;
-	(void)path;
+void dir_list(Request& request, const std::string& path) {
+	std::string					   response;
+	const std::vector<std::string> files = fs::list_dir(path, true);
+	response += "<html><head><title>Index of " + path + "</title></head>\n";
+	response += "<body>\n";
+	response += "<h1>Index of " + path + "</h1>\n";
+	response += "<hr><pre><a href=\"../\">../</a>\n";
+	for (std::string file_name : files) {
+		if (fs::is_direcory(path + file_name))
+			file_name += "/";
+		response += "<a href=\"" + file_name + "\">" + file_name + "</a>\n";
+	}
+	response += "</pre><hr></body>\n";
+	response += "</html>";
+
+	Response::text(request, 200, response);
 }
 
 void route_cgi(Request& request, std::string& path) {
@@ -120,7 +133,6 @@ void route_cgi(Request& request, std::string& path) {
 	// exectutable_path: "/cgi-bin/printenv.pl"
 	// path_info	   : "/with/additional/path" // TODO: not implemented
 	// request.query   : "and=a&query=string"
-
 	if (!fs::path_exists(path))
 		return respond_with_file_not_found(request, path);
 	Response::cgi(request, path, "", request.query); // todo should we read the cgi executable from the config?
@@ -157,10 +169,10 @@ void Router::route(Client& client) {
 			if (index.size())
 				return Response::file(request, path + index);
 			if (location.auto_index == "on")
-				return dir_list(request, location, path);
+				return dir_list(request, path);
+			if (fs::is_direcory(path))
+				return Response::text(request, 403, "Cannot access directory"); // TODO: should this be a 404 not found?
 			return respond_with_file_not_found(request, path);
-			// if (fs::is_direcory(path))
-			// 	return Response::text(request, 403, "Cannot access directory"); // TODO: should this be a 404 not found?
 		}
 
 		if (fs::path_exists(path))

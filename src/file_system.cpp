@@ -14,6 +14,11 @@ std::string exception_str(const std::string& path) {
 	return err;
 }
 
+std::string get_working_path() {
+	char temp[PATH_MAX];
+	return (getcwd(temp, sizeof(temp)) ? std::string(temp) : std::string(""));
+}
+
 // make directory recursively
 void mkdir(const std::string& path) {
 	size_t slash_pos = 0;
@@ -55,7 +60,7 @@ void write_file(const std::string& path, const std::string& data) {
 	file.close();
 }
 
-std::vector<std::string> list_dir(const std::string& path) {
+std::vector<std::string> list_dir(const std::string& path, bool ignore_relatives) {
 	std::vector<std::string> files;
 	DIR*					 dir = opendir(path.c_str());
 	if (!dir)
@@ -65,7 +70,8 @@ std::vector<std::string> list_dir(const std::string& path) {
 		struct dirent* entry = readdir(dir);
 		if (!entry)
 			break;
-		// if (!strcmp(entry->d_name, ".") && !strcmp(entry->d_name, ".."))
+		if (ignore_relatives && (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")))
+			continue;
 		files.push_back(entry->d_name);
 	}
 	closedir(dir);

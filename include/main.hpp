@@ -76,7 +76,8 @@ const T& min(const T& a, const T& b) {
 // Wrappers for c standard functions
 namespace cpp {
 
-int execve(const std::string& path, const std::vector<std::string>& arg, const std::vector<std::string>& envp);
+int			execve(const std::string& path, const std::vector<std::string>& arg, const std::vector<std::string>& envp);
+std::string inet_ntop(struct sockaddr address);
 
 } // namespace cpp
 

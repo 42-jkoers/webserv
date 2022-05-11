@@ -102,4 +102,13 @@ int execve(const std::string& path, const std::vector<std::string>& arg, const s
 	return ::execve(path.c_str(), (char* const*)envp_c.data(), (char* const*)envp_c.data());
 }
 
+// returns ipv4 address
+// returns empty string on fail
+std::string inet_ntop(struct sockaddr address) {
+	static char buf[INET_ADDRSTRLEN];
+	if (inet_ntop(AF_INET, &address, buf, sizeof(buf)) == NULL)
+		return "";
+	return std::string(buf);
+}
+
 } // namespace cpp

@@ -2,9 +2,10 @@
 #include "constants.hpp"
 #include "router.hpp"
 
-Request::Request(uint16_t port) {
+Request::Request(const std::string& ip, uint16_t port) {
 	response_code = 200;
 	fd = -1;
+	this->ip = ip;
 	this->port = port;
 	_crlf = "\r\n";
 	_whitespaces = " \t";
@@ -301,6 +302,7 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 	output << "uri:           [" << rhs.uri << "]" << std::endl;
 	output << "method:        [" << rhs.method << "]" << std::endl;
 	output << "path:          [" << rhs.path << "]" << std::endl;
+	output << "ip:            [" << rhs.ip << "]" << std::endl;
 	output << "port:          [" << rhs.port << "]" << std::endl;
 	output << "query:         [" << rhs.query << "]" << std::endl;
 	output << "absolute_form: [" << rhs.absolute_form << "]" << std::endl;

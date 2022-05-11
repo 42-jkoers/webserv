@@ -1,4 +1,5 @@
 #include "router.hpp"
+#include "constants.hpp"
 #include "file_system.hpp"
 
 Router::~Router() {
@@ -77,8 +78,10 @@ bool Router::_method_allowed(const Request& request, const Config::Location& loc
 	return false;
 }
 
-void respond_with_file_not_found(const Request& request, std::string& path) {
-	Response::text(request, 404, "Path \"" + path + "\" not found\n");
+void respond_with_error_code(const Request& request, const std::string& path, uint16_t error_code) {
+	// TODO: check for custom error page in config file
+	// if custom error page and this page exists return this file, else:
+	Response::error(request, path, error_code);
 }
 
 std::string find_index(const Config::Location& location, std::string& path) {
@@ -101,14 +104,13 @@ std::string get_path_on_disk(const Request& request, const Config::Location& loc
 	//     location.path = "/cgi"
 	//     location.root = "www/cgi"
 	// Then mounted_path = "www/cgi/test"
-	std::string default_root = ".";
-	if (location.root.size() == 0) {
-		return default_root + request.path; // TODO: del default_root and require root in each location instead?
+	std::string default_root = "html";
+	if (location.root.empty()) {
+		return default_root + request.path; // TODO: del default_root is html
 	}
 	return location.root + request.path;
 }
 
-// TODO: finish directory listing
 void dir_list(Request& request, const std::string& path) {
 	std::string					   response;
 	const std::vector<std::string> files = fs::list_dir(path, true);
@@ -134,7 +136,7 @@ void route_cgi(Request& request, std::string& path) {
 	// path_info	   : "/with/additional/path" // TODO: not implemented
 	// request.query   : "and=a&query=string"
 	if (!fs::path_exists(path))
-		return respond_with_file_not_found(request, path);
+		return respond_with_error_code(request, path, 404);
 	Response::cgi(request, path, "", request.query); // todo should we read the cgi executable from the config?
 }
 
@@ -150,8 +152,9 @@ How the server processes request:
 
 If a request ends with a slash, NGINX treats it as a request for a directory and tries to find an index file in the directory
 search for index.html or index if specified
-if not found-> if autoindex on -> dir listing
-if not exist and not autoindex on -> 404
+if dir and autoindex on -> dir listing
+if dir and autoindex off -> 403
+if not exist -> 404
 */
 void Router::route(Client& client) {
 	Request&				request = client.request;
@@ -168,22 +171,21 @@ void Router::route(Client& client) {
 			std::string index = find_index(location, path);
 			if (index.size())
 				return Response::file(request, path + index);
-			if (location.auto_index == "on")
+			if (fs::is_direcory(path) && location.auto_index == "off")
+				return respond_with_error_code(request, path, 403);
+			if (fs::is_direcory(path) && location.auto_index == "on")
 				return dir_list(request, path);
-			if (fs::is_direcory(path))
-				return Response::text(request, 403, "Cannot access directory"); // TODO: should this be a 404 not found?
-			return respond_with_file_not_found(request, path);
+			return respond_with_error_code(request, path, 404);
 		}
 
-		if (fs::path_exists(path))
-			Response::file(request, path);
-		return respond_with_file_not_found(request, path);
+		if (fs::path_exists(path) && !fs::is_direcory(path))
+			return Response::file(request, path);
+		return respond_with_error_code(request, path, 404);
 	}
 
-	if (location.cgi_path.first.size())
-		return route_cgi(request, path);
-
 	if (request.method == "POST") {
+		if (location.cgi_path.first.size())
+			return route_cgi(request, path);
 		return Response::text(request, 200, "POST not yet implemented"); // TODO
 	}
 

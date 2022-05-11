@@ -33,6 +33,7 @@ std::vector<std::string> get_cgi_env(const Request& request, const std::string& 
 	env.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	env.push_back("SERVER_SOFTWARE=webserv/42");
 	env.push_back("PATH_INFO=" + path_info);
+	// if (request.method != "POST") // TODO: should this be here?
 	env.push_back("QUERY_STRING=" + query_string);
 	return env;
 }
@@ -51,9 +52,8 @@ void cgi(const Request& request, const std::string& path, const std::string& pat
 		dup2(request.fd, STDOUT_FILENO);
 		dup2(request.fd, STDERR_FILENO);
 
-		char* const				 args[] = {NULL};
-		std::vector<const char*> envp = vector_to_c_array(get_cgi_env(request, path, path_info, query_string));
-		if (execve(path.c_str(), args, (char* const*)envp.data()))
+		const std::vector<std::string> envp = get_cgi_env(request, path, path_info, query_string);
+		if (cpp::execve(path, std::vector<std::string>(), envp))
 			Response::text(request, 500, "Could not start cgi script \"" + request.path + "\"");
 
 		close(pipe_in[0]);
@@ -64,7 +64,8 @@ void cgi(const Request& request, const std::string& path, const std::string& pat
 		exit(0);
 	} //
 	else {
-		write(pipe_in[1], request.body.data(), request.body.size());
+		if (request.body.size())
+			write(pipe_in[1], request.body.data(), request.body.size());
 		close(pipe_in[0]);
 		close(pipe_in[1]);
 		close(request.fd);

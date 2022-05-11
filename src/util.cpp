@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <ostream>
+#include <unistd.h>
 
 namespace exit_with {
 
@@ -90,3 +91,15 @@ std::vector<std::string> ft_split(const std::string& s, const std::string& chars
 	}
 	return out;
 }
+
+// Wrappers for c standard funcions
+namespace cpp {
+
+int execve(const std::string& path, const std::vector<std::string>& arg, const std::vector<std::string>& envp) {
+	std::vector<const char*> argv_c = vector_to_c_array(arg);
+	std::vector<const char*> envp_c = vector_to_c_array(envp);
+
+	return ::execve(path.c_str(), (char* const*)envp_c.data(), (char* const*)envp_c.data());
+}
+
+} // namespace cpp

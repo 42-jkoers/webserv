@@ -73,6 +73,13 @@ const T& min(const T& a, const T& b) {
 
 } // namespace std_ft
 
+// Wrappers for c standard functions
+namespace cpp {
+
+int execve(const std::string& path, const std::vector<std::string>& arg, const std::vector<std::string>& envp);
+
+} // namespace cpp
+
 std::string readFile(const std::string& path);
 
 // Someone should probably move this

@@ -32,7 +32,12 @@ class Config {
 		friend class Server;
 
 	  public:
-		Location(){};
+		Location() {
+			auto_index = "off";
+			allowed_methods.push_back("GET");
+			allowed_methods.push_back("POST");
+			allowed_methods.push_back("DELETE");
+		};
 		~Location(){};
 
 		// READONLY // TODO: require all these to be defined in the block or set defaults
@@ -52,12 +57,12 @@ class Config {
 
 	  public:
 		Server(){};
+		~Server(){};
 
 		// READONLY
 		std::vector<uint16_t>		  ports;
 		std::vector<std::string>	  ips;
 		std::vector<std::string>	  server_names;
-		std::string					  root;
 		std::string					  client_max_body_size; // TODO: parse as string
 		std::map<size_t, std::string> error_pages;
 		std::vector<Location>		  locations;
@@ -66,7 +71,7 @@ class Config {
 	std::vector<Server> servers;
 
   private:
-	Location&					  last_location();
+	Location&					  _last_location();
 	void						  _parse_server_name(std::map<const std::string, std::string>& config_info);
 	void						  _parse_listen(std::map<const std::string, std::string>& config_info);
 	void						  _parse_error_page(std::map<const std::string, std::string>& config_info);

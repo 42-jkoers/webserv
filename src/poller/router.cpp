@@ -90,7 +90,7 @@ How the server processes request:
 */
 void Router::route(Client& client) { // t
 	const Request&			request = client.request;
-	const Config::Server&	server = request.associated_server();
+	// const Config::Server&	server = request.associated_server();
 	const Config::Location& location = request.associated_location();
 
 	if (!_method_allowed(request, location)) {
@@ -109,7 +109,7 @@ void Router::route(Client& client) { // t
 		// path_info	   : "/with/additional/path"
 		// request.query   : "and=a&query=string"
 
-		std::string				 executable_path = server.root + "/" + location.path;
+		std::string				 executable_path = "/" + location.path;
 		std::vector<std::string> blocks = ft_split(request.uri, "/");
 		bool					 found = false;
 		while (blocks.size() && fs::path_exists(executable_path + "/" + blocks[0])) {

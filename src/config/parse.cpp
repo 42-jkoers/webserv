@@ -27,7 +27,7 @@ void cut_till_bracket(std::string& line) {
 	line = line.substr(0, end + 1); // getting rid of the ';' and whitespace
 }
 
-Config::Location& Config::last_location() {
+Config::Location& Config::_last_location() {
 	if (!servers.size())
 		servers.push_back(Server());
 	if (!servers[servers.size() - 1].locations.size())
@@ -131,7 +131,7 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 	std::stringstream sstream(error.substr(0, space).c_str());
 	sstream >> error_code;
 	if (_inside_location)
-		last_location().error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
+		_last_location().error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
 	else
 		servers[servers.size() - 1].error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
 }
@@ -158,9 +158,10 @@ void Config::_add_methods(const std::string& methods_str, std::vector<std::strin
 void Config::_parse_allowed_methods(std::map<const std::string, std::string>& config_info) {
 	std::string methods_str = config_info["allowed_methods"];
 
+	_last_location().allowed_methods.clear();
 	cut_till_collon(methods_str);
 	if (_inside_location)
-		_add_methods(methods_str, last_location().allowed_methods);
+		_add_methods(methods_str, _last_location().allowed_methods);
 	else
 		exit_with::message("\"allowed_methods\" field only allowed in location scope");
 }
@@ -170,9 +171,9 @@ void Config::_parse_root(std::map<const std::string, std::string>& config_info) 
 
 	cut_till_collon(root);
 	if (_inside_location)
-		exit_with::message("\"root\" field only allowed in server scope");
+		_last_location().path = root;
 	else
-		servers[servers.size() - 1].root = root;
+		exit_with::message("\"root\" field only allowed in server scope");
 }
 
 void Config::_parse_location(std::map<const std::string, std::string>& config_info) {
@@ -180,16 +181,16 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 
 	_inside_location++;
 	if (_safe_new_path_location == false && !servers[servers.size() - 1].locations.empty())
-		_what_location[_inside_location] = last_location().path;
+		_what_location[_inside_location] = _last_location().path;
 	cut_till_bracket(location);
 	if (_inside_location > 1) {
 		location = _what_location[_inside_location] + location;
 	}
 
 	servers[servers.size() - 1].locations.push_back(Location());
-	last_location() = (Location());
-	last_location().path = location;
-	std::cout << _inside_location << "  | " << last_location().path << std::endl;
+	_last_location() = (Location());
+	_last_location().path = location;
+	// std::cout << _inside_location << "  | " << _last_location().path << std::endl;
 	_safe_new_path_location = false;
 }
 
@@ -197,7 +198,7 @@ void Config::_parse_index(std::map<const std::string, std::string>& config_info)
 	std::string index = config_info["index"];
 
 	cut_till_collon(index);
-	last_location().indexes = ft_split(index, " \t");
+	_last_location().indexes = ft_split(index, " \t");
 }
 
 void Config::_parse_auto_index(std::map<const std::string, std::string>& config_info) {
@@ -207,7 +208,7 @@ void Config::_parse_auto_index(std::map<const std::string, std::string>& config_
 	if (autoIndex.compare("on") != 0 && autoIndex.compare("off") != 0)
 		exit_with::message("config error: autoindex");
 	if (_inside_location)
-		last_location().auto_index = autoIndex;
+		_last_location().auto_index = autoIndex;
 	else
 		exit_with::message("\"auto_index\" field only allowed in location scope");
 }
@@ -220,8 +221,8 @@ void Config::_parse_cgi(std::map<const std::string, std::string>& config_info) {
 	size_t		not_space = cgi.find_first_not_of(" \t", space);
 	std::string path = cgi.substr(not_space, cgi.size());
 	if (_inside_location) {
-		last_location().cgi_path.first = cgi.substr(0, space);
-		last_location().cgi_path.second = path;
+		_last_location().cgi_path.first = cgi.substr(0, space);
+		_last_location().cgi_path.second = path;
 	} else
 		exit_with::message("config error: cgi");
 	// std::cout << _server[_server.size() - 1].location[_server[_server.size() - 1].location.size() - 1].cgi_path.first << " | " << _server[_server.size() - 1].location[_server[_server.size() - 1].location.size() - 1].cgi_path.second << std::endl;
@@ -234,8 +235,8 @@ void Config::_parse_return(std::map<const std::string, std::string>& config_info
 	size_t found_redirect = ret.find("301");
 	if (found_redirect == std::string::npos)
 		exit_with::message("config error: redirect");
-	last_location().redirect = ret.substr(ret.find_first_not_of("301 \t", found_redirect, ret.length() - found_redirect));
+	_last_location().redirect = ret.substr(ret.find_first_not_of("301 \t", found_redirect, ret.length() - found_redirect));
 	std::cout << found_redirect << std::endl;
 
-	std::cout << last_location().redirect << std::endl;
+	std::cout << _last_location().redirect << std::endl;
 }

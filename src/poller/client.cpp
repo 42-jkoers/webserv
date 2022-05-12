@@ -1,10 +1,10 @@
 #include "client.hpp"
 
-Client::Client(uint16_t port) {
+Client::Client(const std::string& ip, uint16_t port) {
 	_parse_status = INCOMPLETE;
 	_body_size = 0;
 	_buf.clear();
-	request = Request(port);
+	request = Request(ip, port);
 }
 
 Client::Parse_status Client::parse_status() const { return _parse_status; }

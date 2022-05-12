@@ -55,7 +55,7 @@ void text(const Request& request, uint32_t code, const std::string& message) {
 std::vector<std::string> get_cgi_env(const Request& request, const std::string& path, const std::string& path_info, const std::string& query_string) {
 	std::vector<std::string> env;
 	env.push_back("GATEWAY_INTERFACE=CGI/1.1");
-	env.push_back("REMOTE_ADDR=172.0.0.1"); // TODO: read from client
+	env.push_back("REMOTE_ADDR=" + request.ip);
 	env.push_back("REQUEST_METHOD=" + request.method);
 	env.push_back("SCRIPT_NAME=" + path);
 	env.push_back("SERVER_NAME=" + request.associated_server().server_names.at(0));

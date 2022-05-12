@@ -5,7 +5,7 @@
 class Client {
   public:
 	Client(){};
-	Client(uint16_t port);
+	Client(const std::string& ip, uint16_t port);
 	~Client() {}
 
 	enum Parse_status {

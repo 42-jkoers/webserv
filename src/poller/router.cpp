@@ -9,7 +9,7 @@ Router::Router() {
 	return;
 }
 
-bool Router::_has_server_name(Config::Server server, std::string server_name) {
+bool Router::_has_server_name(const Config::Server& server, const std::string& server_name) {
 	for (std::string name : server.server_names) {
 		if (name == server_name) {
 			return 1;
@@ -22,7 +22,7 @@ bool Router::_has_server_name(Config::Server server, std::string server_name) {
 first server with correct port is the default server
 if correct server name is found -> this server is returned
 */
-const Config::Server& Router::find_server(uint16_t port, const std::string& hostname) {
+const Config::Server& Router::find_server(const uint16_t port, const std::string& hostname) {
 	int	   found = 0;
 	size_t i = 0;
 	size_t server_index;
@@ -68,7 +68,7 @@ const Config::Location& Router::find_location(const std::string& path, const Con
 	return server.locations[location_index];
 }
 
-bool Router::_method_allowed(const Request& request, const Config::Location& location) {
+bool Router::_method_allowed(const Request& request, const Config::Location location) {
 	if (location.allowed_methods.empty())
 		return true;
 	for (std::string method : location.allowed_methods) {

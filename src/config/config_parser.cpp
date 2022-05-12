@@ -48,8 +48,13 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 			if (_inside_location > 0) {
 				_inside_location--;
 				_safe_new_path_location = true;
-			} else if (_inside_server)
+			} else if (_inside_server){
+				if (servers[servers.size() - 1].ports.size() == 0)
+					servers[servers.size() - 1].ports.push_back(8080);
+				if (servers[servers.size() - 1].ips.size() == 0)
+					servers[servers.size() - 1].ips.push_back("127.0.0.1");
 				_inside_server = false;
+			}
 			else
 				exit_with::message("config: syntx");
 			return;
@@ -111,6 +116,7 @@ std::ostream& operator<<(std::ostream& stream, Config const& config) {
 
 		for (size_t location = 0; location < config.servers[server].locations.size(); location++) {
 			stream << "\nALL LOCATION INFO " << location << std::endl;
+			stream << "ROOT = " << config.servers[server].locations[location].root << std::endl;
 			stream << "PATH = " << config.servers[server].locations[location].path << std::endl;
 			for (size_t m = 0; m < config.servers[server].locations[location].allowed_methods.size(); m++) {
 				stream << "METHODS = " << config.servers[server].locations[location].allowed_methods[m] << std::endl;

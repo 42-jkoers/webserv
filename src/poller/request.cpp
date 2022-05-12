@@ -2,9 +2,10 @@
 #include "constants.hpp"
 #include "router.hpp"
 
-Request::Request(uint16_t port) {
+Request::Request(const std::string& ip, uint16_t port) {
 	response_code = 200;
 	fd = -1;
+	this->ip = ip;
 	this->port = port;
 	_crlf = "\r\n";
 	_whitespaces = " \t";
@@ -291,6 +292,19 @@ const Config::Server& Request::associated_server() const {
 	return g_router.find_server(port, field_value("host"));
 }
 
+const std::string& Request::associated_server_name(std::vector<std::string> server_names) const {
+	std::string host = field_value("host");
+	static std::string empty = "";
+	for (std::string& name : server_names) {
+		if (name == host)
+			return name;
+	}
+	if (server_names.empty()) {
+		return empty;
+	}
+	return server_names.at(0);
+}
+
 const Config::Location& Request::associated_location() const {
 	return g_router.find_location(path, associated_server());
 }
@@ -301,6 +315,7 @@ std::ostream& operator<<(std::ostream& output, Request const& rhs) {
 	output << "uri:           [" << rhs.uri << "]" << std::endl;
 	output << "method:        [" << rhs.method << "]" << std::endl;
 	output << "path:          [" << rhs.path << "]" << std::endl;
+	output << "ip:            [" << rhs.ip << "]" << std::endl;
 	output << "port:          [" << rhs.port << "]" << std::endl;
 	output << "query:         [" << rhs.query << "]" << std::endl;
 	output << "absolute_form: [" << rhs.absolute_form << "]" << std::endl;

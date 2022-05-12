@@ -6,7 +6,7 @@
 class Request {
   public:
 	Request(){};
-	Request(uint16_t port);
+	Request(const std::string& ip, uint16_t port);
 	~Request(){};
 
 	bool				field_exists(const std::string& field) const;
@@ -25,8 +25,10 @@ class Request {
 	// associations
 	const Config::Server&	associated_server() const;
 	const Config::Location& associated_location() const;
+	const std::string& associated_server_name(std::vector<std::string> server_names) const;
 
 	// read-only variables
+	std::string ip;
 	uint16_t	port;
 	uint32_t	response_code;
 	fd_t		fd;

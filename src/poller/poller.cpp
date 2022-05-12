@@ -28,7 +28,10 @@ void Poller::add_server(IP_mode ip_mode, const char* str_addr, uint16_t port) {
 void Poller::_accept_clients() {
 	for (size_t i = 0; i < _n_servers; i++) {
 		while (true) {
-			int newfd = accept(_pollfds[i].fd, NULL, NULL);
+			struct sockaddr address;
+			socklen_t		address_len = sizeof(address);
+			int				newfd = accept(_pollfds[i].fd, &address, &address_len);
+
 			if (newfd < 0 && errno != EWOULDBLOCK)
 				exit_with::e_perror("accept() failed");
 			if (newfd < 0)
@@ -37,7 +40,7 @@ void Poller::_accept_clients() {
 			const struct pollfd client_pfd = constructors::pollfd(newfd, POLLIN | POLLOUT);
 			_pollfds.push_back(client_pfd);
 			if (_clients.find(client_pfd.fd) == _clients.end())
-				_clients[client_pfd.fd] = Client(_server_ports[i]);
+				_clients[client_pfd.fd] = Client(cpp::inet_ntop(address), _server_ports[i]);
 		}
 	}
 }

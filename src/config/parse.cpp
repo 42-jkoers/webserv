@@ -139,7 +139,7 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 void Config::_parse_client_max_body_size(std::map<const std::string, std::string>& config_info) {
 	std::string body_size = config_info["client_max_body_size"];
 	cut_till_collon(body_size);
-	if (body_size[body_size.size() - 1] != 'M' && body_size[body_size.size() - 1] != 'm')
+	if (body_size[body_size.size() - 1] != 'M' && body_size[body_size.size() - 1] != 'm' &&body_size[body_size.size() - 1] != 'K' && body_size[body_size.size() - 1] != 'k' )
 		exit_with::message("config error: client_max_body_size");
 	servers[servers.size() - 1].client_max_body_size = body_size;
 }
@@ -171,9 +171,9 @@ void Config::_parse_root(std::map<const std::string, std::string>& config_info) 
 
 	cut_till_collon(root);
 	if (_inside_location)
-		_last_location().path = root;
+		_last_location().root = root;
 	else
-		exit_with::message("\"root\" field only allowed in server scope");
+		exit_with::message("Field \"root\" not allowed inside server scope");
 }
 
 void Config::_parse_location(std::map<const std::string, std::string>& config_info) {

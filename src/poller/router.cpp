@@ -28,7 +28,7 @@ const Config::Server& Router::find_server(uint16_t port, const std::string& host
 
 	// TODO: cpp11 iterators
 	for (std::vector<Config::Server>::iterator it = g_config.servers.begin(); it != g_config.servers.end(); ++it) { // loop over servers
-		for (std::vector<uint16_t>::iterator it2 = it->ports.begin(); it2 != it->ports.end(); ++it2) {				  // loop over ports
+		for (std::vector<uint16_t>::iterator it2 = it->ports.begin(); it2 != it->ports.end(); ++it2) {				// loop over ports
 			if (*it2 == port) {
 				if (_has_server_name(it, hostname)) {
 					return *it;
@@ -78,6 +78,50 @@ bool Router::_method_allowed(const Request& request, const Config::Location& loc
 	return false;
 }
 
+void respond_with_file_not_found(Request& request) {
+	Response::text(request, 404, "Path \"" + request.path + "\" not found");
+}
+
+// If a request ends with a slash, NGINX treats it as a request for a directory and tries to find an index file in the directory
+// search for index.html or index if specified
+// if not found-> if autoindex on -> dir listing
+// if not exist and not autoindex on -> 404
+
+// returns the path of the file on disk
+// returns "" when the path could not be found
+std::string get_path_on_disk(const Request& request) {
+	// The path where the server should start looking for files
+	// eg:  request.path = "/cgi/test"
+	//     location.path = "/cgi"
+	//     location.root = "www/cgi"
+	// Then mounted_path = "www/cgi/test"
+
+	const Config::Location& location = request.associated_location();
+	std::string				path = request.path.size() ? request.path : "/";
+
+	if (path.at(path.size() - 1) == '/')
+		path = path::join(path, location.indexes[0]); // TODO: should this be an array?
+	path = path.substr(location.path.size());
+	path = path::join(location.root, path);
+	path = path::normalize(path);
+	if (!fs::path_exists(path))
+		return "";
+	return path;
+}
+
+void rout_cgi(Request& request) {
+	// parse http://example.com/cgi-bin/printenv.pl/with/additional/path?and=a&query=string to:
+	// request.uri     : "/cgi-bin/printenv.pl/with/additional/path"
+	// exectutable_path: "/cgi-bin/printenv.pl"
+	// path_info	   : "/with/additional/path" // TODO: not implemented
+	// request.query   : "and=a&query=string"
+
+	const std::string path = get_path_on_disk(request);
+	if (path == "")
+		return respond_with_file_not_found(request);
+	Response::cgi(request, path, "", request.query); // todo should we read the cgi executable from the config?
+}
+
 /*
 Routes request to the right server
 How the server processes request:
@@ -88,48 +132,39 @@ How the server processes request:
 5. find URI matches file-> if not 404
 6. if it is a directory -> defaultfile?
 */
-void Router::route(Client& client) { // t
-	const Request&			request = client.request;
-	// const Config::Server&	server = request.associated_server();
+void Router::route(Client& client) {
+	Request&				request = client.request;
 	const Config::Location& location = request.associated_location();
 
 	if (!_method_allowed(request, location)) {
 		Response::text(request, 405, "");
 		return;
 	}
-	if (request.path.compare("favicon.ico") == 0) { // our server does not provide a favicon
+	if (request.path.compare("/favicon.ico") == 0) { // our server does not provide a favicon
 		Response::text(request, 404, "");
 		return;
 	}
 
-	if (location.cgi_path.first.size()) {
-		// parse http://example.com/cgi-bin/printenv.pl/with/additional/path?and=a&query=string to:
-		// request.uri     : "/cgi-bin/printenv.pl/with/additional/path"
-		// exectutable_path: "/cgi-bin/printenv.pl"
-		// path_info	   : "/with/additional/path"
-		// request.query   : "and=a&query=string"
+	if (location.auto_index == "on" &&
+		request.path.at(request.path.size() - 1) == '/')
+		return Response::text(request, 200, "Files: ..."); // TODO: read files in dir
 
-		std::string				 executable_path = "/" + location.path;
-		std::vector<std::string> blocks = ft_split(request.uri, "/");
-		bool					 found = false;
-		while (blocks.size() && fs::path_exists(executable_path + "/" + blocks[0])) {
-			executable_path += "/" + blocks[0];
-			blocks.erase(blocks.begin());
-			found = true;
-		}
-		if (!found)
-			return Response::text(request, 404, ""); // TODO: error page
-		std::string path_info;
-		for (size_t i = 0; i < blocks.size(); i++)
-			path_info += "/" + blocks[i];
-		Response::cgi(request, executable_path, path_info, request.query); // todo should we read the cgi executable from the config?
+	if (location.auto_index == "off") {
+		std::string path = get_path_on_disk(request);
+		if (fs::is_direcory(path))
+			return Response::text(request, 403, "Cannot access directory"); // TODO: should this be a 404 not found?
 	}
-	if (request.uri.find("/cgi/index.sh") != std::string::npos)
-		Response::cgi(request, "./cgi/index.sh", "", request.query);
-	else if (request.uri.find("/form") != std::string::npos)
-		Response::file(request, "./html/form.html");
-	else if (request.field_contains("user-agent", "curl"))
-		Response::text(request, 200, "Hello curl\n");
-	else
-		Response::file(request, "./html/upload.html");
+
+	if (location.cgi_path.first.size())
+		return rout_cgi(request);
+
+	if (request.method == "GET") {
+		const std::string path = get_path_on_disk(request);
+		if (path == "")
+			return respond_with_file_not_found(request);
+		return Response::file(request, path);
+	}
+	if (request.method == "POST") {
+		return Response::text(request, 200, "POST not jet implemented"); // TODO
+	}
 }

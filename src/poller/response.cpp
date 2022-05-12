@@ -17,9 +17,25 @@ namespace Response {
 // TODO: optimize
 void text(const Request& request, uint32_t code, const std::string& message) {
 	std::string response = header_template(code);
-	response += "\r\n\r\n";
+	response += "\r\n";
 	response += message;
 	write(request.fd, response.c_str(), response.length()); // TODO: error handling
+}
+
+std::vector<std::string> get_cgi_env(const Request& request, const std::string& path, const std::string& path_info, const std::string& query_string) {
+	std::vector<std::string> env;
+	env.push_back("GATEWAY_INTERFACE=CGI/1.1");
+	env.push_back("REMOTE_ADDR=" + request.ip);
+	env.push_back("REQUEST_METHOD=" + request.method);
+	env.push_back("SCRIPT_NAME=" + path);
+	env.push_back("SERVER_NAME=" + request.associated_server_name(request.associated_server().server_names));
+	env.push_back("SERVER_PORT=" + std_ft::to_string(request.port));
+	env.push_back("SERVER_PROTOCOL=HTTP/1.1");
+	env.push_back("SERVER_SOFTWARE=webserv/42");
+	env.push_back("PATH_INFO=" + path_info);
+	// if (request.method != "POST") // TODO: should this be here?
+	env.push_back("QUERY_STRING=" + query_string);
+	return env;
 }
 
 void cgi(const Request& request, const std::string& path, const std::string& path_info, const std::string& query_string) {
@@ -36,22 +52,10 @@ void cgi(const Request& request, const std::string& path, const std::string& pat
 		dup2(request.fd, STDOUT_FILENO);
 		dup2(request.fd, STDERR_FILENO);
 
-		std::vector<std::string> env;
-		env.push_back("GATEWAY_INTERFACE=CGI/1.1");	 // TODO: what value
-		env.push_back("REMOTE_ADDR=127.0.0.1");		 // TODO: IP of the client
-		env.push_back("REQUEST_METHOD=GET");		 // TODO: allow POST
-		env.push_back("SCRIPT_NAME=" + path);		 //
-		env.push_back("SERVER_NAME=127.0.0.1");		 // TODO: read from config
-		env.push_back("SERVER_PORT=8080");			 // TODO: read from request
-		env.push_back("SERVER_PROTOCOL=HTTP/1.1");	 //
-		env.push_back("SERVER_SOFTWARE=webserv/42"); //
-		env.push_back("PATH_INFO=" + path_info);
-		env.push_back("QUERY_STRING=" + query_string);
-
-		char* const				 args[] = {NULL};
-		std::vector<const char*> envp = vector_to_c_array(env);
-		if (execve(path.c_str(), args, (char* const*)envp.data()))
-			exit_with::e_errno("Could not start cgi script"); // TODO pipe to parent?
+		const std::vector<std::string> envp = get_cgi_env(request, path, path_info, query_string);
+		std::cerr << " MAKING MY WAY DOWNTOWN" << std::endl;
+		if (cpp::execve(path, std::vector<std::string>(), envp))
+			Response::text(request, 500, "Could not start cgi script \"" + request.path + "\"");
 
 		close(pipe_in[0]);
 		close(pipe_in[1]);
@@ -61,7 +65,8 @@ void cgi(const Request& request, const std::string& path, const std::string& pat
 		exit(0);
 	} //
 	else {
-		write(pipe_in[1], request.body.data(), request.body.size());
+		if (request.body.size())
+			write(pipe_in[1], request.body.data(), request.body.size());
 		close(pipe_in[0]);
 		close(pipe_in[1]);
 		close(request.fd);

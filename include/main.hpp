@@ -41,7 +41,7 @@ void					 print_escaped(const char* s, size_t n, std::string label = "");
 std::vector<const char*> vector_to_c_array(const std::vector<std::string>& v);
 std::string				 to_lower(const std::string& s);
 std::string				 to_upper(const std::string& s);
-std::vector<std::string> ft_split(const std::string& s, const std::string& delim);
+std::vector<std::string> ft_split(const std::string& s, const std::string& charset);
 
 namespace Color {
 
@@ -72,6 +72,14 @@ const T& min(const T& a, const T& b) {
 }
 
 } // namespace std_ft
+
+// Wrappers for c standard functions
+namespace cpp {
+
+int			execve(const std::string& path, const std::vector<std::string>& arg, const std::vector<std::string>& envp);
+std::string inet_ntop(struct sockaddr address);
+
+} // namespace cpp
 
 std::string readFile(const std::string& path);
 

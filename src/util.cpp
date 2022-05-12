@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include <ostream>
+#include <unistd.h>
 
 namespace exit_with {
 
@@ -76,17 +77,38 @@ std::string to_upper(const std::string& s) {
 }
 
 // splits s in any of the delimiters in delim
-std::vector<std::string> ft_split(const std::string& s, const std::string& delim) {
+std::vector<std::string> ft_split(const std::string& s, const std::string& charset) {
 	std::vector<std::string> out;
 	size_t					 start;
 	size_t					 end = 0;
 
-	while ((start = s.find_first_not_of(delim, end)) != std::string::npos) {
+	while ((start = s.find_first_not_of(charset, end)) != std::string::npos) {
 		end = std::string::npos;
-		for (size_t i = 0; i < delim.size(); i++)
-			end = std_ft::min(end, s.find(delim[i], start));
+		for (size_t i = 0; i < charset.size(); i++)
+			end = std_ft::min(end, s.find(charset[i], start));
 
 		out.push_back(s.substr(start, end - start));
 	}
 	return out;
 }
+
+// Wrappers for c standard funcions
+namespace cpp {
+
+int execve(const std::string& path, const std::vector<std::string>& arg, const std::vector<std::string>& envp) {
+	std::vector<const char*> argv_c = vector_to_c_array(arg);
+	std::vector<const char*> envp_c = vector_to_c_array(envp);
+
+	return ::execve(path.c_str(), (char* const*)envp_c.data(), (char* const*)envp_c.data());
+}
+
+// returns ipv4 address
+// returns empty string on fail
+std::string inet_ntop(struct sockaddr address) {
+	static char buf[INET_ADDRSTRLEN];
+	if (inet_ntop(AF_INET, &address, buf, sizeof(buf)) == NULL)
+		return "";
+	return std::string(buf);
+}
+
+} // namespace cpp

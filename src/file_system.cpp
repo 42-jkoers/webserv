@@ -77,4 +77,60 @@ bool path_exists(const std::string& path) {
 	return stat(path.c_str(), &buffer) == 0;
 }
 
+bool is_direcory(const std::string& path) {
+	struct stat s;
+	if (stat(path.c_str(), &s) == 0)
+		if (s.st_mode & S_IFDIR)
+			return true;
+	return false;
+}
+
 } // namespace fs
+
+namespace path {
+
+// "  ./aa//bb///  " -> "aa/bb"
+// "//a" -> "/a"
+// "/" -> "/"
+// "" -> ""
+std::string normalize(std::string path) {
+	size_t start = path.find_first_not_of("\t ");
+	path.erase(0, start);
+	if (path.substr(0, 2) == "./")
+		path.erase(0, 2);
+	size_t end = path.size();
+	while (end && std::iswspace(path[end - 1]))
+		end--;
+	path.erase(end, path.size());
+	std::vector<std::string> blocks = ft_split(path, "/");
+	std::string				 out;
+	if (path[0] == '/')
+		out += '/';
+	for (size_t i = 0; i < blocks.size(); i++) {
+		if (blocks[i] == ".")
+			continue;
+		if (i != 0)
+			out += '/';
+		out += blocks[i];
+	}
+	return out;
+}
+
+bool is_same(const std::string& path1, const std::string& path2) {
+	return path::normalize(path1) == path::normalize(path2);
+}
+
+// this is easier than recursive template matching
+std::string join(const std::string& path1, const std::string& path2) {
+	return path::normalize(path1 + "/" + path2);
+}
+
+std::string join(const std::string& path1, const std::string& path2, const std::string& path3) {
+	return path::normalize(path1 + "/" + path2 + "/" + path3);
+}
+
+std::string join(const std::string& path1, const std::string& path2, const std::string& path3, const std::string& path4) {
+	return path::normalize(path1 + "/" + path2 + "/" + path3 + "/" + path4);
+}
+
+} // namespace path

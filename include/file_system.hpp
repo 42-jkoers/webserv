@@ -27,5 +27,18 @@ void					 write_file(const std::string& path, const std::string& content);
 
 std::vector<std::string> list_dir(const std::string& path);
 bool					 path_exists(const std::string& path);
+bool					 is_direcory(const std::string& path);
 
 } // namespace fs
+
+namespace path {
+
+std::string normalize(std::string path);
+
+bool		is_same(const std::string& path1, const std::string& path2);
+
+std::string join(const std::string& path1, const std::string& path2);
+std::string join(const std::string& path1, const std::string& path2, const std::string& path3);
+std::string join(const std::string& path1, const std::string& path2, const std::string& path3, const std::string& path4);
+
+} // namespace path

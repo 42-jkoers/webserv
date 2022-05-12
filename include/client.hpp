@@ -9,17 +9,17 @@ class Client {
 	~Client() {}
 
 	enum Parse_status {
-		INCOMPLETE,
-		READING_HEADER,
-		READING_HEADER_DONE,
-
-		HEADER_DONE,
-		// send 100-continue
-		READING_BODY_HEADER,
-		READING_BODY,
-		FINISHED,
-
-		ERROR
+		INCOMPLETE,			 // Invalid state
+							 //
+		READING_HEADER,		 // \r\n\r\n not yet reached
+		READING_HEADER_DONE, // \r\n\r\n reached
+		HEADER_DONE,		 // header successfully parsed
+							 //
+		READING_BODY_HEADER, // \r\n\r\n not yet reached
+		READING_BODY,		 // \r\n\r\n reached
+		FINISHED,			 // responded to request
+							 //
+		ERROR				 // something went wrong in any of the above steps
 	};
 
 	enum Chunk_status {

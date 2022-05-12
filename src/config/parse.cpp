@@ -236,7 +236,4 @@ void Config::_parse_return(std::map<const std::string, std::string>& config_info
 	if (found_redirect == std::string::npos)
 		exit_with::message("config error: redirect");
 	_last_location().redirect = ret.substr(ret.find_first_not_of("301 \t", found_redirect, ret.length() - found_redirect));
-	std::cout << found_redirect << std::endl;
-
-	std::cout << _last_location().redirect << std::endl;
 }

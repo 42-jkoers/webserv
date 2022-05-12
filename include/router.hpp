@@ -19,7 +19,7 @@ class Router {
 	// disabled
 	// Router(const Router& cp); // TODO
 	// Router& operator=(const Router& cp);
-	bool _has_server_name(std::vector<Config::Server>::iterator server, std::string server_name);
+	bool _has_server_name(Config::Server server, std::string server_name);
 	bool _method_allowed(const Request& request, const Config::Location& location);
 };
 

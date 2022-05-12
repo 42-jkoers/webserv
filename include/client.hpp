@@ -40,6 +40,6 @@ class Client {
 	size_t		 _body_size;
 	std::string	 _buf;
 
-	void		 _parse(size_t bytes_read);
-	Chunk_status _append_chunk(size_t bytes_read);
+	void		 _parse();
+	Chunk_status _append_chunk();
 };

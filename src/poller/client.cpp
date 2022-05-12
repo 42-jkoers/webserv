@@ -24,7 +24,7 @@ void Client::read_pollfd(const pollfd& pfd) {
 			return;
 		for (ssize_t i = 0; i < bytes_read; i++)
 			_buf.push_back(buf[i]);
-		_parse(bytes_read);
+		_parse();
 		if (_parse_status == HEADER_DONE)
 			break;
 		if (_parse_status >= FINISHED)
@@ -37,7 +37,7 @@ void Client::read_pollfd(const pollfd& pfd) {
 	}
 }
 
-Client::Chunk_status Client::_append_chunk(size_t bytes_read) {
+Client::Chunk_status Client::_append_chunk() {
 	size_t block_size;
 	size_t hex_len = parse_hex(block_size, _buf.data(), '\r');
 	assert(hex_len > 0); // if parse_hex is successful
@@ -51,7 +51,7 @@ Client::Chunk_status Client::_append_chunk(size_t bytes_read) {
 		_buf.erase(_buf.begin(), _buf.begin() + hex_len + block_size + 2); // also remove \r\n suffix
 	}
 	if (_buf.size())
-		return _append_chunk(bytes_read);
+		return _append_chunk();
 	return CS_IN_PROGRESS;
 }
 
@@ -66,7 +66,7 @@ bool request_has_body(const Request& request) {
 	return false;
 }
 
-void Client::_parse(size_t bytes_read) {
+void Client::_parse() {
 	if (_parse_status <= READING_HEADER) {
 		_parse_status = READING_HEADER;
 		if (_buf.find("\r\n\r\n") != std::string::npos)
@@ -113,7 +113,7 @@ void Client::_parse(size_t bytes_read) {
 	}
 
 	if (_parse_status == READING_BODY && request.field_is("transfer-encoding", "chunked")) {
-		Chunk_status cs = _append_chunk(bytes_read);
+		Chunk_status cs = _append_chunk();
 		assert(cs != CS_ERROR);
 		if (cs == CS_NULL_BLOCK_REACHED)
 			_parse_status = FINISHED;

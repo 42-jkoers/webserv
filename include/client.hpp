@@ -28,7 +28,9 @@ class Client {
 		CS_ERROR
 	};
 
-	void		 read_pollfd(const pollfd& pfd);
+	void		 on_pollevent(struct pollfd pfd);
+	void		 on_pollevent_read(struct pollfd pfd);
+	void		 on_pollevent_write(struct pollfd pfd);
 	Parse_status parse_status() const;
 	void		 reset();
 
@@ -38,7 +40,8 @@ class Client {
   private:
 	Parse_status _parse_status;
 	size_t		 _body_size;
-	std::string	 _buf;
+	std::string	 _buf_read;
+	std::string	 _buf_write;
 
 	void		 _parse();
 	Chunk_status _append_chunk();

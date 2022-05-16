@@ -27,13 +27,12 @@ const Config::Server& Router::find_server(const uint16_t port, const std::string
 	size_t i = 0;
 	size_t server_index;
 
-	// TODO: cpp11 iterators
 	for (Config::Server& server : g_config.servers) { // loop over servers
 		for (uint16_t p : server.ports) {			  // loop over ports
 			if (p == port) {
 				if (_has_server_name(server, hostname)) {
 					return server;
-				} else if (found == 0) {
+				} else if (found == 0) { // the first server with correct port = default server
 					server_index = i;
 				}
 				found = 1;
@@ -105,9 +104,8 @@ std::string get_path_on_disk(const Request& request, const Config::Location& loc
 	//     location.root = "www/cgi"
 	// Then mounted_path = "www/cgi/test"
 	std::string default_root = "html";
-	if (location.root.empty()) {
+	if (location.root.empty())
 		return default_root + request.path;
-	}
 	return location.root + request.path;
 }
 

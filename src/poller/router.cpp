@@ -119,7 +119,7 @@ void rout_cgi(Request& request) {
 	const std::string path = get_path_on_disk(request);
 	if (path == "")
 		return respond_with_file_not_found(request);
-	Response::cgi(request, path, "", request.query); // todo should we read the cgi executable from the config?
+	Response::cgi(request, path); // todo should we read the cgi executable from the config?
 }
 
 /*

@@ -99,7 +99,7 @@ int execve(const std::string& path, const std::vector<std::string>& arg, const s
 	std::vector<const char*> argv_c = vector_to_c_array(arg);
 	std::vector<const char*> envp_c = vector_to_c_array(envp);
 
-	return ::execve(path.c_str(), (char* const*)envp_c.data(), (char* const*)envp_c.data());
+	return ::execve(path.c_str(), (char* const*)argv_c.data(), (char* const*)envp_c.data());
 }
 
 // returns ipv4 address

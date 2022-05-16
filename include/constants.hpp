@@ -7,6 +7,7 @@ class Constants {
 	const std::string& to_content_type(const std::string& filename) const;
 	const std::string& to_response_string(uint32_t code) const;
 	bool			   is_valid_method(const std::string& method) const;
+	std::string		   webserver_name() const;
 
   private:
 	std::map<std::string, std::string> _content_type;

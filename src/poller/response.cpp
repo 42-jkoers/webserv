@@ -14,6 +14,36 @@ static std::string header_template(uint32_t code) {
 
 namespace Response {
 
+void error(const Request& request, const std::string& path, uint32_t code) {
+	std::string response = header_template(code);
+	response += "\r\n";
+
+	response += "<html>\n";
+	response += "<head><title>";
+	response += std_ft::to_string(code);
+	response += " ";
+	response += g_constants.to_response_string(code);
+	response += "</title></head>\n";
+	response += "<body>\n";
+
+	response += "<center><h1>";
+	response += std_ft::to_string(code);
+	response += " ";
+	response += g_constants.to_response_string(code);
+	response += "</h1></center>\n";
+
+	response += "<hr><center>" + g_constants.webserver_name() + "\n";
+
+	response += "<center>path: ";
+	response += path;
+	response += "\n";
+
+	response += "</center>";
+	response += "</body>";
+	response += "</html>";
+	write(request.fd, response.c_str(), response.length());
+}
+
 // TODO: optimize
 void text(const Request& request, uint32_t code, const std::string& message) {
 	std::string response = header_template(code);
@@ -33,6 +63,7 @@ std::vector<std::string> get_cgi_env(const Request& request, const std::string& 
 	env.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	env.push_back("SERVER_SOFTWARE=webserv/42");
 	env.push_back("PATH_INFO=" + path::join("/" + request.associated_location().root, request.path));
+	env.push_back("SERVER_SOFTWARE=" + g_constants.webserver_name());
 	// if (request.method != "POST") // TODO: should this be here?
 	env.push_back("QUERY_STRING=" + request.query);
 	return env;

@@ -4,6 +4,6 @@ obj/
 .DS_Store
 /webserv
 *.dSYM
-/www/cgi/input
+/html/cgi/input
 /file_uploads/
 test/

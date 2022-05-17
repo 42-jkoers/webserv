@@ -77,13 +77,13 @@ bool Router::_method_allowed(const Request& request, const Config::Location loca
 	return false;
 }
 
-void respond_with_error_code(const Request& request, const std::string& path, uint16_t error_code) {
+void Router::_respond_with_error_code(const Request& request, const std::string& path, uint16_t error_code) {
 	// TODO: check for custom error page in config file
 	// if custom error page and this page exists return this file, else:
 	Response::error(request, path, error_code);
 }
 
-std::string find_index(const Config::Location& location, std::string& path) {
+std::string Router::_find_index(const Config::Location& location, std::string& path) {
 	if (location.indexes.empty()) {
 		if (fs::path_exists(path + "index.html"))
 			return "index.html";
@@ -97,19 +97,19 @@ std::string find_index(const Config::Location& location, std::string& path) {
 }
 
 // returns the path of the file on disk
-std::string get_path_on_disk(const Request& request, const Config::Location& location) {
+std::string Router::_get_path_on_disk(const Request& request, const Config::Location& location) {
 	// The path where the server should start looking for files
 	// eg:  request.path = "/cgi/test"
 	//     location.path = "/cgi"
 	//     location.root = "www/cgi"
 	// Then mounted_path = "www/cgi/test"
-	std::string default_root = "/www/html";
+	std::string default_root = "www/html";
 	if (location.root.empty())
 		return default_root + request.path;
 	return location.root + request.path;
 }
 
-void dir_list(Request& request, const std::string& path) {
+void Router::_dir_list(Request& request, const std::string& path) {
 	std::string					   response;
 	const std::vector<std::string> files = fs::list_dir(path, true);
 	response += "<html><head><title>Index of " + request.path + "</title></head>\n";
@@ -127,14 +127,14 @@ void dir_list(Request& request, const std::string& path) {
 	Response::text(request, 200, response);
 }
 
-void route_cgi(Request& request, std::string& path) {
+void Router::_route_cgi(Request& request, std::string& path) {
 	// parse http://example.com/cgi-bin/printenv.pl/with/additional/path?and=a&query=string to:
 	// request.uri     : "/cgi-bin/printenv.pl/with/additional/path"
 	// exectutable_path: "/cgi-bin/printenv.pl"
 	// path_info	   : "/with/additional/path" // TODO: not implemented
 	// request.query   : "and=a&query=string"
 	if (!fs::path_exists(path))
-		return respond_with_error_code(request, path, 404);
+		return _respond_with_error_code(request, path, 404);
 	Response::cgi(request, path, "", request.query); // todo should we read the cgi executable from the config?
 }
 
@@ -157,7 +157,7 @@ if not exist -> 404
 void Router::route(Client& client) {
 	Request&				request = client.request;
 	const Config::Location& location = request.associated_location();
-	std::string				path = get_path_on_disk(request, location);
+	std::string				path = _get_path_on_disk(request, location);
 
 	if (!_method_allowed(request, location)) {
 		Response::text(request, 405, "");
@@ -166,24 +166,24 @@ void Router::route(Client& client) {
 
 	if (request.method == "GET") {
 		if (path.at(path.size() - 1) == '/') { // directory -> find index or else dir listing if autoindex on
-			std::string index = find_index(location, path);
+			std::string index = _find_index(location, path);
 			if (index.size())
 				return Response::file(request, path + index);
 			if (fs::is_direcory(path) && location.auto_index == "off")
-				return respond_with_error_code(request, path, 403);
+				return _respond_with_error_code(request, path, 403);
 			if (fs::is_direcory(path) && location.auto_index == "on")
-				return dir_list(request, path);
-			return respond_with_error_code(request, path, 404);
+				return _dir_list(request, path);
+			return _respond_with_error_code(request, path, 404);
 		}
 
 		if (fs::path_exists(path) && !fs::is_direcory(path))
 			return Response::file(request, path);
-		return respond_with_error_code(request, path, 404);
+		return _respond_with_error_code(request, path, 404);
 	}
 
 	if (request.method == "POST") {
 		if (location.cgi_path.first.size())
-			return route_cgi(request, path);
+			return _route_cgi(request, path);
 		return Response::text(request, 200, "POST not yet implemented"); // TODO
 	}
 

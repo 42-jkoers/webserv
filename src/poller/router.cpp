@@ -9,7 +9,7 @@ Router::Router() {
 	return;
 }
 
-bool Router::_has_server_name(const Config::Server& server, const std::string& server_name) {
+bool has_server_name(const Config::Server& server, const std::string& server_name) {
 	for (std::string name : server.server_names) {
 		if (name == server_name) {
 			return 1;
@@ -30,7 +30,7 @@ const Config::Server& Router::find_server(const uint16_t port, const std::string
 	for (Config::Server& server : g_config.servers) { // loop over servers
 		for (uint16_t p : server.ports) {			  // loop over ports
 			if (p == port) {
-				if (_has_server_name(server, hostname)) {
+				if (has_server_name(server, hostname)) {
 					return server;
 				} else if (found == 0) { // the first server with correct port = default server
 					server_index = i;
@@ -67,7 +67,9 @@ const Config::Location& Router::find_location(const std::string& path, const Con
 	return server.locations[location_index];
 }
 
-bool Router::_method_allowed(const Request& request, const Config::Location location) {
+bool method_allowed(const Request& request) {
+	const Config::Location location = request.associated_location();
+
 	if (location.allowed_methods.empty())
 		return true;
 	for (std::string method : location.allowed_methods) {
@@ -78,8 +80,17 @@ bool Router::_method_allowed(const Request& request, const Config::Location loca
 }
 
 void Router::_respond_with_error_code(const Request& request, const std::string& path, uint16_t error_code) {
-	// TODO: check for custom error page in config file
-	// if custom error page and this page exists return this file, else:
+	const Config::Location location = request.associated_location();
+
+	for (const std::pair<size_t, std::string>& p : location.error_pages) {
+		if (p.first == error_code) {
+			std::string error_path = p.second;
+			error_path.erase(0, 1); // TODO: remove when correct error paths parsed config
+			if (!fs::path_exists(location.root + error_path))
+				Router::_respond_with_error_code(request, location.root + path, 404); // TODO: do we want this infinite loop or not?
+			Response::file(request, location.root + error_path, error_code);
+		}
+	}
 	Response::error(request, path, error_code);
 }
 
@@ -97,13 +108,14 @@ std::string Router::_find_index(const Config::Location& location, std::string& p
 }
 
 // returns the path of the file on disk
-std::string Router::_get_path_on_disk(const Request& request, const Config::Location& location) {
+std::string get_path_on_disk(const Request& request) {
 	// The path where the server should start looking for files
 	// eg:  request.path = "/cgi/test"
 	//     location.path = "/cgi"
 	//     location.root = "www/cgi"
 	// Then mounted_path = "www/cgi/test"
-	std::string default_root = "www/html";
+	const Config::Location location = request.associated_location();
+	std::string			   default_root = "www/html";
 	if (location.root.empty())
 		return default_root + request.path;
 	return location.root + request.path;
@@ -157,9 +169,9 @@ if not exist -> 404
 void Router::route(Client& client) {
 	Request&				request = client.request;
 	const Config::Location& location = request.associated_location();
-	std::string				path = _get_path_on_disk(request, location);
+	std::string				path = get_path_on_disk(request);
 
-	if (!_method_allowed(request, location)) {
+	if (!method_allowed(request)) {
 		Response::text(request, 405, "");
 		return;
 	}
@@ -168,7 +180,7 @@ void Router::route(Client& client) {
 		if (path.at(path.size() - 1) == '/') { // directory -> find index or else dir listing if autoindex on
 			std::string index = _find_index(location, path);
 			if (index.size())
-				return Response::file(request, path + index);
+				return Response::file(request, path + index, 200);
 			if (fs::is_direcory(path) && location.auto_index == "off")
 				return _respond_with_error_code(request, path, 403);
 			if (fs::is_direcory(path) && location.auto_index == "on")
@@ -177,7 +189,7 @@ void Router::route(Client& client) {
 		}
 
 		if (fs::path_exists(path) && !fs::is_direcory(path))
-			return Response::file(request, path);
+			return Response::file(request, path, 200);
 		return _respond_with_error_code(request, path, 404);
 	}
 

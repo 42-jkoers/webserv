@@ -102,8 +102,8 @@ void cgi(const Request& request, const std::string& path, const std::string& pat
 	}
 }
 
-void file(const Request& request, const std::string& path) {
-	std::string header = header_template(200);
+void file(const Request& request, const std::string& path, uint32_t code) {
+	std::string header = header_template(code);
 	std::string file = fs::read_file(path);
 	header += "Content-length: " + std_ft::to_string(file.size());
 	header += "\r\n\r\n";

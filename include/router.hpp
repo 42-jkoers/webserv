@@ -19,11 +19,8 @@ class Router {
 	// disabled
 	// Router(const Router& cp); // TODO
 	// Router& operator=(const Router& cp);
-	bool		_has_server_name(const Config::Server& server, const std::string& server_name);
-	bool		_method_allowed(const Request& request, const Config::Location location);
 	void		_respond_with_error_code(const Request& request, const std::string& path, uint16_t error_code);
 	std::string _find_index(const Config::Location& location, std::string& path);
-	std::string _get_path_on_disk(const Request& request, const Config::Location& location);
 	void		_dir_list(Request& request, const std::string& path);
 	void		_route_cgi(Request& request, std::string& path);
 };

@@ -103,7 +103,7 @@ std::string get_path_on_disk(const Request& request, const Config::Location& loc
 	//     location.path = "/cgi"
 	//     location.root = "www/cgi"
 	// Then mounted_path = "www/cgi/test"
-	std::string default_root = "html";
+	std::string default_root = "/www/html";
 	if (location.root.empty())
 		return default_root + request.path;
 	return location.root + request.path;

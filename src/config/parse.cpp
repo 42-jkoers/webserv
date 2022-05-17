@@ -112,10 +112,8 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 		servers[servers.size() - 1].ips.push_back("127.0.0.1");
 	}
 	// TODO: validate this
-	if (port < ntohs(32768) || port > ntohs(61000)) {
-		std::cout << port << std::endl;
+	if (port < ntohs(32768) || port > ntohs(61000))
 		exit_with::message("config error: invalid port");
-	}
 	servers[servers.size() - 1].ports.push_back(port);
 }
 
@@ -234,7 +232,7 @@ void Config::_parse_return(std::map<const std::string, std::string>& config_info
 	if (found_redirect == std::string::npos)
 		exit_with::message("config error: redirect");
 	last_location().redirect = ret.substr(ret.find_first_not_of("301 \t", found_redirect, ret.length() - found_redirect));
-	std::cout << found_redirect << std::endl;
+	// std::cout << found_redirect << std::endl;
 
-	std::cout << last_location().redirect << std::endl;
+	// std::cout << last_location().redirect << std::endl;
 }

@@ -9,7 +9,7 @@
 
 class Config;
 
-//TODO: different error when giving empty line
+// TODO: different error when giving empty line
 
 extern Config g_config;
 

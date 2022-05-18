@@ -70,15 +70,12 @@ void Config::_parse_server_name(std::map<const std::string, std::string>& config
  if there is no ip the ip will be set to 127.0.0.1
  */
 
-// TODO: What if no port is specified Range of ip ports
-// don't connect to a port when IP adress is not localhost
 void Config::_parse_listen(std::map<const std::string, std::string>& config_info) {
 	std::string listen = config_info["listen"];
 	size_t		i = 0;
 	size_t		check_dots = 0;
 	size_t		check_ip = 0;
 
-	// std::cout << "hello I am here" << listen << std::endl;
 	if (_inside_location)
 		exit_with::message("\"listen\" directive only allowed in server scope");
 	cut_till_collon(listen);
@@ -123,24 +120,20 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 }
 
 // error pages are safed in a map structure so you can see what html file to use for what error code
-// TODO: you can set more error codes in 1 line
 void Config::_parse_error_page(std::map<const std::string, std::string>& config_info) {
 	std::string error = config_info["error_page"];
-	size_t		space;
+	size_t		error_code;
 
 	if (!_inside_location)
 		exit_with::message("\"error_page\" directive only allowed in location scope");
 	cut_till_collon(error);
-	size_t error_code;
-	space = error.find_first_of(" \t");
-	if (space == std::string::npos)
-		exit_with::message("config error: error_page");
-	std::stringstream sstream(error.substr(0, space).c_str());
-	sstream >> error_code;
-	if (_inside_location)
-		_last_location().error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
-	else
-		servers[servers.size() - 1].error_pages[error_code] = error.substr(error.find_last_of(" \t"), error.size() - space);
+	std::vector<std::string> splitted_error_codes = ft_split(error, " \t");
+	for (std::string i : splitted_error_codes){
+		std::stringstream sstream(i);
+		sstream >> error_code;
+		_last_location().error_pages[error_code] = splitted_error_codes[splitted_error_codes.size() - 1]; // Should this be the last one always??
+		// std::cout << _last_location().error_pages[error_code] << std::endl;
+	}
 }
 
 void Config::_parse_client_max_body_size(std::map<const std::string, std::string>& config_info) {
@@ -164,7 +157,6 @@ void Config::_add_methods(const std::string& methods_str, std::vector<std::strin
 	}
 }
 
-// TODO: set methods in location aswell
 void Config::_parse_allowed_methods(std::map<const std::string, std::string>& config_info) {
 	std::string methods_str = config_info["allowed_methods"];
 

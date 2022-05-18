@@ -48,14 +48,15 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 			if (_inside_location > 0) {
 				_inside_location--;
 				_safe_new_path_location = true;
-			} else if (_inside_server){
+				if (_last_location().root.empty())
+					_last_location().root = "www/html";
+			} else if (_inside_server) {
 				if (servers[servers.size() - 1].ports.size() == 0)
 					servers[servers.size() - 1].ports.push_back(8080);
 				if (servers[servers.size() - 1].ips.size() == 0)
 					servers[servers.size() - 1].ips.push_back("127.0.0.1");
 				_inside_server = false;
-			}
-			else
+			} else
 				exit_with::message("config: syntx");
 			return;
 		}

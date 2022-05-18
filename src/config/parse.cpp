@@ -1,4 +1,5 @@
 
+
 #include "config_parser.hpp"
 #include "constants.hpp"
 #include "file_system.hpp"
@@ -124,15 +125,14 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 	std::string error = config_info["error_page"];
 	size_t		error_code;
 
-	if (!_inside_location)
-		exit_with::message("\"error_page\" directive only allowed in location scope");
+	if (_inside_location)
+		exit_with::message("\"error_page\" directive only allowed in server scope");
 	cut_till_collon(error);
 	std::vector<std::string> splitted_error_codes = ft_split(error, " \t");
 	for (std::string i : splitted_error_codes){
 		std::stringstream sstream(i);
 		sstream >> error_code;
-		_last_location().error_pages[error_code] = splitted_error_codes[splitted_error_codes.size() - 1]; // Should this be the last one always??
-		// std::cout << _last_location().error_pages[error_code] << std::endl;
+		servers[servers.size() - 1].error_pages[error_code] = splitted_error_codes[splitted_error_codes.size() - 1]; // Should this be the last one always??
 	}
 }
 
@@ -237,8 +237,11 @@ void Config::_parse_return(std::map<const std::string, std::string>& config_info
 	if (!_inside_location)
 		exit_with::message("\"redirect\" directive only allowed in location scope");
 	cut_till_collon(ret);
-	size_t found_redirect = ret.find("301");
-	if (found_redirect == std::string::npos)
-		exit_with::message("config error: redirect");
-	_last_location().redirect = ret.substr(ret.find_first_not_of("301 \t", found_redirect, ret.length() - found_redirect));
+
+	std::vector<std::string> redirects = ft_split(ret, " \t");
+	if (redirects.size() > 2)
+		exit_with::message("\"redirect\" invalid number of arguments");
+	std::stringstream sstream(redirects[0]);
+	sstream >>_last_location().redirect_code; 
+	_last_location().redirect = redirects[1];
 }

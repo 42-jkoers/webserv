@@ -50,13 +50,16 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 				_safe_new_path_location = true;
 				if (_last_location().root.empty())
 					_last_location().root = "www/html";
+				if (_last_location().indexes.size() == 0)
+					_last_location().indexes.push_back("index.html");
 			} else if (_inside_server) {
 				if (servers[servers.size() - 1].ports.size() == 0)
 					servers[servers.size() - 1].ports.push_back(8080);
 				if (servers[servers.size() - 1].ips.size() == 0)
 					servers[servers.size() - 1].ips.push_back("127.0.0.1");
 				_inside_server = false;
-			} else
+			}
+			else
 				exit_with::message("config: syntx");
 			return;
 		}
@@ -124,9 +127,6 @@ std::ostream& operator<<(std::ostream& stream, Config const& config) {
 			}
 			stream << "AUTOINDEX = " << config.servers[server].locations[location].auto_index << std::endl;
 			stream << "CGI = " << config.servers[server].locations[location].cgi_path.first << " | " << config.servers[server].locations[location].cgi_path.second << std::endl;
-			for (size_t j = 0; j < config.servers[server].locations[location].ports.size(); j++) {
-				stream << "PORTS = " << config.servers[server].locations[location].ports[j] << std::endl;
-			}
 			for (std::map<size_t, std::string>::const_iterator it = config.servers[server].locations[location].error_pages.begin(); it != config.servers[server].locations[location].error_pages.end(); it++) {
 				stream << "ERROR_PAGES = " << it->first << " | " << it->second << std::endl;
 			}

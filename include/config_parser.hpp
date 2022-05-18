@@ -41,15 +41,15 @@ class Config {
 		~Location(){};
 
 		// READONLY // TODO: require all these to be defined in the block or set defaults
-		std::string							path;
-		std::vector<std::string>			indexes;
-		std::vector<std::string>			allowed_methods;
-		std::string							auto_index;
+		std::string							path;				
+		std::vector<std::string>			indexes;				//If empty is set to: index.html
+		std::vector<std::string>			allowed_methods;		//If empty is set to: GET, POST, DELETE			
+		std::string							auto_index;				//If empty is set to: off
 		std::pair<std::string, std::string> cgi_path;
-		std::vector<uint16_t>				ports;
-		std::map<size_t, std::string>		error_pages;
-		std::string							redirect;
-		std::string							root;
+		std::map<size_t, std::string>		error_pages;	
+		std::string							redirect;	
+		std::size_t	                        redirect_code;
+		std::string							root;					//If empty is set to: www/html				
 	};
 
 	class Server {

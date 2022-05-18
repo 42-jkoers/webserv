@@ -85,14 +85,9 @@ void respond_with_error_code(const Request& request, const std::string& path, ui
 }
 
 std::string find_index(const Config::Location& location, std::string& path) {
-	if (location.indexes.empty()) {
-		if (fs::path_exists(path + "index.html"))
-			return "index.html";
-	} else {
-		for (std::string index : location.indexes) {
-			if (fs::path_exists(path + index))
-				return index;
-		}
+	for (std::string index : location.indexes) {
+		if (fs::path_exists(path + index))
+			return index;
 	}
 	return "";
 }
@@ -104,10 +99,6 @@ std::string get_path_on_disk(const Request& request, const Config::Location& loc
 	//     location.path = "/cgi"
 	//     location.root = "www/cgi"
 	// Then mounted_path = "www/cgi/test"
-	std::string default_root = "html";
-	if (location.root.empty()) {
-		return default_root + request.path;
-	}
 	return location.root + request.path;
 }
 
@@ -165,7 +156,11 @@ void Router::route(Client& client) {
 		Response::text(request, 405, "");
 		return;
 	}
-
+	if (!location.redirect.empty()) {
+		respond_with_error_code(request, path, location.redirect_code);
+		client.request.path = location.redirect;
+		g_router.route(client);
+	}
 	if (request.method == "GET") {
 		if (path.at(path.size() - 1) == '/') { // directory -> find index or else dir listing if autoindex on
 			std::string index = find_index(location, path);

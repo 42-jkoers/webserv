@@ -32,7 +32,7 @@ void error(const Request& request, const std::string& path, uint32_t code) {
 	response += g_constants.to_response_string(code);
 	response += "</h1></center>\n";
 
-	response += "<hr><center>webbysetservvvvvv/1.0\n";
+	response += "<hr><center>" + g_constants.webserver_name() + "\n";
 
 	response += "<center>path: ";
 	response += path;
@@ -61,7 +61,7 @@ std::vector<std::string> get_cgi_env(const Request& request, const std::string& 
 	env.push_back("SERVER_NAME=" + request.associated_server_name(request.associated_server().server_names));
 	env.push_back("SERVER_PORT=" + std_ft::to_string(request.port));
 	env.push_back("SERVER_PROTOCOL=HTTP/1.1");
-	env.push_back("SERVER_SOFTWARE=webserv/42");
+	env.push_back("SERVER_SOFTWARE=" + g_constants.webserver_name());
 	env.push_back("PATH_INFO=" + path_info);
 	// if (request.method != "POST") // TODO: should this be here?
 	env.push_back("QUERY_STRING=" + query_string);
@@ -103,8 +103,8 @@ void cgi(const Request& request, const std::string& path, const std::string& pat
 	}
 }
 
-void file(const Request& request, const std::string& path) {
-	std::string header = header_template(200);
+void file(const Request& request, const std::string& path, uint32_t code) {
+	std::string header = header_template(code);
 	std::string file = fs::read_file(path);
 	header += "Content-length: " + std_ft::to_string(file.size());
 	header += "\r\n\r\n";

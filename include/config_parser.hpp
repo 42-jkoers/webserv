@@ -9,6 +9,8 @@
 
 class Config;
 
+//TODO: different error when giving empty line
+
 extern Config g_config;
 
 /*
@@ -32,7 +34,7 @@ class Config {
 		friend class Server;
 
 	  public:
-		Location() {
+		Location() { // TODO: set all default values
 			auto_index = "off";
 			allowed_methods.push_back("GET");
 			allowed_methods.push_back("POST");

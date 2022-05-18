@@ -44,6 +44,9 @@ Config::Location& Config::_last_location() {
 void Config::_parse_server_name(std::map<const std::string, std::string>& config_info) {
 	std::string serverName = config_info["server_name"];
 	size_t		i = 0;
+
+	if (_inside_location)
+		exit_with::message("\"server_name\" directive only allowed in server scope");
 	cut_till_collon(serverName);
 	while (i < serverName.length() && i != std::string::npos) {
 		if (serverName[i] != ' ' && serverName[i] != '\t') {
@@ -76,6 +79,8 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 	size_t		check_ip = 0;
 
 	// std::cout << "hello I am here" << listen << std::endl;
+	if (_inside_location)
+		exit_with::message("\"listen\" directive only allowed in server scope");
 	cut_till_collon(listen);
 	if (strchr(listen.c_str(), '.') || strchr(listen.c_str(), ':')) {
 		while (i < listen.size()) {
@@ -112,17 +117,19 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 		servers[servers.size() - 1].ips.push_back("127.0.0.1");
 	}
 	// TODO: validate this
-	if (port < ntohs(32768) || port > ntohs(61000)) {
-		std::cout << port << std::endl;
+	if (port < ntohs(32768) || port > ntohs(61000))
 		exit_with::message("config error: invalid port");
-	}
 	servers[servers.size() - 1].ports.push_back(port);
 }
 
+// error pages are safed in a map structure so you can see what html file to use for what error code
+// TODO: you can set more error codes in 1 line
 void Config::_parse_error_page(std::map<const std::string, std::string>& config_info) {
 	std::string error = config_info["error_page"];
 	size_t		space;
 
+	if (!_inside_location)
+		exit_with::message("\"error_page\" directive only allowed in location scope");
 	cut_till_collon(error);
 	size_t error_code;
 	space = error.find_first_of(" \t");
@@ -138,8 +145,11 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 
 void Config::_parse_client_max_body_size(std::map<const std::string, std::string>& config_info) {
 	std::string body_size = config_info["client_max_body_size"];
+
+	if (_inside_location)
+		exit_with::message("\"client_max_body_size\" directive only allowed in server scope");
 	cut_till_collon(body_size);
-	if (body_size[body_size.size() - 1] != 'M' && body_size[body_size.size() - 1] != 'm' &&body_size[body_size.size() - 1] != 'K' && body_size[body_size.size() - 1] != 'k' )
+	if (body_size[body_size.size() - 1] != 'M' && body_size[body_size.size() - 1] != 'm' && body_size[body_size.size() - 1] != 'K' && body_size[body_size.size() - 1] != 'k')
 		exit_with::message("config error: client_max_body_size");
 	servers[servers.size() - 1].client_max_body_size = body_size;
 }
@@ -158,22 +168,23 @@ void Config::_add_methods(const std::string& methods_str, std::vector<std::strin
 void Config::_parse_allowed_methods(std::map<const std::string, std::string>& config_info) {
 	std::string methods_str = config_info["allowed_methods"];
 
+	if (!_inside_location)
+		exit_with::message("\"allowed_methods\" directive only allowed in location scope");
 	_last_location().allowed_methods.clear();
 	cut_till_collon(methods_str);
-	if (_inside_location)
-		_add_methods(methods_str, _last_location().allowed_methods);
-	else
-		exit_with::message("\"allowed_methods\" field only allowed in location scope");
+	_add_methods(methods_str, _last_location().allowed_methods);
 }
 
 void Config::_parse_root(std::map<const std::string, std::string>& config_info) {
 	std::string root = config_info["root"];
 
 	cut_till_collon(root);
-	if (_inside_location)
+	if (!_last_location().root.empty())
+		exit_with::message("config error: No duplicate \"root\" allowed");
+	else if (_inside_location)
 		_last_location().root = root;
 	else
-		exit_with::message("Field \"root\" not allowed inside server scope");
+		exit_with::message("\"root\" directive only allowed in location scope");
 }
 
 void Config::_parse_location(std::map<const std::string, std::string>& config_info) {
@@ -186,7 +197,6 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 	if (_inside_location > 1) {
 		location = _what_location[_inside_location] + location;
 	}
-
 	servers[servers.size() - 1].locations.push_back(Location());
 	_last_location() = (Location());
 	_last_location().path = location;
@@ -197,6 +207,8 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 void Config::_parse_index(std::map<const std::string, std::string>& config_info) {
 	std::string index = config_info["index"];
 
+	if (!_inside_location)
+		exit_with::message("\"index\" directive only allowed in location scope");
 	cut_till_collon(index);
 	_last_location().indexes = ft_split(index, " \t");
 }
@@ -204,18 +216,19 @@ void Config::_parse_index(std::map<const std::string, std::string>& config_info)
 void Config::_parse_auto_index(std::map<const std::string, std::string>& config_info) {
 	std::string autoIndex = config_info["autoindex"];
 
+	if (!_inside_location)
+		exit_with::message("\"auto index\" directive only allowed in location scope");
 	cut_till_collon(autoIndex);
 	if (autoIndex.compare("on") != 0 && autoIndex.compare("off") != 0)
 		exit_with::message("config error: autoindex");
-	if (_inside_location)
-		_last_location().auto_index = autoIndex;
-	else
-		exit_with::message("\"auto_index\" field only allowed in location scope");
+	_last_location().auto_index = autoIndex;
 }
 
 void Config::_parse_cgi(std::map<const std::string, std::string>& config_info) {
 	std::string cgi = config_info["cgi"];
 
+	if (!_inside_location)
+		exit_with::message("\"cgi\" directive only allowed in location scope");
 	cut_till_collon(cgi);
 	size_t		space = cgi.find_first_of(" \t");
 	size_t		not_space = cgi.find_first_not_of(" \t", space);
@@ -223,14 +236,14 @@ void Config::_parse_cgi(std::map<const std::string, std::string>& config_info) {
 	if (_inside_location) {
 		_last_location().cgi_path.first = cgi.substr(0, space);
 		_last_location().cgi_path.second = path;
-	} else
-		exit_with::message("config error: cgi");
-	// std::cout << _server[_server.size() - 1].location[_server[_server.size() - 1].location.size() - 1].cgi_path.first << " | " << _server[_server.size() - 1].location[_server[_server.size() - 1].location.size() - 1].cgi_path.second << std::endl;
+	}
 }
 
 void Config::_parse_return(std::map<const std::string, std::string>& config_info) {
 	std::string ret = config_info["return"];
 
+	if (!_inside_location)
+		exit_with::message("\"redirect\" directive only allowed in location scope");
 	cut_till_collon(ret);
 	size_t found_redirect = ret.find("301");
 	if (found_redirect == std::string::npos)

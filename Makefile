@@ -29,7 +29,7 @@ ifdef DEBUG
 CFLAGS += -fsanitize=address
 endif
 
-all: $(NAME) html/cgi/input
+all: $(NAME) www/cgi/input
 
 $(NAME): $(BUILDDIR)/ $(OBJ) $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(OBJ) $(LIBS) -o $(NAME) $(LINK)
@@ -37,8 +37,8 @@ $(NAME): $(BUILDDIR)/ $(OBJ) $(HEADERS)
 $(BUILDDIR)/%.$(OBJEXT): %.$(SRCEXT) $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $(BUILDDIR)/$(notdir $@)
 
-html/cgi/input: html/cgi/input.c
-	gcc -Wall -Wextra html/cgi/input.c -o html/cgi/input
+www/cgi/input: www/cgi/input.c
+	gcc -Wall -Wextra www/cgi/input.c -o www/cgi/input
 
 # sources
 
@@ -50,7 +50,7 @@ endif
 
 fclean: | clean
 	/bin/rm -f $(NAME)
-	/bin/rm -f html/cgi/input
+	/bin/rm -f www/cgi/input
 
 re: | fclean all
 

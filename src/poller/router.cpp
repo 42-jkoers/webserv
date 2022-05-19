@@ -70,8 +70,6 @@ const Config::Location& Router::find_location(const std::string& path, const Con
 static bool method_allowed(const Request& request) {
 	const Config::Location location = request.associated_location();
 
-	if (location.allowed_methods.empty())
-		return true;
 	for (std::string method : location.allowed_methods) {
 		if (to_upper(method) == request.method)
 			return true;
@@ -95,14 +93,9 @@ void Router::_respond_with_error_code(const Request& request, const std::string&
 }
 
 std::string Router::_find_index(const Config::Location& location, std::string& path) {
-	if (location.indexes.empty()) {
-		if (fs::path_exists(path + "index.html"))
-			return "index.html";
-	} else {
-		for (std::string index : location.indexes) {
-			if (fs::path_exists(path + index))
-				return index;
-		}
+	for (std::string index : location.indexes) {
+		if (fs::path_exists(path + index))
+			return index;
 	}
 	return "";
 }
@@ -114,11 +107,7 @@ static std::string get_path_on_disk(const Request& request) {
 	//     location.path = "/cgi"
 	//     location.root = "www/cgi"
 	// Then mounted_path = "www/cgi/test"
-	const Config::Location location = request.associated_location();
-	std::string			   default_root = "www/html";
-	if (location.root.empty())
-		return default_root + request.path;
-	return location.root + request.path;
+	return request.associated_location().root + request.path;
 }
 
 void Router::_dir_list(Request& request, const std::string& path) {

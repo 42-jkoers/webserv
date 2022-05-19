@@ -82,7 +82,7 @@ static bool method_allowed(const Request& request) {
 void Router::_respond_with_error_code(const Request& request, const std::string& path, uint16_t error_code) {
 	const Config::Location location = request.associated_location();
 
-	for (const std::pair<size_t, std::string>& p : location.error_pages) {
+	for (const std::__1::pair<const size_t, std::string>& p : location.error_pages) {
 		if (p.first == error_code) {
 			std::string error_path = p.second;
 			error_path.erase(0, 1); // TODO: remove when correct error paths parsed config

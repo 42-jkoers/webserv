@@ -4,6 +4,7 @@
 #include "constants.hpp"
 #include "file_system.hpp"
 #include "main.hpp"
+#include <math.h>
 
 // getting rid of the ';' and its precending whitespace
 void cut_till_collon(std::string& line) {
@@ -137,14 +138,29 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 }
 
 void Config::_parse_client_max_body_size(std::map<const std::string, std::string>& config_info) {
-	std::string body_size = config_info["client_max_body_size"];
-
 	if (_inside_location)
 		exit_with::message("\"client_max_body_size\" directive only allowed in server scope");
-	cut_till_collon(body_size);
-	if (body_size[body_size.size() - 1] != 'M' && body_size[body_size.size() - 1] != 'm' && body_size[body_size.size() - 1] != 'K' && body_size[body_size.size() - 1] != 'k')
-		exit_with::message("config error: client_max_body_size");
-	servers[servers.size() - 1].client_max_body_size = body_size;
+
+	static const std::string multipliers = "KMGTP";
+	std::string				 size = config_info["client_max_body_size"];
+	cut_till_collon(size);
+
+	if (size.size() == 0)
+		exit_with::message("config error: client_max_body_size: empty");
+
+	char unit = !std::isdigit(size[size.size() - 1]) ? std::toupper(size[size.size() - 1]) : 0;
+	if (unit && multipliers.find(unit) == std::string::npos)
+		exit_with::message("config error: client_max_body_size: invalid unit");
+	if (unit)
+		size.resize(size.size() - 1);
+
+	size_t num;
+	if (!parse_int(num, size))
+		exit_with::message("config error: client_max_body_size: non numeric argument");
+	if (unit)
+		num *= pow(1024, multipliers.find(unit) + 1);
+
+	servers[servers.size() - 1].client_max_body_size = num;
 }
 
 void Config::_add_methods(const std::string& methods_str, std::vector<std::string>& methods) {

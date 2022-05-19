@@ -58,7 +58,7 @@ std::vector<std::string> get_cgi_env(const Request& request, const std::string& 
 	env.push_back("REMOTE_ADDR=" + request.ip);
 	env.push_back("REQUEST_METHOD=" + request.method);
 	env.push_back("SCRIPT_NAME=" + path);
-	env.push_back("SERVER_NAME=" + request.associated_server().server_names.at(0));
+	env.push_back("SERVER_NAME=" + request.associated_server_name(request.associated_server().server_names));
 	env.push_back("SERVER_PORT=" + std_ft::to_string(request.port));
 	env.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	env.push_back("SERVER_SOFTWARE=" + g_constants.webserver_name());
@@ -83,6 +83,7 @@ void cgi(const Request& request, const std::string& path, const std::string& pat
 		dup2(request.fd, STDERR_FILENO);
 
 		const std::vector<std::string> envp = get_cgi_env(request, path, path_info, query_string);
+		std::cerr << " MAKING MY WAY DOWNTOWN" << std::endl;
 		if (cpp::execve(path, std::vector<std::string>(), envp))
 			Response::text(request, 500, "Could not start cgi script \"" + request.path + "\"");
 

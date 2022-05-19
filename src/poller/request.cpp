@@ -292,6 +292,19 @@ const Config::Server& Request::associated_server() const {
 	return g_router.find_server(port, field_value("host"));
 }
 
+const std::string& Request::associated_server_name(std::vector<std::string> server_names) const {
+	std::string host = field_value("host");
+	static std::string empty = "";
+	for (std::string& name : server_names) {
+		if (name == host)
+			return name;
+	}
+	if (server_names.empty()) {
+		return empty;
+	}
+	return server_names.at(0);
+}
+
 const Config::Location& Request::associated_location() const {
 	return g_router.find_location(path, associated_server());
 }

@@ -25,6 +25,7 @@ class Request {
 	// associations
 	const Config::Server&	associated_server() const;
 	const Config::Location& associated_location() const;
+	const std::string& associated_server_name(std::vector<std::string> server_names) const;
 
 	// read-only variables
 	std::string ip;

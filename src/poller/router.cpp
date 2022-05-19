@@ -176,6 +176,12 @@ void Router::route(Client& client) {
 		return;
 	}
 
+	// if (!location.redirect.empty()) {
+	// 	_respond_with_error_code(request, path, location.redirect_code);
+	// 	request.path = location.redirect;
+	// 	g_router.route(client);
+	// }
+
 	if (request.method == "GET") {
 		if (path.at(path.size() - 1) == '/') { // directory -> find index or else dir listing if autoindex on
 			std::string index = _find_index(location, path);

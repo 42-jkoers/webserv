@@ -21,6 +21,8 @@ so it will be either:
 * config._server[x].location[y]
 * config._server[x]._variable_name
 */
+
+// TODO: if empty give error
 class Config {
   public:
 	Config(const std::string& config_file_path);
@@ -32,19 +34,24 @@ class Config {
 		friend class Server;
 
 	  public:
-		Location(){};
+		Location() {
+			auto_index = "off";
+			allowed_methods.push_back("GET");
+			allowed_methods.push_back("POST");
+			allowed_methods.push_back("DELETE");
+		};
 		~Location(){};
 
 		// READONLY // TODO: require all these to be defined in the block or set defaults
 		std::string							path;
-		std::vector<std::string>			indexes;
-		std::vector<std::string>			allowed_methods;
-		std::string							auto_index;
+		std::vector<std::string>			indexes;		 // If empty is set to: index.html
+		std::vector<std::string>			allowed_methods; // If empty is set to: GET, POST, DELETE
+		std::string							auto_index;		 // If empty is set to: off
 		std::pair<std::string, std::string> cgi_path;
-		std::vector<uint16_t>				ports;
 		std::map<size_t, std::string>		error_pages;
 		std::string							redirect;
-		std::string							root;
+		std::size_t							redirect_code;
+		std::string							root; // If empty is set to: www/html
 	};
 
 	class Server {
@@ -53,6 +60,7 @@ class Config {
 
 	  public:
 		Server(){};
+		~Server(){};
 
 		// READONLY
 		std::vector<uint16_t>		  ports;
@@ -66,7 +74,7 @@ class Config {
 	std::vector<Server> servers;
 
   private:
-	Location&					  last_location();
+	Location&					  _last_location();
 	void						  _parse_server_name(std::map<const std::string, std::string>& config_info);
 	void						  _parse_listen(std::map<const std::string, std::string>& config_info);
 	void						  _parse_error_page(std::map<const std::string, std::string>& config_info);

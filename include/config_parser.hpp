@@ -45,10 +45,7 @@ class Config {
 		std::string							auto_index;		 // If empty is set to: off
 		std::pair<std::string, std::string> cgi_path;
 		std::pair<size_t, std::string>      redirect_pair;
-		std::map<size_t, std::string>		error_pages; //TODO: dont overwrite!!!!
 		std::string                         upload_pass;
-		std::string							redirect;
-		std::size_t							redirect_code;
 		std::string							root; // If empty is set to: www/html
 	};
 
@@ -61,10 +58,10 @@ class Config {
 		~Server();
 
 		// READONLY
-		std::vector<uint16_t>		  ports;
-		std::vector<std::string>	  ips;
+		std::vector<uint16_t>		  ports;				
+		std::vector<std::string>	  ips;	 // If empty is set to:	127.0.0.1
 		std::vector<std::string>	  server_names;
-		std::string					  client_max_body_size; // TODO: parse as string
+		std::string					  client_max_body_size; // TODO: parse as string //If empty is set to: 1m
 		std::map<size_t, std::string> error_pages;
 		std::vector<Location>		  locations;
 	};

@@ -44,20 +44,13 @@ Config::Location& Config::_last_location() {
 
 void Config::_parse_server_name(std::map<const std::string, std::string>& config_info) {
 	std::string serverName = config_info["server_name"];
-	size_t		i = 0;
 
 	if (_inside_location)
 		exit_with::message("\"server_name\" directive only allowed in server scope");
 	cut_till_collon(serverName);
-	while (i < serverName.length() && i != std::string::npos) {
-		if (serverName[i] != ' ' && serverName[i] != '\t') {
-			servers[servers.size() - 1].server_names.push_back(serverName.substr(i, serverName.find_first_of(" \t", i) - i));
-			i = serverName.find_first_of(" \t", i);
-			if (i == std::string::npos)
-				break;
-		}
-		i++;
-	}
+	std::vector<std::string> serverName_splitted = ft_split(serverName, "\t ");
+	for (std::string serverName : serverName_splitted)
+		servers[servers.size() - 1].server_names.push_back(serverName);
 }
 
 /*
@@ -138,13 +131,18 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 	}
 }
 
+
+//TODO: check if there are not more 
 void Config::_parse_client_max_body_size(std::map<const std::string, std::string>& config_info) {
 	std::string body_size = config_info["client_max_body_size"];
 
 	if (_inside_location)
 		exit_with::message("\"client_max_body_size\" directive only allowed in server scope");
 	cut_till_collon(body_size);
-	if (body_size[body_size.size() - 1] != 'M' && body_size[body_size.size() - 1] != 'm' && body_size[body_size.size() - 1] != 'K' && body_size[body_size.size() - 1] != 'k')
+	std::vector<std::string> body_size_splitted = ft_split(body_size, " \t ");
+	if (body_size_splitted.size() > 1)
+		exit_with::message("\"client_max_body_size\" invalid number of arguments");
+	if (body_size_splitted[0][body_size_splitted[0].size() - 1] != 'M' && body_size_splitted[0][body_size_splitted[0].size() - 1] != 'm' && body_size_splitted[0][body_size_splitted[0].size() - 1] != 'K' && body_size_splitted[0][body_size_splitted.size() - 1] != 'k')
 		exit_with::message("config error: client_max_body_size");
 	servers[servers.size() - 1].client_max_body_size = body_size;
 }

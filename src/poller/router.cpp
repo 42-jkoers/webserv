@@ -80,14 +80,14 @@ bool method_allowed(const Request& request) {
 }
 
 void Router::_respond_with_error_code(const Request& request, const std::string& path, uint16_t error_code) {
+	const Config::Server   server = request.associated_server();
 	const Config::Location location = request.associated_location();
 
-	for (const std::pair<size_t, std::string>& p : location.error_pages) {
-		if (p.first == error_code) {
-			std::string error_path = p.second;
-			error_path.erase(0, 1); // TODO: remove when correct error paths parsed config
+	for (const std::pair<size_t, std::string>& error_page : server.error_pages) {
+		if (error_page.first == error_code) {
+			std::string error_path = error_page.second;
 			if (!fs::path_exists(location.root + error_path))
-				Router::_respond_with_error_code(request, location.root + path, 404); // TODO: do we want this infinite loop or not?
+				Router::_respond_with_error_code(request, location.root + error_path, 500); // TODO: infinite redirect -> 500 internal server error?
 			Response::file(request, location.root + error_path, error_code);
 		}
 	}

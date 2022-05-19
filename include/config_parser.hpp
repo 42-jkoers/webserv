@@ -21,6 +21,8 @@ so it will be either:
 * config._server[x].location[y]
 * config._server[x]._variable_name
 */
+
+// TODO: if empty give error
 class Config {
   public:
 	Config(const std::string& config_file_path);
@@ -41,15 +43,15 @@ class Config {
 		~Location(){};
 
 		// READONLY // TODO: require all these to be defined in the block or set defaults
-		std::string							path;				
-		std::vector<std::string>			indexes;				//If empty is set to: index.html
-		std::vector<std::string>			allowed_methods;		//If empty is set to: GET, POST, DELETE			
-		std::string							auto_index;				//If empty is set to: off
+		std::string							path;
+		std::vector<std::string>			indexes;		 // If empty is set to: index.html
+		std::vector<std::string>			allowed_methods; // If empty is set to: GET, POST, DELETE
+		std::string							auto_index;		 // If empty is set to: off
 		std::pair<std::string, std::string> cgi_path;
-		std::map<size_t, std::string>		error_pages;	
-		std::string							redirect;	
-		std::size_t	                        redirect_code;
-		std::string							root;					//If empty is set to: www/html				
+		std::map<size_t, std::string>		error_pages;
+		std::string							redirect;
+		std::size_t							redirect_code;
+		std::string							root; // If empty is set to: www/html
 	};
 
 	class Server {

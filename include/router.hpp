@@ -10,8 +10,7 @@ class Router {
   public:
 	Router();
 	~Router();
-	void route(Client& client);
-	// read-only variables
+	void					route(Client& client);
 	const Config::Server&	find_server(const uint16_t port, const std::string& hostname);
 	const Config::Location& find_location(const std::string& path, const Config::Server& server);
 
@@ -24,5 +23,3 @@ class Router {
 	void		_dir_list(Request& request, const std::string& path);
 	void		_route_cgi(Request& request, std::string& path);
 };
-
-std::ostream& operator<<(std::ostream& output, Router const& rhs);

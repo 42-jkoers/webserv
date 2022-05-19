@@ -59,14 +59,16 @@ class Config {
 		friend class Location;
 
 	  public:
-		Server(){};
+		Server() {
+			client_max_body_size = ~0;
+		};
 		~Server(){};
 
 		// READONLY
 		std::vector<uint16_t>		  ports;
 		std::vector<std::string>	  ips;
 		std::vector<std::string>	  server_names;
-		size_t						  client_max_body_size; 
+		size_t						  client_max_body_size; // default is max int value
 		std::map<size_t, std::string> error_pages;
 		std::vector<Location>		  locations;
 	};

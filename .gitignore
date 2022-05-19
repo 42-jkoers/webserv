@@ -6,3 +6,4 @@ obj/
 *.dSYM
 /www/cgi/input
 /file_uploads/
+test/

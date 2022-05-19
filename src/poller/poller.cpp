@@ -49,7 +49,7 @@ void Poller::_accept_clients() {
 void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client)) {
 	Client& client = _clients[pfd.fd];
 
-	client.read_pollfd(pfd);
+	client.on_pollevent(pfd);
 	if (client.parse_status() >= Client::FINISHED) {
 		on_request(client);
 	}

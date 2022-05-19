@@ -9,17 +9,17 @@ class Client {
 	~Client() {}
 
 	enum Parse_status {
-		INCOMPLETE,
-		READING_HEADER,
-		READING_HEADER_DONE,
-
-		HEADER_DONE,
-		// send 100-continue
-		READING_BODY_HEADER,
-		READING_BODY,
-		FINISHED,
-
-		ERROR
+		INCOMPLETE,			 // Invalid state
+							 //
+		READING_HEADER,		 // \r\n\r\n not yet reached
+		READING_HEADER_DONE, // \r\n\r\n reached
+		HEADER_DONE,		 // header successfully parsed
+							 //
+		READING_BODY_HEADER, // \r\n\r\n not yet reached
+		READING_BODY,		 // \r\n\r\n reached
+		FINISHED,			 // responded to request
+							 //
+		ERROR				 // something went wrong in any of the above steps
 	};
 
 	enum Chunk_status {
@@ -28,7 +28,9 @@ class Client {
 		CS_ERROR
 	};
 
-	void		 read_pollfd(const pollfd& pfd);
+	void		 on_pollevent(struct pollfd pfd);
+	void		 on_pollevent_read(struct pollfd pfd);
+	void		 on_pollevent_write(struct pollfd pfd);
 	Parse_status parse_status() const;
 	void		 reset();
 
@@ -38,8 +40,9 @@ class Client {
   private:
 	Parse_status _parse_status;
 	size_t		 _body_size;
-	std::string	 _buf;
+	std::string	 _buf_read;
+	std::string	 _buf_write;
 
-	void		 _parse(size_t bytes_read);
-	Chunk_status _append_chunk(size_t bytes_read);
+	void		 _parse();
+	Chunk_status _append_chunk();
 };

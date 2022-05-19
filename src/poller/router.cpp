@@ -136,9 +136,10 @@ void Router::_route_cgi(Request& request, std::string& path) {
 	// exectutable_path: "/cgi-bin/printenv.pl"
 	// path_info	   : "/with/additional/path" // TODO: not implemented
 	// request.query   : "and=a&query=string"
+
 	if (!fs::path_exists(path))
 		return _respond_with_error_code(request, path, 404);
-	Response::cgi(request, path, "", request.query); // todo should we read the cgi executable from the config?
+	Response::cgi(request, path); // todo should we read the cgi executable from the config?
 }
 
 /*

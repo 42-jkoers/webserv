@@ -9,7 +9,7 @@ Router::Router() {
 	return;
 }
 
-bool has_server_name(const Config::Server& server, const std::string& server_name) {
+static bool has_server_name(const Config::Server& server, const std::string& server_name) {
 	for (std::string name : server.server_names) {
 		if (name == server_name) {
 			return 1;
@@ -67,7 +67,7 @@ const Config::Location& Router::find_location(const std::string& path, const Con
 	return server.locations[location_index];
 }
 
-bool method_allowed(const Request& request) {
+static bool method_allowed(const Request& request) {
 	const Config::Location location = request.associated_location();
 
 	if (location.allowed_methods.empty())
@@ -108,7 +108,7 @@ std::string Router::_find_index(const Config::Location& location, std::string& p
 }
 
 // returns the path of the file on disk
-std::string get_path_on_disk(const Request& request) {
+static std::string get_path_on_disk(const Request& request) {
 	// The path where the server should start looking for files
 	// eg:  request.path = "/cgi/test"
 	//     location.path = "/cgi"
@@ -171,10 +171,8 @@ void Router::route(Client& client) {
 	const Config::Location& location = request.associated_location();
 	std::string				path = get_path_on_disk(request);
 
-	if (!method_allowed(request)) {
-		Response::text(request, 405, "");
-		return;
-	}
+	if (!method_allowed(request))
+		return _respond_with_error_code(request, path, 405);
 
 	// if (!location.redirect.empty()) {
 	// 	_respond_with_error_code(request, path, location.redirect_code);

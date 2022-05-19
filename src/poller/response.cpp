@@ -34,9 +34,11 @@ void error(const Request& request, const std::string& path, uint32_t code) {
 
 	response += "<hr><center>" + g_constants.webserver_name() + "\n";
 
-	response += "<center>path: ";
-	response += path;
-	response += "\n";
+	if (!path.empty()) {
+		response += "<center>path: ";
+		response += path;
+		response += "\n";
+	}
 
 	response += "</center>";
 	response += "</body>";

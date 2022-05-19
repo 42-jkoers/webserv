@@ -20,10 +20,8 @@ Router			g_router;
 
 void on_request(Client& client) {
 	std::cout << client.request << std::endl;
-	if (client.request.response_code != 200) {							  // do not route if error has happened
-		Response::text(client.request, client.request.response_code, ""); // TODO: default error page
-		return;
-	}
+	if (client.request.response_code != 200) // do not route if error in request parsing has happened
+		return Response::error(client.request, "", client.request.response_code);
 	g_router.route(client);
 }
 

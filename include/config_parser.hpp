@@ -21,6 +21,8 @@ so it will be either:
 * config._server[x].location[y]
 * config._server[x]._variable_name
 */
+
+// TODO: if empty give error
 class Config {
   public:
 	Config(const std::string& config_file_path);

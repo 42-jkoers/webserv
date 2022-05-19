@@ -1,4 +1,5 @@
 
+
 #include "config_parser.hpp"
 #include "constants.hpp"
 #include "file_system.hpp"
@@ -12,7 +13,7 @@ void cut_till_collon(std::string& line) {
 	while (end > 1 && std::iswspace(line[end - 1]))
 		end--;
 	if (end == 0)
-		exit_with::message("config error: line \"" + line + "\" is empty");
+		exit_with::message("config error: line is empty");
 	line = line.substr(0, end);
 }
 
@@ -128,7 +129,7 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 		exit_with::message("\"error_page\" directive only allowed in server scope");
 	cut_till_collon(error);
 	std::vector<std::string> splitted_error_codes = ft_split(error, " \t");
-	for (std::string i : splitted_error_codes){
+	for (std::string i : splitted_error_codes) {
 		std::stringstream sstream(i);
 		sstream >> error_code;
 		servers[servers.size() - 1].error_pages[error_code] = splitted_error_codes[splitted_error_codes.size() - 1]; // Should this be the last one always??
@@ -230,6 +231,7 @@ void Config::_parse_cgi(std::map<const std::string, std::string>& config_info) {
 	}
 }
 
+// TODO: don't abort when only one
 void Config::_parse_return(std::map<const std::string, std::string>& config_info) {
 	std::string ret = config_info["return"];
 
@@ -241,6 +243,7 @@ void Config::_parse_return(std::map<const std::string, std::string>& config_info
 	if (redirects.size() > 2)
 		exit_with::message("\"redirect\" invalid number of arguments");
 	std::stringstream sstream(redirects[0]);
-	sstream >>_last_location().redirect_code; 
-	_last_location().redirect = redirects[1];
+	sstream >> _last_location().redirect_code;
+	if (redirects.size() == 2)
+		_last_location().redirect = redirects[1];
 }

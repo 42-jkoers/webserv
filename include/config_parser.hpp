@@ -23,6 +23,7 @@ so it will be either:
 */
 
 // TODO: if empty give error
+//TODO: make directive for POST where to put all the files // upload_pass directive
 class Config {
   public:
 	Config(const std::string& config_file_path);
@@ -34,13 +35,8 @@ class Config {
 		friend class Server;
 
 	  public:
-		Location() {
-			auto_index = "off";
-			allowed_methods.push_back("GET");
-			allowed_methods.push_back("POST");
-			allowed_methods.push_back("DELETE");
-		};
-		~Location(){};
+		Location();
+		~Location();
 
 		// READONLY // TODO: require all these to be defined in the block or set defaults
 		std::string							path;
@@ -48,7 +44,9 @@ class Config {
 		std::vector<std::string>			allowed_methods; // If empty is set to: GET, POST, DELETE
 		std::string							auto_index;		 // If empty is set to: off
 		std::pair<std::string, std::string> cgi_path;
-		std::map<size_t, std::string>		error_pages;
+		std::pair<size_t, std::string>      redirect_pair;
+		std::map<size_t, std::string>		error_pages; //TODO: dont overwrite!!!!
+		std::string                         upload_pass;
 		std::string							redirect;
 		std::size_t							redirect_code;
 		std::string							root; // If empty is set to: www/html
@@ -59,8 +57,8 @@ class Config {
 		friend class Location;
 
 	  public:
-		Server(){};
-		~Server(){};
+		Server();
+		~Server();
 
 		// READONLY
 		std::vector<uint16_t>		  ports;
@@ -86,6 +84,7 @@ class Config {
 	void						  _parse_location(std::map<const std::string, std::string>& config_info);
 	void						  _parse_cgi(std::map<const std::string, std::string>& config_info);
 	void						  _parse_return(std::map<const std::string, std::string>& config_info);
+	void						  _parse_upload_pass(std::map<const std::string, std::string>& config_info);
 	void						  _print_class();
 	void						  _config_parser(const std::string& config_file_path);
 	void						  _safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);

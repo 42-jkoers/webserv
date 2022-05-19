@@ -2,6 +2,22 @@
 #include "main.hpp"
 #include <sstream>
 
+Config::Location::Location() {
+	auto_index = "off";
+	allowed_methods.push_back("GET");
+	allowed_methods.push_back("POST");
+	allowed_methods.push_back("DELETE");
+}
+
+Config::Location::~Location() {
+}
+
+Config::Server::Server() {
+}
+
+Config::Server::~Server() {
+}
+
 Config::Config(const std::string& config_file_path) {
 	_config_parser(config_file_path);
 }
@@ -31,7 +47,8 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 		&Config::_parse_auto_index,
 		&Config::_parse_index,
 		&Config::_parse_cgi,
-		&Config::_parse_return};
+		&Config::_parse_return,
+		&Config::_parse_upload_pass};
 	for (size_t i = 0; i < options.size(); i++) {
 		if (line.find("server") != std::string::npos && line.find("{") != std::string::npos) {
 			servers.push_back(Server());
@@ -58,9 +75,8 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 				if (servers[servers.size() - 1].ips.size() == 0)
 					servers[servers.size() - 1].ips.push_back("127.0.0.1");
 				_inside_server = false;
-			}
-			else
-				exit_with::message("config: syntx");
+			} else
+				exit_with::message("config: syntax");
 			return;
 		}
 	}
@@ -86,6 +102,7 @@ void Config::_config_parser(const std::string& config_file_path) {
 	options.push_back("index");
 	options.push_back("cgi");
 	options.push_back("return");
+	options.push_back("upload_pass");
 	_inside_location = 0;
 	_safe_new_path_location = false;
 	config_file.open(config_file_path);

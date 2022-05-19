@@ -83,13 +83,13 @@ void Router::_respond_with_error_code(const Request& request, const std::string&
 
 	for (const std::pair<size_t, std::string>& error_page : server.error_pages) {
 		if (error_page.first == error_code) {
-			std::string error_path = error_page.second;
-			if (!fs::path_exists(location.root + error_path))
-				Router::_respond_with_error_code(request, location.root + error_path, 500); // TODO: infinite redirect -> 500 internal server error?
-			Response::file(request, location.root + error_path, error_code);
+			std::string error_path = location.root + error_page.second;
+			if (!fs::path_exists(error_path))
+				return Router::_respond_with_error_code(request, error_path, 500); // TODO: infinite redirect -> 500 internal server error?
+			return Response::file(request, error_path, error_code);
 		}
 	}
-	Response::error(request, path, error_code);
+	return Response::error(request, path, error_code);
 }
 
 std::string Router::_find_index(const Config::Location& location, std::string& path) {
@@ -134,9 +134,10 @@ void Router::_route_cgi(Request& request, std::string& path) {
 	// exectutable_path: "/cgi-bin/printenv.pl"
 	// path_info	   : "/with/additional/path" // TODO: not implemented
 	// request.query   : "and=a&query=string"
+
 	if (!fs::path_exists(path))
 		return _respond_with_error_code(request, path, 404);
-	Response::cgi(request, path, "", request.query); // todo should we read the cgi executable from the config?
+	Response::cgi(request, path); // todo should we read the cgi executable from the config?
 }
 
 /*
@@ -163,6 +164,7 @@ void Router::route(Client& client) {
 	if (!method_allowed(request))
 		return _respond_with_error_code(request, path, 405);
 
+	// TODO: redirect here
 	// if (!location.redirect.empty()) {
 	// 	_respond_with_error_code(request, path, location.redirect_code);
 	// 	request.path = location.redirect;

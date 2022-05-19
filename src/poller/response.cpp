@@ -54,7 +54,7 @@ void text(const Request& request, uint32_t code, const std::string& message) {
 	write(request.fd, response.c_str(), response.length()); // TODO: error handling
 }
 
-std::vector<std::string> get_cgi_env(const Request& request, const std::string& path, const std::string& path_info, const std::string& query_string) {
+std::vector<std::string> get_cgi_env(const Request& request, const std::string& path) {
 	std::vector<std::string> env;
 	env.push_back("GATEWAY_INTERFACE=CGI/1.1");
 	env.push_back("REMOTE_ADDR=" + request.ip);
@@ -63,14 +63,14 @@ std::vector<std::string> get_cgi_env(const Request& request, const std::string& 
 	env.push_back("SERVER_NAME=" + request.associated_server_name(request.associated_server().server_names));
 	env.push_back("SERVER_PORT=" + std_ft::to_string(request.port));
 	env.push_back("SERVER_PROTOCOL=HTTP/1.1");
+	env.push_back("PATH_INFO=" + path::join("/" + request.associated_location().root, request.path));
 	env.push_back("SERVER_SOFTWARE=" + g_constants.webserver_name());
-	env.push_back("PATH_INFO=" + path_info);
 	// if (request.method != "POST") // TODO: should this be here?
-	env.push_back("QUERY_STRING=" + query_string);
+	env.push_back("QUERY_STRING=" + request.query);
 	return env;
 }
 
-void cgi(const Request& request, const std::string& path, const std::string& path_info, const std::string& query_string) {
+void cgi(const Request& request, const std::string& path) {
 	int pipe_in[2];
 	if (pipe(pipe_in))
 		exit_with::e_errno("pipe() failed");
@@ -84,9 +84,11 @@ void cgi(const Request& request, const std::string& path, const std::string& pat
 		dup2(request.fd, STDOUT_FILENO);
 		dup2(request.fd, STDERR_FILENO);
 
-		const std::vector<std::string> envp = get_cgi_env(request, path, path_info, query_string);
-		std::cerr << " MAKING MY WAY DOWNTOWN" << std::endl;
-		if (cpp::execve(path, std::vector<std::string>(), envp))
+		const std::vector<std::string> envp = get_cgi_env(request, path);
+		const std::vector<std::string> argv = {
+			path::absolute(path::join(request.associated_location().root, request.path)),
+			path::absolute(path::join(request.associated_location().root, request.path))};
+		if (cpp::execve(path, argv, envp))
 			Response::text(request, 500, "Could not start cgi script \"" + request.path + "\"");
 
 		close(pipe_in[0]);

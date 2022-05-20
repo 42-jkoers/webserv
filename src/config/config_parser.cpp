@@ -2,6 +2,24 @@
 #include "main.hpp"
 #include <sstream>
 
+Config::Location::Location() {
+	redirect_pair.first = 0;
+	auto_index = "off";
+	allowed_methods.push_back("GET");
+	allowed_methods.push_back("POST");
+	allowed_methods.push_back("DELETE");
+}
+
+Config::Location::~Location() {
+}
+
+Config::Server::Server() {
+	client_max_body_size = "1m";
+}
+
+Config::Server::~Server() {
+}
+
 Config::Config(const std::string& config_file_path) {
 	_config_parser(config_file_path);
 }
@@ -31,7 +49,8 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 		&Config::_parse_auto_index,
 		&Config::_parse_index,
 		&Config::_parse_cgi,
-		&Config::_parse_return};
+		&Config::_parse_return,
+		&Config::_parse_upload_pass};
 	for (size_t i = 0; i < options.size(); i++) {
 		if (line.find("server") != std::string::npos && line.find("{") != std::string::npos) {
 			servers.push_back(Server());
@@ -58,9 +77,8 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 				if (servers[servers.size() - 1].ips.size() == 0)
 					servers[servers.size() - 1].ips.push_back("127.0.0.1");
 				_inside_server = false;
-			}
-			else
-				exit_with::message("config: syntx");
+			} else
+				exit_with::message("config: syntax");
 			return;
 		}
 	}
@@ -86,6 +104,7 @@ void Config::_config_parser(const std::string& config_file_path) {
 	options.push_back("index");
 	options.push_back("cgi");
 	options.push_back("return");
+	options.push_back("upload_pass");
 	_inside_location = 0;
 	_safe_new_path_location = false;
 	config_file.open(config_file_path);
@@ -127,9 +146,6 @@ std::ostream& operator<<(std::ostream& stream, Config const& config) {
 			}
 			stream << "AUTOINDEX = " << config.servers[server].locations[location].auto_index << std::endl;
 			stream << "CGI = " << config.servers[server].locations[location].cgi_path.first << " | " << config.servers[server].locations[location].cgi_path.second << std::endl;
-			for (std::map<size_t, std::string>::const_iterator it = config.servers[server].locations[location].error_pages.begin(); it != config.servers[server].locations[location].error_pages.end(); it++) {
-				stream << "ERROR_PAGES = " << it->first << " | " << it->second << std::endl;
-			}
 			stream << "METHODS = ";
 			for (size_t i = 0; i < config.servers[server].locations[location].allowed_methods.size(); i++)
 				stream << config.servers[server].locations[location].allowed_methods[i] << " | ";

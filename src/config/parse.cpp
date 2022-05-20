@@ -44,20 +44,13 @@ Config::Location& Config::_last_location() {
 
 void Config::_parse_server_name(std::map<const std::string, std::string>& config_info) {
 	std::string serverName = config_info["server_name"];
-	size_t		i = 0;
 
 	if (_inside_location)
 		exit_with::message("\"server_name\" directive only allowed in server scope");
 	cut_till_collon(serverName);
-	while (i < serverName.length() && i != std::string::npos) {
-		if (serverName[i] != ' ' && serverName[i] != '\t') {
-			servers[servers.size() - 1].server_names.push_back(serverName.substr(i, serverName.find_first_of(" \t", i) - i));
-			i = serverName.find_first_of(" \t", i);
-			if (i == std::string::npos)
-				break;
-		}
-		i++;
-	}
+	std::vector<std::string> serverName_splitted = ft_split(serverName, "\t ");
+	for (std::string serverName : serverName_splitted)
+		servers[servers.size() - 1].server_names.push_back(serverName);
 }
 
 /*
@@ -132,17 +125,24 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 	for (std::string i : splitted_error_codes) {
 		std::stringstream sstream(i);
 		sstream >> error_code;
+		if (!servers[servers.size() - 1].error_pages[error_code].empty())
+			return;
 		servers[servers.size() - 1].error_pages[error_code] = splitted_error_codes[splitted_error_codes.size() - 1]; // Should this be the last one always??
 	}
 }
 
+
+//TODO: check if there are not more 
 void Config::_parse_client_max_body_size(std::map<const std::string, std::string>& config_info) {
 	std::string body_size = config_info["client_max_body_size"];
 
 	if (_inside_location)
 		exit_with::message("\"client_max_body_size\" directive only allowed in server scope");
 	cut_till_collon(body_size);
-	if (body_size[body_size.size() - 1] != 'M' && body_size[body_size.size() - 1] != 'm' && body_size[body_size.size() - 1] != 'K' && body_size[body_size.size() - 1] != 'k')
+	std::vector<std::string> body_size_splitted = ft_split(body_size, " \t ");
+	if (body_size_splitted.size() > 1)
+		exit_with::message("\"client_max_body_size\" invalid number of arguments");
+	if (body_size_splitted[0][body_size_splitted[0].size() - 1] != 'M' && body_size_splitted[0][body_size_splitted[0].size() - 1] != 'm' && body_size_splitted[0][body_size_splitted[0].size() - 1] != 'K' && body_size_splitted[0][body_size_splitted.size() - 1] != 'k')
 		exit_with::message("config error: client_max_body_size");
 	servers[servers.size() - 1].client_max_body_size = body_size;
 }
@@ -217,21 +217,19 @@ void Config::_parse_auto_index(std::map<const std::string, std::string>& config_
 }
 
 void Config::_parse_cgi(std::map<const std::string, std::string>& config_info) {
-	std::string cgi = config_info["cgi"];
+	std::string				 cgi = config_info["cgi"];
+	std::vector<std::string> cgi_splitted = ft_split(cgi, "\t ");
 
 	if (!_inside_location)
 		exit_with::message("\"cgi\" directive only allowed in location scope");
 	cut_till_collon(cgi);
-	size_t		space = cgi.find_first_of(" \t");
-	size_t		not_space = cgi.find_first_not_of(" \t", space);
-	std::string path = cgi.substr(not_space, cgi.size());
-	if (_inside_location) {
-		_last_location().cgi_path.first = cgi.substr(0, space);
-		_last_location().cgi_path.second = path;
-	}
+	if (cgi_splitted.size() > 2)
+		exit_with::message("\"cgi\" invalid number of arguments");
+	_last_location().cgi_path.first = cgi_splitted[0];
+	if (cgi_splitted.size() == 2)
+		_last_location().cgi_path.second = cgi_splitted[1];
 }
 
-// TODO: don't abort when only one
 void Config::_parse_return(std::map<const std::string, std::string>& config_info) {
 	std::string ret = config_info["return"];
 
@@ -243,7 +241,17 @@ void Config::_parse_return(std::map<const std::string, std::string>& config_info
 	if (redirects.size() > 2)
 		exit_with::message("\"redirect\" invalid number of arguments");
 	std::stringstream sstream(redirects[0]);
-	sstream >> _last_location().redirect_code;
+	sstream >> _last_location().redirect_pair.first;
 	if (redirects.size() == 2)
-		_last_location().redirect = redirects[1];
+		_last_location().redirect_pair.second = redirects[1];
+}
+
+void Config::_parse_upload_pass(std::map<const std::string, std::string>& config_info) {
+	std::string upload_pass = config_info["upload_pass"];
+
+	if (!_inside_location)
+		exit_with::message("\"upload_pass\" directive only allowed in location scope");
+	cut_till_collon(upload_pass);
+	std::cout << upload_pass << std::endl;
+	_last_location().upload_pass = upload_pass;
 }

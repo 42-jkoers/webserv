@@ -3,7 +3,7 @@
 #include <sstream>
 
 Config::Location::Location() {
-	redirect_pair.first = 0;
+	redirect.code = 0;
 	auto_index = "off";
 	allowed_methods.push_back("GET");
 	allowed_methods.push_back("POST");

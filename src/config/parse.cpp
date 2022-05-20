@@ -131,8 +131,7 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 	}
 }
 
-
-//TODO: check if there are not more 
+// TODO: check if there are not more
 void Config::_parse_client_max_body_size(std::map<const std::string, std::string>& config_info) {
 	std::string body_size = config_info["client_max_body_size"];
 
@@ -168,9 +167,12 @@ void Config::_parse_allowed_methods(std::map<const std::string, std::string>& co
 }
 
 void Config::_parse_root(std::map<const std::string, std::string>& config_info) {
-	std::string root = config_info["root"];
+	std::string				 root = config_info["root"];
+	std::vector<std::string> root_splitted = ft_split(root, "\t ");
 
 	cut_till_collon(root);
+	if (root_splitted.size() > 1)
+		exit_with::message("\"root\" invalid number of arguments");
 	if (!_last_location().root.empty())
 		exit_with::message("config error: No duplicate \"root\" allowed");
 	else if (_inside_location)
@@ -186,13 +188,15 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 	if (_safe_new_path_location == false && !servers[servers.size() - 1].locations.empty())
 		_what_location[_inside_location] = _last_location().path;
 	cut_till_bracket(location);
+	std::vector<std::string> location_splitted = ft_split(location, "\t ");
+	if (location_splitted.size() > 1)
+		exit_with::message("\"location\" invalid number of arguments");
 	if (_inside_location > 1) {
 		location = _what_location[_inside_location] + location;
 	}
 	servers[servers.size() - 1].locations.push_back(Location());
 	_last_location() = (Location());
 	_last_location().path = location;
-	// std::cout << _inside_location << "  | " << _last_location().path << std::endl;
 	_safe_new_path_location = false;
 }
 
@@ -241,9 +245,9 @@ void Config::_parse_return(std::map<const std::string, std::string>& config_info
 	if (redirects.size() > 2)
 		exit_with::message("\"redirect\" invalid number of arguments");
 	std::stringstream sstream(redirects[0]);
-	sstream >> _last_location().redirect_pair.first;
+	sstream >> _last_location().redirect.code;
 	if (redirects.size() == 2)
-		_last_location().redirect_pair.second = redirects[1];
+		_last_location().redirect.text = redirects[1];
 }
 
 void Config::_parse_upload_pass(std::map<const std::string, std::string>& config_info) {

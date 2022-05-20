@@ -23,12 +23,17 @@ so it will be either:
 */
 
 // TODO: if empty give error
-//TODO: make directive for POST where to put all the files // upload_pass directive
+// TODO: make directive for POST where to put all the files // upload_pass directive
 class Config {
   public:
 	Config(const std::string& config_file_path);
 	Config(){};
 	~Config();
+
+	struct t_redirect {
+		size_t		code;
+		std::string text;
+	} s_redirect;
 
 	class Location {
 		friend class Config;
@@ -44,8 +49,8 @@ class Config {
 		std::vector<std::string>			allowed_methods; // If empty is set to: GET, POST, DELETE
 		std::string							auto_index;		 // If empty is set to: off
 		std::pair<std::string, std::string> cgi_path;
-		std::pair<size_t, std::string>      redirect_pair; // set default value for empty
-		std::string                         upload_pass;
+		t_redirect							redirect; // If empty is set to: 0
+		std::string							upload_pass;
 		std::string							root; // If empty is set to: www/html
 	};
 
@@ -58,8 +63,8 @@ class Config {
 		~Server();
 
 		// READONLY
-		std::vector<uint16_t>		  ports;				
-		std::vector<std::string>	  ips;	 // If empty is set to:	127.0.0.1
+		std::vector<uint16_t>		  ports;
+		std::vector<std::string>	  ips; // If empty is set to:	127.0.0.1
 		std::vector<std::string>	  server_names;
 		std::string					  client_max_body_size; // TODO: parse as string //If empty is set to: 1m
 		std::map<size_t, std::string> error_pages;

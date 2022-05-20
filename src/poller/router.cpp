@@ -98,8 +98,8 @@ void Router::_respond_redirect(const Request& request) {
 	// std::cout << "redirect code: " << location.redirect_pair.first << std::endl;
 	// For a code in the 3xx series, the urlparameter defines the new (rewritten) URL
 	// return (301 | 302 | 303 | 307) url;
-	if (location.redirect_pair.first >= 301 && location.redirect_pair.first <= 307) {
-		return _respond_with_error_code(request, location.root + location.redirect_pair.second, location.redirect_pair.first);
+	if (location.redirect.code >= 301 && location.redirect.code <= 307) {
+		return _respond_with_error_code(request, location.root + location.redirect.text, location.redirect.code);
 	}
 	// other codes:
 	// you optionally define a text string which appears in the body of the response
@@ -195,16 +195,16 @@ if dir and autoindex off -> 403
 if not exist -> 404
 */
 void Router::route(Client& client) {
+	if (client.request.response_code != 200) // do not route if error in request parsing has happened
+		return Response::error(client.request, "", client.request.response_code);
+
 	Request&				request = client.request;
 	const Config::Location& location = request.associated_location();
 	std::string				path = get_path_on_disk(request);
 
 	if (!method_allowed(request))
 		return _respond_with_error_code(request, path, 405);
-
-	// TODO: redirect here
-	// TODO: location.redirect.first != 0
-	if (location.redirect_pair.first != 0)
+	if (location.redirect.code != 0)
 		return _respond_redirect(request);
 	if (location.cgi_path.first.size())
 		return _route_cgi(request, path);

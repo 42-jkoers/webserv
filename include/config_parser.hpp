@@ -39,10 +39,10 @@ class Config {
 		~Location();
 
 		// READONLY // TODO: require all these to be defined in the block or set defaults
-		std::string							path;
-		std::vector<std::string>			indexes;		 // If empty is set to: index.html
-		std::vector<std::string>			allowed_methods; // If empty is set to: GET, POST, DELETE
-		std::string							auto_index;		 // If empty is set to: off
+		std::string							path;				
+		std::vector<std::string>			indexes;				//If empty is set to: index.html
+		std::vector<std::string>			allowed_methods;		//If empty is set to: GET, POST, DELETE			
+		std::string							auto_index;				//If empty is set to: off
 		std::pair<std::string, std::string> cgi_path;
 		std::pair<size_t, std::string>      redirect_pair; // set default value for empty
 		std::string                         upload_pass;

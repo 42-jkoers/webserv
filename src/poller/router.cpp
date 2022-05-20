@@ -9,7 +9,7 @@ Router::Router() {
 	return;
 }
 
-bool has_server_name(const Config::Server& server, const std::string& server_name) {
+static bool has_server_name(const Config::Server& server, const std::string& server_name) {
 	for (std::string name : server.server_names) {
 		if (name == server_name) {
 			return 1;
@@ -67,11 +67,9 @@ const Config::Location& Router::find_location(const std::string& path, const Con
 	return server.locations[location_index];
 }
 
-bool method_allowed(const Request& request) {
+static bool method_allowed(const Request& request) {
 	const Config::Location location = request.associated_location();
 
-	if (location.allowed_methods.empty())
-		return true;
 	for (std::string method : location.allowed_methods) {
 		if (to_upper(method) == request.method)
 			return true;
@@ -80,45 +78,36 @@ bool method_allowed(const Request& request) {
 }
 
 void Router::_respond_with_error_code(const Request& request, const std::string& path, uint16_t error_code) {
+	const Config::Server   server = request.associated_server();
 	const Config::Location location = request.associated_location();
-	const Config::Server server = request.associated_server();
-	for (const std::pair<size_t, std::string>& p : server.error_pages) {
-		if (p.first == error_code) {
-			std::string error_path = p.second;
-			error_path.erase(0, 1); // TODO: remove when correct error paths parsed config
-			if (!fs::path_exists(location.root + error_path))
-				Router::_respond_with_error_code(request, location.root + path, 404); // TODO: do we want this infinite loop or not?
-			Response::file(request, location.root + error_path, error_code);
+
+	for (const std::pair<size_t, std::string>& error_page : server.error_pages) {
+		if (error_page.first == error_code) {
+			std::string error_path = location.root + error_page.second;
+			if (!fs::path_exists(error_path))
+				return Router::_respond_with_error_code(request, error_path, 500); // TODO: infinite redirect -> 500 internal server error?
+			return Response::file(request, error_path, error_code);
 		}
 	}
-	Response::error(request, path, error_code);
+	return Response::error(request, path, error_code);
 }
 
 std::string Router::_find_index(const Config::Location& location, std::string& path) {
-	if (location.indexes.empty()) {
-		if (fs::path_exists(path + "index.html"))
-			return "index.html";
-	} else {
-		for (std::string index : location.indexes) {
-			if (fs::path_exists(path + index))
-				return index;
-		}
+	for (std::string index : location.indexes) {
+		if (fs::path_exists(path + index))
+			return index;
 	}
 	return "";
 }
 
 // returns the path of the file on disk
-std::string get_path_on_disk(const Request& request) {
+static std::string get_path_on_disk(const Request& request) {
 	// The path where the server should start looking for files
 	// eg:  request.path = "/cgi/test"
 	//     location.path = "/cgi"
 	//     location.root = "www/cgi"
 	// Then mounted_path = "www/cgi/test"
-	const Config::Location location = request.associated_location();
-	std::string			   default_root = "www/html";
-	if (location.root.empty())
-		return default_root + request.path;
-	return location.root + request.path;
+	return request.associated_location().root + request.path;
 }
 
 void Router::_dir_list(Request& request, const std::string& path) {
@@ -145,9 +134,10 @@ void Router::_route_cgi(Request& request, std::string& path) {
 	// exectutable_path: "/cgi-bin/printenv.pl"
 	// path_info	   : "/with/additional/path" // TODO: not implemented
 	// request.query   : "and=a&query=string"
+
 	if (!fs::path_exists(path))
 		return _respond_with_error_code(request, path, 404);
-	Response::cgi(request, path, "", request.query); // todo should we read the cgi executable from the config?
+	Response::cgi(request, path); // todo should we read the cgi executable from the config?
 }
 
 /*
@@ -171,11 +161,10 @@ void Router::route(Client& client) {
 	const Config::Location& location = request.associated_location();
 	std::string				path = get_path_on_disk(request);
 
-	if (!method_allowed(request)) {
-		Response::text(request, 405, "");
-		return;
-	}
+	if (!method_allowed(request))
+		return _respond_with_error_code(request, path, 405);
 
+	// TODO: redirect here
 	// if (!location.redirect.empty()) {
 	// 	_respond_with_error_code(request, path, location.redirect_code);
 	// 	request.path = location.redirect;

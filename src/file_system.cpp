@@ -1,6 +1,7 @@
 #include "file_system.hpp"
 #include <dirent.h>
 #include <fstream>
+#include <stdlib.h>
 #include <sys/stat.h>
 
 namespace fs {
@@ -137,6 +138,16 @@ std::string join(const std::string& path1, const std::string& path2, const std::
 
 std::string join(const std::string& path1, const std::string& path2, const std::string& path3, const std::string& path4) {
 	return path::normalize(path1 + "/" + path2 + "/" + path3 + "/" + path4);
+}
+
+// returns empty string on fail
+std::string absolute(const std::string& path) {
+	char* absolute_c = realpath(("./" + path).c_str(), NULL);
+	if (!absolute_c)
+		return "";
+	std::string absolute(absolute_c);
+	free(absolute_c);
+	return absolute;
 }
 
 } // namespace path

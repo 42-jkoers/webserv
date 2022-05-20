@@ -42,4 +42,5 @@ std::string join(const std::string& path1, const std::string& path2);
 std::string join(const std::string& path1, const std::string& path2, const std::string& path3);
 std::string join(const std::string& path1, const std::string& path2, const std::string& path3, const std::string& path4);
 
+std::string absolute(const std::string& path);
 } // namespace path

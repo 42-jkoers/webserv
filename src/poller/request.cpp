@@ -292,8 +292,8 @@ const Config::Server& Request::associated_server() const {
 	return g_router.find_server(port, field_value("host"));
 }
 
-const std::string& Request::associated_server_name(std::vector<std::string> server_names) const {
-	std::string host = field_value("host");
+const std::string Request::associated_server_name(std::vector<std::string> server_names) const {
+	std::string		   host = field_value("host");
 	static std::string empty = "";
 	for (std::string& name : server_names) {
 		if (name == host)

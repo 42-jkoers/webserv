@@ -169,8 +169,11 @@ void Config::_parse_allowed_methods(std::map<const std::string, std::string>& co
 
 void Config::_parse_root(std::map<const std::string, std::string>& config_info) {
 	std::string root = config_info["root"];
-
+	std::vector<std::string> root_splitted = ft_split(root, "\t ");
+	
 	cut_till_collon(root);
+	if (root_splitted.size() > 1)
+		exit_with::message("\"root\" invalid number of arguments");
 	if (!_last_location().root.empty())
 		exit_with::message("config error: No duplicate \"root\" allowed");
 	else if (_inside_location)

@@ -189,13 +189,15 @@ void Config::_parse_location(std::map<const std::string, std::string>& config_in
 	if (_safe_new_path_location == false && !servers[servers.size() - 1].locations.empty())
 		_what_location[_inside_location] = _last_location().path;
 	cut_till_bracket(location);
+	std::vector<std::string> location_splitted = ft_split(location, "\t ");
+	if (location_splitted.size() > 1)
+		exit_with::message("\"location\" invalid number of arguments");
 	if (_inside_location > 1) {
 		location = _what_location[_inside_location] + location;
 	}
 	servers[servers.size() - 1].locations.push_back(Location());
 	_last_location() = (Location());
 	_last_location().path = location;
-	// std::cout << _inside_location << "  | " << _last_location().path << std::endl;
 	_safe_new_path_location = false;
 }
 
@@ -244,9 +246,9 @@ void Config::_parse_return(std::map<const std::string, std::string>& config_info
 	if (redirects.size() > 2)
 		exit_with::message("\"redirect\" invalid number of arguments");
 	std::stringstream sstream(redirects[0]);
-	sstream >> _last_location().redirect_pair.first;
+	sstream >> _last_location().redirect.redirect_code;
 	if (redirects.size() == 2)
-		_last_location().redirect_pair.second = redirects[1];
+		_last_location().redirect.redirect_path = redirects[1];
 }
 
 void Config::_parse_upload_pass(std::map<const std::string, std::string>& config_info) {

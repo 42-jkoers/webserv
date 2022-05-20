@@ -51,6 +51,8 @@ class Config {
 		std::pair<std::string, std::string> cgi_path;
 		t_redirect							redirect; // If empty is set to: 0
 		std::string							upload_pass;
+		std::map<size_t, std::string>		error_pages;
+		std::size_t							redirect_code;
 		std::string							root; // If empty is set to: www/html
 	};
 
@@ -59,14 +61,16 @@ class Config {
 		friend class Location;
 
 	  public:
-		Server();
-		~Server();
+		Server() {
+			client_max_body_size = ~0;
+		};
+		~Server(){};
 
 		// READONLY
 		std::vector<uint16_t>		  ports;
 		std::vector<std::string>	  ips; // If empty is set to:	127.0.0.1
 		std::vector<std::string>	  server_names;
-		std::string					  client_max_body_size; // TODO: parse as string //If empty is set to: 1m
+		size_t						  client_max_body_size; // default is max int value
 		std::map<size_t, std::string> error_pages;
 		std::vector<Location>		  locations;
 	};

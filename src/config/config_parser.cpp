@@ -13,13 +13,6 @@ Config::Location::Location() {
 Config::Location::~Location() {
 }
 
-Config::Server::Server() {
-	client_max_body_size = "1m";
-}
-
-Config::Server::~Server() {
-}
-
 Config::Config(const std::string& config_file_path) {
 	_config_parser(config_file_path);
 }

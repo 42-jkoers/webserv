@@ -95,20 +95,19 @@ void Router::_respond_with_error_code(const Request& request, const std::string&
 void Router::_respond_redirect(const Request& request) {
 	const Config::Location& location = request.associated_location();
 
-	// std::cout << "redirect code: " << location.redirect_pair.first << std::endl;
-	// For a code in the 3xx series, the urlparameter defines the new (rewritten) URL
+	// For a code in the 3xx series, the url parameter defines the new (rewritten) URL
 	// return (301 | 302 | 303 | 307) url;
 	if (location.redirect.code >= 301 && location.redirect.code <= 307) {
-		return _respond_with_error_code(request, location.root + location.redirect.text, location.redirect.code);
+		// Location: [path] in header
+		// do net check for custom error_codes here! ngninx doesn't do this
+		return Response::redirect(request, location.redirect.code, "");
 	}
 	// other codes:
-	// you optionally define a text string which appears in the body of the response
+	// you optionally define a text string which appears in the body of the response (and not the header)
 	// return (1xx | 2xx | 4xx | 5xx) ["text"];
 	else {
-		return;
+		return Response::redirect(request, location.redirect.code, location.redirect.text);
 	}
-	// request.path = location.redirect;
-	// g_router.route(client);
 }
 
 std::string Router::_find_index(const Config::Location& location, std::string& path) {
@@ -195,7 +194,7 @@ if dir and autoindex off -> 403
 if not exist -> 404
 */
 void Router::route(Client& client) {
-	if (client.request.response_code != 200) // do not route if error in request parsing has happened
+	if (client.request.response_code != 200) // do not route if error in request reading/parsing has happened
 		return Response::error(client.request, "", client.request.response_code);
 
 	Request&				request = client.request;

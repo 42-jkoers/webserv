@@ -46,6 +46,21 @@ void error(const Request& request, const std::string& path, uint32_t code) {
 	write(request.fd, response.c_str(), response.length());
 }
 
+void redirect(const Request& request, uint32_t code, const std::string& message) {
+	std::string response = header_template(code);
+
+	if (message.empty()) {
+		response += "Location: ";
+		response += request.associated_location().redirect.text;
+		response += "\n";
+	}
+	response += "\r\n";
+	if (!message.empty()) {
+		response += message;
+	}
+	write(request.fd, response.c_str(), response.length());
+}
+
 // TODO: optimize
 void text(const Request& request, uint32_t code, const std::string& message) {
 	std::string response = header_template(code);

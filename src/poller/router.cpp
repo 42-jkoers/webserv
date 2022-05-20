@@ -166,12 +166,12 @@ void Router::route(Client& client) {
 
 	// TODO: redirect here
 	// TODO: location.redirect.first != 0
-	if (!location.redirect.empty()) {
-		std::cout << "redirect code: " << location.redirect << std::endl;
+	if (location.redirect_pair.first != 0) {
+		// std::cout << "redirect code: " << location.redirect_pair.first << std::endl;
 		// For a code in the 3xx series, the urlparameter defines the new (rewritten) URL
 		// return (301 | 302 | 303 | 307) url;
-		if (location.redirect_code >= 301 && location.redirect_code <= 307) {
-			return _respond_with_error_code(request, location.root + location.redirect, location.redirect_code);
+		if (location.redirect_pair.first >= 301 && location.redirect_pair.first <= 307) {
+			return _respond_with_error_code(request, location.root + location.redirect_pair.second, location.redirect_pair.first);
 		}
 		// other codes:
 		// you optionally define a text string which appears in the body of the response
@@ -201,8 +201,6 @@ void Router::route(Client& client) {
 	}
 
 	if (request.method == "POST") {
-		if (location.cgi_path.first.size())
-			return _route_cgi(request, path);
 		return Response::text(request, 200, "POST not yet implemented"); // TODO
 	}
 

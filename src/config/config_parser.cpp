@@ -59,6 +59,8 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 		}
 		if (line.find(options[i]) != std::string::npos) {
 			tokenizer(options[i], config_info, line);
+			if (!_inside_server)
+				exit_with::message("directive not allowed here");
 			(this->*jump_table[i])(config_info);
 			return;
 		} else if (line.find_first_not_of("\t ") == std::string::npos)
@@ -78,12 +80,11 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 					servers[servers.size() - 1].ips.push_back("127.0.0.1");
 				_inside_server = false;
 			} else
-				exit_with::message("config: syntax");
+				exit_with::message("config: syntax error: \"" + line + "\"");
 			return;
 		}
 	}
-	std::cout << line << std::endl;
-	exit_with::message("config error: invalid line");
+	exit_with::message("config error: \"" + line + "\" invalid line");
 }
 
 // TODO: work with comments

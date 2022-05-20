@@ -257,6 +257,8 @@ void Config::_parse_upload_pass(std::map<const std::string, std::string>& config
 	if (!_inside_location)
 		exit_with::message("\"upload_pass\" directive only allowed in location scope");
 	cut_till_collon(upload_pass);
-	std::cout << upload_pass << std::endl;
+	std::vector<std::string> upload_pass_splitted = ft_split(upload_pass, "\t ");
+	if (upload_pass_splitted.size() > 1)
+		exit_with::message("\"upload_pass\" invalid number of arguments");
 	_last_location().upload_pass = upload_pass;
 }

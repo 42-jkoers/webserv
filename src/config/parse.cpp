@@ -131,8 +131,7 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 	}
 }
 
-
-//TODO: check if there are not more 
+// TODO: check if there are not more
 void Config::_parse_client_max_body_size(std::map<const std::string, std::string>& config_info) {
 	std::string body_size = config_info["client_max_body_size"];
 
@@ -168,9 +167,9 @@ void Config::_parse_allowed_methods(std::map<const std::string, std::string>& co
 }
 
 void Config::_parse_root(std::map<const std::string, std::string>& config_info) {
-	std::string root = config_info["root"];
+	std::string				 root = config_info["root"];
 	std::vector<std::string> root_splitted = ft_split(root, "\t ");
-	
+
 	cut_till_collon(root);
 	if (root_splitted.size() > 1)
 		exit_with::message("\"root\" invalid number of arguments");
@@ -246,9 +245,9 @@ void Config::_parse_return(std::map<const std::string, std::string>& config_info
 	if (redirects.size() > 2)
 		exit_with::message("\"redirect\" invalid number of arguments");
 	std::stringstream sstream(redirects[0]);
-	sstream >> _last_location().redirect.redirect_code;
+	sstream >> _last_location().redirect.code;
 	if (redirects.size() == 2)
-		_last_location().redirect.redirect_path = redirects[1];
+		_last_location().redirect.text = redirects[1];
 }
 
 void Config::_parse_upload_pass(std::map<const std::string, std::string>& config_info) {

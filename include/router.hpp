@@ -22,4 +22,6 @@ class Router {
 	std::string _find_index(const Config::Location& location, std::string& path);
 	void		_dir_list(Request& request, const std::string& path);
 	void		_route_cgi(Request& request, std::string& path);
+	void		_route_get(Request& request, std::string& path);
+	void		_respond_redirect(const Request& request);
 };

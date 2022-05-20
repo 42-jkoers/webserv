@@ -125,6 +125,8 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 	for (std::string i : splitted_error_codes) {
 		std::stringstream sstream(i);
 		sstream >> error_code;
+		if (error_code < 300 || error_code > 599)
+			exit_with::message("\"error_page\" code must be between 300 and 599");
 		if (!servers[servers.size() - 1].error_pages[error_code].empty())
 			return;
 		servers[servers.size() - 1].error_pages[error_code] = splitted_error_codes[splitted_error_codes.size() - 1]; // Should this be the last one always??

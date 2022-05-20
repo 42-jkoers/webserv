@@ -183,6 +183,9 @@ void Router::route(Client& client) {
 		// g_router.route(client);
 	}
 
+	if (location.cgi_path.first.size())
+		return _route_cgi(request, path);
+
 	if (request.method == "GET") {
 		if (path.at(path.size() - 1) == '/') { // directory -> find index or else dir listing if autoindex on
 			std::string index = _find_index(location, path);

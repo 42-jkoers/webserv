@@ -92,6 +92,25 @@ void Router::_respond_with_error_code(const Request& request, const std::string&
 	return Response::error(request, path, error_code);
 }
 
+void Router::_respond_redirect(const Request& request) {
+	const Config::Location& location = request.associated_location();
+
+	// std::cout << "redirect code: " << location.redirect_pair.first << std::endl;
+	// For a code in the 3xx series, the urlparameter defines the new (rewritten) URL
+	// return (301 | 302 | 303 | 307) url;
+	if (location.redirect_pair.first >= 301 && location.redirect_pair.first <= 307) {
+		return _respond_with_error_code(request, location.root + location.redirect_pair.second, location.redirect_pair.first);
+	}
+	// other codes:
+	// you optionally define a text string which appears in the body of the response
+	// return (1xx | 2xx | 4xx | 5xx) ["text"];
+	else {
+		return;
+	}
+	// request.path = location.redirect;
+	// g_router.route(client);
+}
+
 std::string Router::_find_index(const Config::Location& location, std::string& path) {
 	for (std::string index : location.indexes) {
 		if (fs::path_exists(path + index))
@@ -140,6 +159,25 @@ void Router::_route_cgi(Request& request, std::string& path) {
 	Response::cgi(request, path); // todo should we read the cgi executable from the config?
 }
 
+void Router::_route_get(Request& request, std::string& path) {
+	const Config::Location& location = request.associated_location();
+
+	if (path.at(path.size() - 1) == '/') { // directory -> find index or else dir listing if autoindex on
+		std::string index = _find_index(location, path);
+		if (index.size())
+			return Response::file(request, path + index, 200);
+		if (fs::is_direcory(path) && location.auto_index == "off")
+			return _respond_with_error_code(request, path, 403);
+		if (fs::is_direcory(path) && location.auto_index == "on")
+			return _dir_list(request, path);
+		return _respond_with_error_code(request, path, 404);
+	}
+
+	if (fs::path_exists(path) && !fs::is_direcory(path))
+		return Response::file(request, path, 200);
+	return _respond_with_error_code(request, path, 404);
+}
+
 /*
 Routes request to the right server
 How the server processes request:
@@ -166,48 +204,14 @@ void Router::route(Client& client) {
 
 	// TODO: redirect here
 	// TODO: location.redirect.first != 0
-	if (location.redirect_pair.first != 0) {
-		// std::cout << "redirect code: " << location.redirect_pair.first << std::endl;
-		// For a code in the 3xx series, the urlparameter defines the new (rewritten) URL
-		// return (301 | 302 | 303 | 307) url;
-		if (location.redirect_pair.first >= 301 && location.redirect_pair.first <= 307) {
-			return _respond_with_error_code(request, location.root + location.redirect_pair.second, location.redirect_pair.first);
-		}
-		// other codes:
-		// you optionally define a text string which appears in the body of the response
-		// return (1xx | 2xx | 4xx | 5xx) ["text"];
-		else {
-			return;
-		}
-		// request.path = location.redirect;
-		// g_router.route(client);
-	}
-
+	if (location.redirect_pair.first != 0)
+		return _respond_redirect(request);
 	if (location.cgi_path.first.size())
 		return _route_cgi(request, path);
-
-	if (request.method == "GET") {
-		if (path.at(path.size() - 1) == '/') { // directory -> find index or else dir listing if autoindex on
-			std::string index = _find_index(location, path);
-			if (index.size())
-				return Response::file(request, path + index, 200);
-			if (fs::is_direcory(path) && location.auto_index == "off")
-				return _respond_with_error_code(request, path, 403);
-			if (fs::is_direcory(path) && location.auto_index == "on")
-				return _dir_list(request, path);
-			return _respond_with_error_code(request, path, 404);
-		}
-
-		if (fs::path_exists(path) && !fs::is_direcory(path))
-			return Response::file(request, path, 200);
-		return _respond_with_error_code(request, path, 404);
-	}
-
-	if (request.method == "POST") {
+	if (request.method == "GET")
+		return _route_get(request, path);
+	if (request.method == "POST")
 		return Response::text(request, 200, "POST not yet implemented"); // TODO
-	}
-
-	if (request.method == "DELETE") {
+	if (request.method == "DELETE")
 		return Response::text(request, 200, "DELETE not yet implemented"); // TODO
-	}
 }

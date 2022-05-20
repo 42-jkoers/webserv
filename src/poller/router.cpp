@@ -165,11 +165,26 @@ void Router::route(Client& client) {
 		return _respond_with_error_code(request, path, 405);
 
 	// TODO: redirect here
-	// if (!location.redirect.empty()) {
-	// 	_respond_with_error_code(request, path, location.redirect_code);
-	// 	request.path = location.redirect;
-	// 	g_router.route(client);
-	// }
+	// TODO: location.redirect.first != 0
+	if (location.redirect_pair.first != 0) {
+		// std::cout << "redirect code: " << location.redirect_pair.first << std::endl;
+		// For a code in the 3xx series, the urlparameter defines the new (rewritten) URL
+		// return (301 | 302 | 303 | 307) url;
+		if (location.redirect_pair.first >= 301 && location.redirect_pair.first <= 307) {
+			return _respond_with_error_code(request, location.root + location.redirect_pair.second, location.redirect_pair.first);
+		}
+		// other codes:
+		// you optionally define a text string which appears in the body of the response
+		// return (1xx | 2xx | 4xx | 5xx) ["text"];
+		else {
+			return;
+		}
+		// request.path = location.redirect;
+		// g_router.route(client);
+	}
+
+	if (location.cgi_path.first.size())
+		return _route_cgi(request, path);
 
 	if (request.method == "GET") {
 		if (path.at(path.size() - 1) == '/') { // directory -> find index or else dir listing if autoindex on
@@ -189,8 +204,6 @@ void Router::route(Client& client) {
 	}
 
 	if (request.method == "POST") {
-		if (location.cgi_path.first.size())
-			return _route_cgi(request, path);
 		return Response::text(request, 200, "POST not yet implemented"); // TODO
 	}
 

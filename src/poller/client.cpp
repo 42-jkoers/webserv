@@ -11,6 +11,12 @@ Client::Client(const std::string& ip, uint16_t port) {
 Client::Parse_status Client::parse_status() const { return _parse_status; }
 
 void				 Client::on_pollevent(struct pollfd pfd) {
+	if (_parse_status == ERROR)
+		return;
+	if (request.response_code != 200) {
+		_parse_status = ERROR;
+		return;
+	}
 	if (pfd.revents & POLLIN)
 		on_pollevent_read(pfd);
 	if (pfd.revents & POLLOUT)
@@ -105,6 +111,12 @@ void Client::_parse() {
 			_parse_status = READING_BODY;
 	}
 
+	_body_size += _buf_read.size();
+	if (_body_size > request.associated_server().client_max_body_size) {
+		request.response_code = 413;
+		_parse_status = ERROR;
+		return;
+	}
 	if (_parse_status == READING_BODY_HEADER) {
 		static const std::string header_end_str = "\r\n\r\n";
 		size_t					 header_end = _buf_read.find(header_end_str);
@@ -144,7 +156,6 @@ void Client::_parse() {
 
 	if (_parse_status == READING_BODY && request.field_exists("content-length")) {
 		request.body.insert(request.body.end(), _buf_read.begin(), _buf_read.end());
-		_body_size += _buf_read.size();
 		if (_body_size >= request.body.size())
 			_parse_status = FINISHED;
 		_buf_read.clear();

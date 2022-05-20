@@ -44,7 +44,7 @@ class Config {
 		std::vector<std::string>			allowed_methods; // If empty is set to: GET, POST, DELETE
 		std::string							auto_index;		 // If empty is set to: off
 		std::pair<std::string, std::string> cgi_path;
-		std::pair<size_t, std::string>      redirect_pair;
+		std::pair<size_t, std::string>      redirect_pair; // set default value for empty
 		std::string                         upload_pass;
 		std::string							root; // If empty is set to: www/html
 	};

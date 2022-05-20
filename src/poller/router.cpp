@@ -165,11 +165,23 @@ void Router::route(Client& client) {
 		return _respond_with_error_code(request, path, 405);
 
 	// TODO: redirect here
-	// if (!location.redirect.empty()) {
-	// 	_respond_with_error_code(request, path, location.redirect_code);
-	// 	request.path = location.redirect;
-	// 	g_router.route(client);
-	// }
+	// TODO: location.redirect.first != 0
+	if (!location.redirect.empty()) {
+		std::cout << "redirect code: " << location.redirect << std::endl;
+		// For a code in the 3xx series, the urlparameter defines the new (rewritten) URL
+		// return (301 | 302 | 303 | 307) url;
+		if (location.redirect_code >= 301 && location.redirect_code <= 307) {
+			return _respond_with_error_code(request, location.root + location.redirect, location.redirect_code);
+		}
+		// other codes:
+		// you optionally define a text string which appears in the body of the response
+		// return (1xx | 2xx | 4xx | 5xx) ["text"];
+		else {
+			return;
+		}
+		// request.path = location.redirect;
+		// g_router.route(client);
+	}
 
 	if (request.method == "GET") {
 		if (path.at(path.size() - 1) == '/') { // directory -> find index or else dir listing if autoindex on

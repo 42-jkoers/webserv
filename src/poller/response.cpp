@@ -9,40 +9,68 @@ static std::string header_template(uint32_t code) {
 	header += " ";
 	header += g_constants.to_response_string(code);
 	header += "\n";
+	header += "Server: " + g_constants.webserver_name() + "\n";
 	return header;
 }
 
 namespace Response {
 
-void error(const Request& request, const std::string& path, uint32_t code) {
-	std::string response = header_template(code);
-	response += "\r\n";
+// default error pages generator
+std::string default_error(const std::string& path, uint32_t code) {
+	std::string body;
 
-	response += "<html>\n";
-	response += "<head><title>";
-	response += std_ft::to_string(code);
-	response += " ";
-	response += g_constants.to_response_string(code);
-	response += "</title></head>\n";
-	response += "<body>\n";
+	body += "<html>\n";
+	body += "<head><title>";
+	body += std_ft::to_string(code);
+	body += " ";
+	body += g_constants.to_response_string(code);
+	body += "</title></head>\n";
+	body += "<body>\n";
 
-	response += "<center><h1>";
-	response += std_ft::to_string(code);
-	response += " ";
-	response += g_constants.to_response_string(code);
-	response += "</h1></center>\n";
+	body += "<center><h1>";
+	body += std_ft::to_string(code);
+	body += " ";
+	body += g_constants.to_response_string(code);
+	body += "</h1></center>\n";
 
-	response += "<hr><center>" + g_constants.webserver_name() + "\n";
+	body += "<hr><center>" + g_constants.webserver_name() + "\n";
 
 	if (!path.empty()) {
-		response += "<center>path: ";
-		response += path;
-		response += "\n";
+		body += "<center>path: ";
+		body += path;
+		body += "\n";
 	}
 
-	response += "</center>";
-	response += "</body>";
-	response += "</html>";
+	body += "</center>";
+	body += "</body>";
+	body += "</html>";
+	return body;
+}
+
+void error(const Request& request, const std::string& path, uint32_t code) {
+	std::string header = header_template(code);
+	std::string body = default_error(path, code);
+
+	header += "Content-length: " + std_ft::to_string(body.size());
+	header += "\r\n\r\n";
+	std::string response = header + body;
+	write(request.fd, response.c_str(), response.length());
+}
+
+void redirect(const Request& request, uint32_t code, const std::string& message, const std::string& redir_location) {
+	std::string header = header_template(code);
+	std::string body;
+
+	if (!message.empty())
+		body += message;
+	if (!redir_location.empty()) {
+		header += "Location: " + redir_location;
+		header += "\n";
+		body += default_error("", code);
+	}
+	header += "Content-length: " + std_ft::to_string(body.size());
+	header += "\r\n\r\n";
+	std::string response = header + body;
 	write(request.fd, response.c_str(), response.length());
 }
 

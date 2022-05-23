@@ -86,27 +86,28 @@ void Router::_respond_with_error_code(const Request& request, const std::string&
 			std::string error_path = location.root + error_page.second;
 			if (!fs::path_exists(error_path))
 				return Router::_respond_with_error_code(request, error_path, 500); // TODO: infinite redirect -> 500 internal server error?
-			return Response::file(request, error_path, error_code);
+			return Response::file(request, error_path, error_code);				   // return file if file exists
 		}
 	}
 	return Response::error(request, path, error_code);
 }
 
 void Router::_respond_redirect(const Request& request) {
-	const Config::Location& location = request.associated_location();
-
-	// std::cout << "redirect code: " << location.redirect_pair.first << std::endl;
 	// For a code in the 3xx series, the urlparameter defines the new (rewritten) URL
 	// return (301 | 302 | 303 | 307) url;
-	if (location.redirect.code >= 301 && location.redirect.code <= 307) {
-		return _respond_with_error_code(request, location.root + location.redirect.text, location.redirect.code);
-	}
+	// only 300 | 301 | 302 | 303 | 307 (and 308) provide Location: <path> in header
+
 	// other codes:
 	// you optionally define a text string which appears in the body of the response
 	// return (1xx | 2xx | 4xx | 5xx) ["text"];
-	else {
-		return;
-	}
+	// TODO: check if redirection works!!!
+	const Config::Location& location = request.associated_location();
+
+	if (location.redirect.code == 304)
+		return Response::redirect(request, location.redirect.code, "", "");
+	else if ((location.redirect.code >= 301 && location.redirect.code <= 303) || location.redirect.code == 307)
+		return Response::redirect(request, location.redirect.code, "", location.redirect.text);
+	return Response::redirect(request, location.redirect.code, location.redirect.text, "");
 	// request.path = location.redirect;
 	// g_router.route(client);
 }

@@ -29,6 +29,7 @@ std::vector<std::string> list_dir(const std::string& path, bool ignore_relatives
 bool					 path_exists(const std::string& path);
 bool					 is_direcory(const std::string& path);
 std::string				 get_working_path();
+bool					 delete_file(const std::string& path);
 
 } // namespace fs
 

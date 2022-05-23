@@ -92,6 +92,11 @@ bool is_direcory(const std::string& path) {
 	return false;
 }
 
+// returns true on success
+bool delete_file(const std::string& path) {
+	return remove(path.c_str()) == 0;
+}
+
 } // namespace fs
 
 namespace path {

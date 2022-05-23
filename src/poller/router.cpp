@@ -193,6 +193,15 @@ void Router::_route_post(Request& request) {
 	Response::text(request, 200, "Saved upload to file \"" + save_path + "\" on disk");
 }
 
+void Router::_route_delete(Request& request) {
+	std::string path = path::join(request.associated_location().root, request.path);
+
+	if (fs::delete_file(path))
+		Response::text(request, 200, "Deleted file \"" + path + "\" on disk");
+	else
+		Response::text(request, 500, "Could not delete file \"" + path + "\" on disk");
+}
+
 /*
 Routes request to the right server
 How the server processes request:
@@ -228,5 +237,5 @@ void Router::route(Client& client) {
 	if (request.method == "POST")
 		return _route_post(request);
 	if (request.method == "DELETE")
-		return Response::text(request, 200, "DELETE not yet implemented"); // TODO
+		return _route_delete(request);
 }

@@ -24,5 +24,6 @@ class Router {
 	void		_route_cgi(Request& request, std::string& path);
 	void		_route_get(Request& request, std::string& path);
 	void		_route_post(Request& request);
+	void		_route_delete(Request& request);
 	void		_respond_redirect(const Request& request);
 };

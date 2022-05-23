@@ -279,9 +279,11 @@ std::string Request::field_multipart_boundary() const {
 	return field_value("content-type").substr(start, length);
 }
 
+// returns empty string if filename is not found
 std::string Request::field_filename() const {
 	static const std::string prefix = "filename=\"";
-	assert(field_contains("content-disposition", prefix));
+	if (!field_contains("content-disposition", prefix))
+		return "";
 	size_t start = field_value("content-disposition").find(prefix) + prefix.size();
 	size_t length = field_value("content-disposition").find("\"", start);
 	return field_value("content-disposition").substr(start, length - start);

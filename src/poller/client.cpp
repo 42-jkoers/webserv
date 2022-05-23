@@ -88,6 +88,8 @@ void Client::_parse() {
 		_parse_status = READING_HEADER;
 		if (_buf_read.find("\r\n\r\n") != std::string::npos)
 			_parse_status = READING_HEADER_DONE;
+		else
+			return;
 	}
 
 	if (_parse_status == READING_HEADER_DONE) {

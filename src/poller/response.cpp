@@ -67,6 +67,9 @@ std::vector<std::string> get_cgi_env(const Request& request, const std::string& 
 	env.push_back("SERVER_SOFTWARE=" + g_constants.webserver_name());
 	// if (request.method != "POST") // TODO: should this be here?
 	env.push_back("QUERY_STRING=" + request.query);
+	if (request.body.size())
+		env.push_back("CONTENT_LENGTH=" + std::to_string(request.body.size()));
+
 	return env;
 }
 

@@ -1,6 +1,7 @@
 #include "router.hpp"
 #include "constants.hpp"
 #include "file_system.hpp"
+#include <ctime>
 
 Router::~Router() {
 }
@@ -178,6 +179,19 @@ void Router::_route_get(Request& request, std::string& path) {
 	return _respond_with_error_code(request, path, 404);
 }
 
+void Router::_route_post(Request& request) {
+	std::string save_path = path::join(request.associated_location().root, request.path);
+	if (!fs::path_exists(save_path))
+		return Response::text(request, 500, "Could not open path \"" + request.path + "\""); // TODO
+
+	std::string filename = request.field_filename();
+	if (filename == "")
+		filename = std::to_string(std::time(0));
+	save_path = path::join(save_path, filename);
+	fs::write_file(save_path, request.body);
+	Response::text(request, 200, "Saved upload to file \"" + save_path + "\" on disk");
+}
+
 /*
 Routes request to the right server
 How the server processes request:
@@ -211,7 +225,7 @@ void Router::route(Client& client) {
 	if (request.method == "GET")
 		return _route_get(request, path);
 	if (request.method == "POST")
-		return Response::text(request, 200, "POST not yet implemented"); // TODO
+		return _route_post(request);
 	if (request.method == "DELETE")
 		return Response::text(request, 200, "DELETE not yet implemented"); // TODO
 }

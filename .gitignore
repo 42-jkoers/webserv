@@ -7,3 +7,4 @@ obj/
 /www/cgi/input
 /file_uploads/
 test/
+/www/upload/*

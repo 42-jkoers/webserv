@@ -115,6 +115,7 @@ Constants::Constants() {
 	_response_str[415] = "Unsupported Media Type";
 	_response_str[416] = "Range Not Satisfiable";
 	_response_str[417] = "Expectation Failed";
+	_response_str[418] = "I'm a teapot";
 	_response_str[426] = "Upgrade Required";
 	_response_str[500] = "Internal Server Error";
 	_response_str[501] = "Not Implemented";

@@ -13,6 +13,47 @@ struct pollfd		pollfd(int fd, short events);
 
 } // namespace constructors
 
+class Fdinfo {
+  public:
+	enum class Type {
+		SERVER,
+		CLIENT,
+		RESPONSE
+	};
+
+	class Server {
+	  public:
+		Server(uint16_t port) : port(port) {}
+		uint16_t port;
+	};
+
+	class Response {
+	  public:
+		fd_t fd;
+	};
+
+	Fdinfo() {}
+	Fdinfo(Type t) : type(t){};
+	~Fdinfo(){};
+	Fdinfo& operator=(const Fdinfo& cp) {
+		type = cp.type;
+		if (cp.type == Type::SERVER)
+			server = cp.server;
+		else if (cp.type == Type::CLIENT)
+			client = cp.client;
+		else if (cp.type == Type::RESPONSE)
+			response = cp.response;
+		return *this;
+	}
+
+	Fdinfo::Type type;
+	union {
+		Fdinfo::Server	 server;
+		Client			 client;
+		Fdinfo::Response response;
+	};
+};
+
 class Poller {
   public:
 	Poller();
@@ -23,11 +64,13 @@ class Poller {
   private:
 	void					   _accept_clients();
 
-	void					   _on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client));
-	size_t					   _n_servers;
+	void					   _on_poll(pollfd& pfd, void (*on_request)(Client& client));
+	void					   _on_server(const pollfd& pfd);
+	void					   _on_client(pollfd& pfd, void (*on_request)(Client& client));
+	void					   _on_response(const pollfd& pfd);
+
 	std::vector<struct pollfd> _pollfds;
-	std::vector<uint16_t>	   _server_ports;
-	std::map<fd_t, Client>	   _clients;
+	std::map<fd_t, Fdinfo>	   _fdinfo;
 
 	// disabled
 	Poller(const Poller& cp);

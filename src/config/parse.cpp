@@ -1,5 +1,3 @@
-
-
 #include "config_parser.hpp"
 #include "constants.hpp"
 #include "file_system.hpp"
@@ -255,16 +253,20 @@ void Config::_parse_cgi(std::map<const std::string, std::string>& config_info) {
 
 void Config::_parse_return(std::map<const std::string, std::string>& config_info) {
 	std::string ret = config_info["return"];
+	int			redirect_code;
 
 	if (!_inside_location)
-		exit_with::message("\"redirect\" directive only allowed in location scope");
+		exit_with::message("\"return\" directive only allowed in location scope");
 	cut_till_collon(ret);
 
 	std::vector<std::string> redirects = ft_split(ret, " \t");
 	if (redirects.size() > 2)
-		exit_with::message("\"redirect\" invalid number of arguments");
-	std::stringstream sstream(redirects[0]);
-	sstream >> _last_location().redirect.code;
+		exit_with::message("\"return\" invalid number of arguments");
+	if (!parse_int(redirect_code, redirects[0]))
+		exit_with::message("\"return\" invalid value: \"" + redirects[0] + "\"");
+	if (redirect_code < 0 || redirect_code > 1000)
+		exit_with::message("\"return\" invalid return code: " + redirects[0]);
+	_last_location().redirect.code = redirect_code;
 	if (redirects.size() == 2)
 		_last_location().redirect.text = redirects[1];
 }

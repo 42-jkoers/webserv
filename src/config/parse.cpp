@@ -118,23 +118,23 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 // last value of the directive is considered the path to the error page
 // other values of the directive are considered error codes (size_t)
 void Config::_parse_error_page(std::map<const std::string, std::string>& config_info) {
-	std::string error = config_info["error_page"];
+	std::string error_page = config_info["error_page"];
 	size_t		error_code;
 
 	if (_inside_location)
 		exit_with::message("\"error_page\" directive only allowed in server scope");
-	cut_till_collon(error);
-	std::vector<std::string> splitted_error_codes = ft_split(error, " \t");
-	for (std::vector<std::string>::const_iterator it = splitted_error_codes.begin(); it != splitted_error_codes.end(); it++) {
-		if (*it == splitted_error_codes[splitted_error_codes.size() - 1])
+	cut_till_collon(error_page);
+	std::vector<std::string> splitted_error_page = ft_split(error_page, " \t");
+	for (std::string str : splitted_error_page) {
+		if (str == splitted_error_page[splitted_error_page.size() - 1])
 			return;
-		if (!parse_int(error_code, *it))
-			exit_with::message("\"error_page\" invalid value: \"" + *it + "\"");
+		if (!parse_int(error_code, str))
+			exit_with::message("\"error_page\" invalid value: \"" + str + "\"");
 		if (error_code < 300 || error_code > 599)
-			exit_with::message("\"error_page\" code must be between 300 and 599");
+			exit_with::message("\"error_page\" error code must be between 300 and 599");
 		if (!servers[servers.size() - 1].error_pages[error_code].empty()) // if error pages[error_code] is not empty => keep the old path?
 			continue;
-		servers[servers.size() - 1].error_pages[error_code] = splitted_error_codes[splitted_error_codes.size() - 1]; // Should this be the last one always??
+		servers[servers.size() - 1].error_pages[error_code] = splitted_error_page[splitted_error_page.size() - 1]; // Should this be the last one always??
 	}
 }
 

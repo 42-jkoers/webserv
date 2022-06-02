@@ -123,6 +123,8 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 		exit_with::message("\"error_page\" directive only allowed in server scope");
 	cut_till_collon(error_page);
 	std::vector<std::string> splitted_error_page = ft_split(error_page, " \t");
+	if (splitted_error_page.size() < 2)
+		exit_with::message("\"error_page\" invalid amount of arguments");
 	for (std::string str : splitted_error_page) {
 		if (str == splitted_error_page[splitted_error_page.size() - 1])
 			return;
@@ -192,7 +194,7 @@ void Config::_parse_root(std::map<const std::string, std::string>& config_info) 
 		exit_with::message("\"root\" invalid number of arguments");
 	if (!_last_location().root.empty())
 		exit_with::message("config error: No duplicate \"root\" allowed");
-	else if (_inside_location)
+	else if (_inside_location) 
 		_last_location().root = root;
 	else
 		exit_with::message("\"root\" directive only allowed in location scope");

@@ -15,13 +15,7 @@
 
 Config			g_config;
 const Constants g_constants;
-Router			g_router;
 //
-
-void on_request(Client& client) {
-	std::cout << client.request << std::endl;
-	g_router.route(client);
-}
 
 int main(int argc, char** argv) {
 	if (argc == 1 || (argc == 2 && !strcmp(argv[1], "-t"))) {
@@ -45,7 +39,7 @@ int main(int argc, char** argv) {
 
 	if (argc == 1 || (argc > 1 && strcmp(argv[1], "-t"))) {
 		std::cout << "started" << std::endl;
-		poller.start(on_request);
+		poller.start();
 	}
 	return 0;
 }

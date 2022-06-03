@@ -10,7 +10,7 @@ class Router {
   public:
 	Router();
 	~Router();
-	void					route(Client& client);
+	fd_t					route(Client& client) __attribute__((warn_unused_result));
 	const Config::Server&	find_server(const uint16_t port, const std::string& hostname);
 	const Config::Location& find_location(const std::string& path, const Config::Server& server);
 

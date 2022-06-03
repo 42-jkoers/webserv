@@ -1,7 +1,9 @@
 #include "router.hpp"
 #include "constants.hpp"
 #include "file_system.hpp"
+#include "main.hpp"
 #include <ctime>
+#include <fcntl.h>
 
 Router::~Router() {
 }
@@ -68,7 +70,7 @@ const Config::Location& Router::find_location(const std::string& path, const Con
 	return server.locations[location_index];
 }
 
-static bool method_allowed(const Request& request) {
+bool method_allowed(const Request& request) {
 	const Config::Location location = request.associated_location();
 
 	for (std::string method : location.allowed_methods) {
@@ -122,7 +124,7 @@ std::string Router::_find_index(const Config::Location& location, std::string& p
 }
 
 // returns the path of the file on disk
-static std::string get_path_on_disk(const Request& request) {
+std::string get_path_on_disk(const Request& request) {
 	// The path where the server should start looking for files
 	// eg:  request.path = "/cgi/test"
 	//     location.path = "/cgi"
@@ -218,24 +220,29 @@ if dir and autoindex on -> dir listing
 if dir and autoindex off -> 403
 if not exist -> 404
 */
-void Router::route(Client& client) {
-	if (client.request.response_code != 200) // do not route if error in request reading/parsing has happened
-		return Response::error(client.request, "", client.request.response_code);
+fd_t Router::route(Client& client) {
+	(void)client;
+	fd_t fd = open("./www/helloworld_response.txt", O_RDWR);
+	assert(fd != -1);
+	return fd;
 
-	Request&				request = client.request;
-	const Config::Location& location = request.associated_location();
-	std::string				path = get_path_on_disk(request);
+	// if (client.request.response_code != 200) // do not route if error in request reading/parsing has happened
+	// 	return Response::error(client.request, "", client.request.response_code);
 
-	if (!method_allowed(request))
-		return _respond_with_error_code(request, path, 405);
-	if (location.redirect.code != 0)
-		return _respond_redirect(request);
-	if (location.cgi_path.first.size())
-		return _route_cgi(request, path);
-	if (request.method == "GET")
-		return _route_get(request, path);
-	if (request.method == "POST")
-		return _route_post(request);
-	if (request.method == "DELETE")
-		return _route_delete(request);
+	// Request&				request = client.request;
+	// const Config::Location& location = request.associated_location();
+	// std::string				path = get_path_on_disk(request);
+
+	// if (!method_allowed(request))
+	// 	return _respond_with_error_code(request, path, 405);
+	// if (location.redirect.code != 0)
+	// 	return _respond_redirect(request);
+	// if (location.cgi_path.first.size())
+	// 	return _route_cgi(request, path);
+	// if (request.method == "GET")
+	// 	return _route_get(request, path);
+	// if (request.method == "POST")
+	// 	return _route_post(request);
+	// if (request.method == "DELETE")
+	// 	return _route_delete(request);
 }

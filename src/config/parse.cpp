@@ -63,53 +63,53 @@ void Config::_parse_server_name(std::map<const std::string, std::string>& config
  if there is no ip the ip will be set to 127.0.0.1
  */
 
+//TODO: error when to many '.'
 void Config::_parse_listen(std::map<const std::string, std::string>& config_info) {
 	std::string listen = config_info["listen"];
-	size_t		i = 0;
 	size_t		check_dots = 0;
-	size_t		check_ip = 0;
-
+	uint32_t port;
+	std::string ip;
+	
 	if (_inside_location)
 		exit_with::message("\"listen\" directive only allowed in server scope");
 	cut_till_collon(listen);
-	if (strchr(listen.c_str(), '.') || strchr(listen.c_str(), ':')) {
-		while (i < listen.size()) {
-			if (listen[i] != '.' && !isdigit(listen[i]) && listen[i] != ':' && listen[i] != ';')
-				exit_with::message("config error: listen");
-			if (listen[i] == '.') {
-				check_ip = 0;
-				if (check_dots > 2) // check if its a real ip address
-					exit_with::message("config error: listen");
-				check_dots++;
-			}
-			if (check_ip > 2 && check_dots != 3) // check if its only 3 numbers long
-				exit_with::message("config error: listen");
-			if (isdigit(listen[i]))
-				check_ip++;
-			i++;
+	for (size_t i = 0; i < listen.length(); i++) {
+		if (listen[i] == '.')
+			check_dots++;
+	}
+	if (check_dots > 3)
+		exit_with::message("\"listen\" too many dots");
+	std::vector<std::string> listen_splitted = ft_split(listen, " \t");
+	if (listen_splitted.size() > 1)
+		exit_with::message("\"listen\" invalid number of arguments");
+	listen_splitted.clear();
+	listen_splitted = ft_split(listen, ".:");
+	if (listen_splitted.size() == 4 || listen_splitted.size() == 5) {
+		for (std::string str : listen_splitted) {
+			if (str.compare(listen_splitted[listen_splitted.size() - 1]) && listen_splitted.size() == 5)
+				break;
+			if (str.find_first_not_of("[0123456789]") != std::string::npos || stoi(str) > 225 || stoi(str) < 0)
+				exit_with::message("\"listen\" not a right given value");
 		}
 	}
-	uint32_t			port;
-	size_t				pos;
-	std::vector<size_t> it;
-	if (strchr(listen.c_str(), ':'))
-		pos = config_info["listen"].find_first_of(":");
-	else
-		pos = listen.size();
-	if (check_ip != 0) {
-		servers[servers.size() - 1].ips.push_back(listen.substr(0, pos));
-		if (!strchr(listen.c_str(), ':'))
-			port = 8080;
-		else
-			parse_int(port, &config_info["listen"][pos + 1]);
-	} else {
-		parse_int(port, &config_info["listen"][0]);
-		servers[servers.size() - 1].ips.push_back("127.0.0.1");
+	else if (listen_splitted.size() == 1) {
+		ip = "127.0.0.1";
+		port = stoi(listen_splitted[listen_splitted.size() - 1]);
 	}
+	port = stoi(listen_splitted[listen_splitted.size() - 1]);
+	if (listen_splitted.size() == 5)
+		ip = listen.substr(0, listen.find_first_of(":"));
+	else if (listen_splitted.size() != 1)
+		ip = listen;
+	if (listen_splitted.size() == 4) 
+		port = 8080;
 	// TODO: validate this
 	if (port < ntohs(32768) || port > ntohs(61000))
 		exit_with::message("config error: invalid port");
 	servers[servers.size() - 1].ports.push_back(port);
+	servers[servers.size() - 1].ips.push_back(ip);
+	// std::cout << " ip = " << servers[servers.size() - 1].ips[servers[servers.size() - 1].ips.size() - 1] << " port = " << servers[servers.size() - 1].ports[servers[servers.size() - 1].ports.size() - 1] << std::endl;
+	// std::cout << servers[servers.size() - 1].ports.size() << " | " << servers[servers.size() - 1].ips.size() << std::endl;
 }
 
 // error pages are saved in a map structure so you can see what html file to use for what error code
@@ -124,7 +124,7 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 	cut_till_collon(error_page);
 	std::vector<std::string> splitted_error_page = ft_split(error_page, " \t");
 	if (splitted_error_page.size() < 2)
-		exit_with::message("\"error_page\" invalid amount of arguments");
+		exit_with::message("\"error_page\" invalid number of arguments");
 	for (std::string str : splitted_error_page) {
 		if (str == splitted_error_page[splitted_error_page.size() - 1])
 			return;
@@ -194,7 +194,7 @@ void Config::_parse_root(std::map<const std::string, std::string>& config_info) 
 		exit_with::message("\"root\" invalid number of arguments");
 	if (!_last_location().root.empty())
 		exit_with::message("config error: No duplicate \"root\" allowed");
-	else if (_inside_location) 
+	else if (_inside_location)
 		_last_location().root = root;
 	else
 		exit_with::message("\"root\" directive only allowed in location scope");

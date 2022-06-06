@@ -84,7 +84,7 @@ void Router::_respond_with_error_code(const Request& request, const std::string&
 	const Config::Server   server = request.associated_server();
 	const Config::Location location = request.associated_location();
 
-	for (const std::pair<size_t, std::string>& error_page : server.error_pages) {
+	for (const std::pair<const size_t, std::string>& error_page : server.error_pages) {
 		if (error_page.first == error_code) {
 			std::string error_path = location.root + error_page.second;
 			if (!fs::path_exists(error_path))
@@ -220,11 +220,11 @@ if dir and autoindex on -> dir listing
 if dir and autoindex off -> 403
 if not exist -> 404
 */
-fd_t Router::route(Client& client) {
+Route Router::route(Client& client) {
 	(void)client;
-	fd_t fd = open("./www/helloworld_response.txt", O_RDWR);
+	fd_t fd = open("./www/helloworld.txt", O_RDWR);
 	assert(fd != -1);
-	return fd;
+	return Route(Response::header_template(200), fd, true);
 
 	// if (client.request.response_code != 200) // do not route if error in request reading/parsing has happened
 	// 	return Response::error(client.request, "", client.request.response_code);

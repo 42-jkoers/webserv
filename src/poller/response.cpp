@@ -33,7 +33,7 @@ std::string default_error(const std::string& path, uint32_t code) {
 	body += g_constants.to_response_string(code);
 	body += "</h1></center>\n";
 
-	body += "<hr><center>" + g_constants.webserver_name() + "\n";
+	body += "<hr><center>" + g_constants.webserver_name() + "</center>\n";
 
 	if (!path.empty()) {
 		body += "<center>path: ";
@@ -42,7 +42,6 @@ std::string default_error(const std::string& path, uint32_t code) {
 		body += "\n";
 	}
 
-	body += "</center>";
 	body += "\n";
 	body += "</body>";
 	body += "\n";
@@ -69,6 +68,11 @@ void redirect(const Request& request, uint32_t code, const std::string& message,
 	if (!redir_location.empty()) {
 		header += "Location: " + redir_location;
 		header += "\n";
+		header += "Content-Type: text/html\n";
+		body += default_error("", code);
+		body += "\n";
+	}
+	if (message.empty() && redir_location.empty()) {
 		header += "Content-Type: text/html\n";
 		body += default_error("", code);
 		body += "\n";

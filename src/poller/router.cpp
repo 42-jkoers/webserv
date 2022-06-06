@@ -96,7 +96,7 @@ void Router::_respond_with_error_code(const Request& request, const std::string&
 void Router::_respond_redirect(const Request& request) {
 	// For a code in the 3xx series, the urlparameter defines the new (rewritten) URL
 	// return (301 | 302 | 303 | 307) url;
-	// only 300 | 301 | 302 | 303 | 307 (and 308) provide Location: <path> in header
+	// only 300 | 301 | 302 | 303 | 307 (and 308) provide Location: <path> in response header
 
 	// other codes:
 	// you optionally define a text string which appears in the body of the response (and not the header)

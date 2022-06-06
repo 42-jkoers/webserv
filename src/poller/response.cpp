@@ -42,7 +42,6 @@ std::string default_error(const std::string& path, uint32_t code) {
 		body += "\n";
 	}
 
-	body += "\n";
 	body += "</body>";
 	body += "\n";
 	body += "</html>";

@@ -3,6 +3,21 @@
 #include "main.hpp"
 #include "poller.hpp"
 
+class Route {
+  public:
+	Route(const std::string& header,
+		  fd_t				 file_fd,
+		  bool				 close_connection)
+		: header(header),
+		  file_fd(file_fd),
+		  close_connection(close_connection) {}
+	Route() {}
+
+	std::string header;
+	fd_t		file_fd;
+	bool		close_connection;
+};
+
 class Router;
 extern Router g_router;
 
@@ -10,7 +25,7 @@ class Router {
   public:
 	Router();
 	~Router();
-	fd_t					route(Client& client) __attribute__((warn_unused_result));
+	Route					route(Client& client) __attribute__((warn_unused_result));
 	const Config::Server&	find_server(const uint16_t port, const std::string& hostname);
 	const Config::Location& find_location(const std::string& path, const Config::Server& server);
 

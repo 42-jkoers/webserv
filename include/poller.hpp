@@ -13,11 +13,11 @@ struct pollfd		pollfd(int fd, short events);
 
 } // namespace constructors
 
-enum class Type {
+enum class Fd_type {
 	SERVER,
 	CLIENT,
-	RESPONSE_READ,
-	RESPONSE_WRITE,
+	RESPONSE,
+	CLOSED
 };
 
 class Poller {
@@ -46,27 +46,28 @@ class Poller {
   private:
 	void accept_clients(const Server& server);
 
-	void on_poll(pollfd& pfd);
+	void on_poll(pollfd pfd);
+	void on_poll(pollfd pfd, Client& client);
 
 	void add_fd(pollfd pfd, const Server& server) {
 		_pollfds.push_back(pfd);
-		_fd_types[pfd.fd] = Type::SERVER;
+		_fd_types[pfd.fd] = Fd_type::SERVER;
 		_servers[pfd.fd] = server;
 	}
 	void add_fd(pollfd pfd, const Client& client) {
 		_pollfds.push_back(pfd);
-		_fd_types[pfd.fd] = Type::CLIENT;
+		_fd_types[pfd.fd] = Fd_type::CLIENT;
 		_clients[pfd.fd] = client;
 	}
 	void add_fd(pollfd pfd, const Response& response) {
 		_pollfds.push_back(pfd);
-		_fd_types[pfd.fd] = Type::RESPONSE_READ;
+		_fd_types[pfd.fd] = Fd_type::RESPONSE;
 		_responses[pfd.fd] = response;
 	}
 
 	std::vector<struct pollfd> _pollfds;
 
-	std::map<fd_t, Type>	   _fd_types;
+	std::map<fd_t, Fd_type>	   _fd_types;
 	std::map<fd_t, Server>	   _servers;
 	std::map<fd_t, Client>	   _clients;
 	std::map<fd_t, Response>   _responses;

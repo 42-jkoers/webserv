@@ -4,6 +4,9 @@
 
 namespace Response {
 
+std::string header_template(uint32_t code);
+
+//
 void text(const Request& request, uint32_t code, const std::string& message);
 void cgi(const Request& request, const std::string& path);
 void file(const Request& request, const std::string& path, uint32_t code);

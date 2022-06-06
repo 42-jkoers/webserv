@@ -2,8 +2,10 @@
 #include "constants.hpp"
 #include "file_system.hpp"
 
+namespace Response {
+
 // returns minimum starting paramters of response header
-static std::string header_template(uint32_t code) {
+std::string header_template(uint32_t code) {
 	std::string header = "HTTP/1.1 ";
 	header += std_ft::to_string(code);
 	header += " ";
@@ -12,8 +14,6 @@ static std::string header_template(uint32_t code) {
 	header += "Server: " + g_constants.webserver_name() + "\n";
 	return header;
 }
-
-namespace Response {
 
 // default error pages generator
 std::string default_error(const std::string& path, uint32_t code) {

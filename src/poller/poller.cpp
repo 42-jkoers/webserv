@@ -9,6 +9,9 @@
 #include <sstream>
 #include <sys/ioctl.h>
 #include <sys/poll.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/uio.h>
 
 Router g_router;
 
@@ -38,38 +41,52 @@ void Poller::accept_clients(const Server& server) {
 
 		const struct pollfd client_pfd = constructors::pollfd(newfd, POLLIN | POLLOUT);
 		add_fd(client_pfd, Client(cpp::inet_ntop(address), server.port));
+		std::cout << "accepted client " << newfd << std::endl;
 	}
 }
 
-#define FD_CLOSED -1
+void Poller::on_poll(pollfd pfd, Client& client) {
+	client.on_pollevent(pfd);
+	if (client.parse_status() < Client::Parse_status::FINISHED)
+		return;
 
-void Poller::on_poll(pollfd& pfd) {
-	if (_fd_types[pfd.fd] == Type::SERVER) {
-		accept_clients(_servers[pfd.fd]);
+	if (client.parse_status() == Client::Parse_status::FINISHED) {
+		Route route = g_router.route(client);
+		write(pfd.fd, route.header.data(), route.header.size());
+
+		if (route.file_fd > 0) {
+			if (fcntl(route.file_fd, F_SETFL, O_NONBLOCK) == -1)
+				exit_with::e_perror("Cannot set non blocking 2");
+			off_t sent_len;
+			if (sendfile(route.file_fd, pfd.fd, 0, &sent_len, NULL, 0))
+				exit_with::e_perror("sendfile() failed");
+
+			close(route.file_fd);
+		}
 	}
 
-	else if (_fd_types[pfd.fd] == Type::CLIENT) {
-		Client& client = _clients[pfd.fd];
-		client.on_pollevent(pfd);
-		if (client.parse_status() == Client::Parse_status::FINISHED) {
-			_fd_types[pfd.fd] = Type::RESPONSE_WRITE;
+	else if (client.parse_status() == Client::Parse_status::ERROR) {
+		_fd_types.erase(pfd.fd);
+		_clients.erase(pfd.fd);
+	}
 
-			// fd_t response_fd = g_router.route(client);
-			// TODO header before pipe file
-			// add_fd(response, Response(pfd.fd));
-			std::string file = fs::read_file("./www/helloworld_response.txt");
-			write(pfd.fd, file.data(), file.size());
-			// dup2(client.request.fd, response_fd);
-			_clients.erase(pfd.fd);
-			close(pfd.fd);
-		}
+	// close(pfd.fd);
+	_clients.erase(pfd.fd);
+	_fd_types[pfd.fd] = Fd_type::CLOSED;
+}
 
-		else if (client.parse_status() == Client::Parse_status::ERROR) {
-			_fd_types.erase(pfd.fd);
-			_clients.erase(pfd.fd);
-			close(pfd.fd);
-			pfd.fd = FD_CLOSED;
-		}
+void Poller::on_poll(pollfd pfd) {
+	switch (_fd_types[pfd.fd]) {
+	case Fd_type::SERVER:
+		accept_clients(_servers[pfd.fd]);
+		break;
+
+	case Fd_type::CLIENT:
+		on_poll(pfd, _clients[pfd.fd]);
+		break;
+
+	default:
+		break;
 	}
 }
 
@@ -89,7 +106,8 @@ void Poller::start() {
 		std::vector<struct pollfd>::iterator valid = _pollfds.begin();
 		std::vector<struct pollfd>::iterator current = _pollfds.begin();
 		while (current != _pollfds.end()) {
-			if (current->fd == FD_CLOSED) {
+			if (_fd_types.at(current->fd) == Fd_type::CLOSED) {
+				_fd_types.erase(current->fd);
 				++current;
 				continue;
 			}

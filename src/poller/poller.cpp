@@ -9,9 +9,14 @@
 #include <sstream>
 #include <sys/ioctl.h>
 #include <sys/poll.h>
+
+#ifdef __APPLE__
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/uio.h>
+#else
+#include <sys/sendfile.h>
+#endif
 
 Router g_router;
 
@@ -56,8 +61,12 @@ void Poller::on_poll(pollfd pfd, Client& client) {
 		if (route.file_fd > 0) {
 			if (fcntl(route.file_fd, F_SETFL, O_NONBLOCK) == -1)
 				exit_with::e_perror("Cannot set non blocking 2");
+#ifdef __APPLE__
 			off_t sent_len;
 			if (sendfile(route.file_fd, pfd.fd, 0, &sent_len, NULL, 0))
+#else
+			if (sendfile(pfd.fd, route.file_fd, NULL, 4096 * 1000))
+#endif
 				exit_with::e_perror("sendfile() failed");
 
 			close(route.file_fd);

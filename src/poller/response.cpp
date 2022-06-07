@@ -165,7 +165,7 @@ Route file(const std::string& path, uint32_t code) {
 	fd_t fd = open(path.c_str(), O_RDONLY);
 	assert(fd != -1);
 
-	return Route(header, fd);
+	return Route(header, fd, size);
 }
 
 } // namespace Response

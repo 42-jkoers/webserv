@@ -41,7 +41,6 @@ void Poller::accept_clients(const Server& server) {
 
 		const struct pollfd client_pfd = constructors::pollfd(newfd, POLLIN | POLLOUT);
 		add_fd(client_pfd, Client(cpp::inet_ntop(address), server.port));
-		std::cout << "accepted client " << newfd << std::endl;
 	}
 }
 
@@ -70,7 +69,7 @@ void Poller::on_poll(pollfd pfd, Client& client) {
 		_clients.erase(pfd.fd);
 	}
 
-	// close(pfd.fd);
+	close(pfd.fd);
 	_clients.erase(pfd.fd);
 	_fd_types[pfd.fd] = Fd_type::CLOSED;
 }

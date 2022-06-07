@@ -1,6 +1,8 @@
 #include "response.hpp"
 #include "constants.hpp"
 #include "file_system.hpp"
+#include "router.hpp"
+#include <fcntl.h>
 
 namespace Response {
 
@@ -47,17 +49,17 @@ std::string default_error(const std::string& path, uint32_t code) {
 	return body;
 }
 
-void error(const Request& request, const std::string& path, uint32_t code) {
+std::string error(const std::string& path, uint32_t code) {
 	std::string header = header_template(code);
 	std::string body = default_error(path, code);
 
 	header += "Content-length: " + std_ft::to_string(body.size());
 	header += "\r\n\r\n";
-	std::string response = header + body;
-	write(request.fd, response.c_str(), response.length());
+
+	return header + body;
 }
 
-void redirect(const Request& request, uint32_t code, const std::string& message, const std::string& redir_location) {
+std::string redirect(uint32_t code, const std::string& message, const std::string& redir_location) {
 	std::string header = header_template(code);
 	std::string body;
 
@@ -70,11 +72,11 @@ void redirect(const Request& request, uint32_t code, const std::string& message,
 	}
 	header += "Content-length: " + std_ft::to_string(body.size());
 	header += "\r\n\r\n";
-	std::string response = header + body;
-	write(request.fd, response.c_str(), response.length());
+
+	return header + body;
 }
 
-void redirect(const Request& request, uint32_t code, const std::string& message) {
+std::string redirect(const Request& request, uint32_t code, const std::string& message) {
 	std::string response = header_template(code);
 
 	if (message.empty()) {
@@ -86,15 +88,15 @@ void redirect(const Request& request, uint32_t code, const std::string& message)
 	if (!message.empty()) {
 		response += message;
 	}
-	write(request.fd, response.c_str(), response.length());
+	return response;
 }
 
 // TODO: optimize
-void text(const Request& request, uint32_t code, const std::string& message) {
+std::string text(uint32_t code, const std::string& message) {
 	std::string response = header_template(code);
 	response += "\r\n";
 	response += message;
-	write(request.fd, response.c_str(), response.length()); // TODO: error handling
+	return response;
 }
 
 std::vector<std::string> get_cgi_env(const Request& request, const std::string& path) {
@@ -134,8 +136,9 @@ void cgi(const Request& request, const std::string& path) {
 		const std::vector<std::string> argv = {
 			path::absolute(path::join(request.associated_location().root, request.path)),
 			path::absolute(path::join(request.associated_location().root, request.path))};
-		if (cpp::execve(path, argv, envp))
-			Response::text(request, 500, "Could not start cgi script \"" + request.path + "\"");
+		if (cpp::execve(path, argv, envp)) {
+		} // TODO
+		// Response::text(500, "Could not start cgi script \"" + request.path + "\"");
 
 		close(pipe_in[0]);
 		close(pipe_in[1]);
@@ -149,18 +152,19 @@ void cgi(const Request& request, const std::string& path) {
 			write(pipe_in[1], request.body.data(), request.body.size());
 		close(pipe_in[0]);
 		close(pipe_in[1]);
-		close(request.fd);
 	}
 }
 
-void file(const Request& request, const std::string& path, uint32_t code) {
+Route file(const std::string& path, uint32_t code) {
 	std::string header = header_template(code);
 	std::string file = fs::read_file(path);
 	header += "Content-length: " + std_ft::to_string(file.size());
 	header += "\r\n\r\n";
-	write(request.fd, header.data(), header.size());
-	// TODO wait for 100-Continue?
-	write(request.fd, file.data(), file.size());
+
+	fd_t fd = open(path.c_str(), O_RDONLY);
+	assert(fd != -1);
+
+	return Route(header, fd);
 }
 
 } // namespace Response

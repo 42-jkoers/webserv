@@ -5,17 +5,19 @@
 
 class Route {
   public:
-	Route(const std::string& header,
-		  fd_t				 file_fd,
-		  bool				 close_connection)
+	Route(const std::string& header)
 		: header(header),
-		  file_fd(file_fd),
-		  close_connection(close_connection) {}
+		  file_fd(-1) {}
+
+	Route(const std::string& header,
+		  fd_t				 file_fd)
+		: header(header),
+		  file_fd(file_fd) {}
 	Route() {}
 
 	std::string header;
 	fd_t		file_fd;
-	bool		close_connection;
+	// bool		close_connection;
 };
 
 class Router;
@@ -33,12 +35,12 @@ class Router {
 	// disabled
 	// Router(const Router& cp); // TODO
 	// Router& operator=(const Router& cp);
-	void		_respond_with_error_code(const Request& request, const std::string& path, uint16_t error_code);
+	Route		_respond_with_error_code(const Request& request, const std::string& path, uint16_t error_code);
 	std::string _find_index(const Config::Location& location, std::string& path);
-	void		_dir_list(Request& request, const std::string& path);
-	void		_route_cgi(Request& request, std::string& path);
-	void		_route_get(Request& request, std::string& path);
-	void		_route_post(Request& request);
-	void		_route_delete(Request& request);
-	void		_respond_redirect(const Request& request);
+	Route		_dir_list(Request& request, const std::string& path);
+	Route		_route_cgi(Request& request, std::string& path);
+	Route		_route_get(Request& request, std::string& path);
+	Route		_route_post(Request& request);
+	Route		_route_delete(Request& request);
+	Route		_respond_redirect(const Request& request);
 };

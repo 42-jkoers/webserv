@@ -1,16 +1,18 @@
 #pragma once
 #include "main.hpp"
 #include "request.hpp"
+#include "router.hpp"
+class Route;
 
 namespace Response {
 
 std::string header_template(uint32_t code);
 
 //
-void text(const Request& request, uint32_t code, const std::string& message);
-void cgi(const Request& request, const std::string& path);
-void file(const Request& request, const std::string& path, uint32_t code);
-void error(const Request& request, const std::string& path, uint32_t code);
-void redirect(const Request& request, uint32_t code, const std::string& message, const std::string& redir_location);
+std::string text(uint32_t code, const std::string& message) __attribute__((warn_unused_result));
+void		cgi(const Request& request, const std::string& path);
+Route		file(const std::string& path, uint32_t code) __attribute__((warn_unused_result));
+std::string error(const std::string& path, uint32_t code) __attribute__((warn_unused_result));
+std::string redirect(uint32_t code, const std::string& message, const std::string& redir_location) __attribute__((warn_unused_result));
 
 } // namespace Response

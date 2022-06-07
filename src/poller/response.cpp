@@ -157,8 +157,9 @@ void cgi(const Request& request, const std::string& path) {
 
 Route file(const std::string& path, uint32_t code) {
 	std::string header = header_template(code);
-	std::string file = fs::read_file(path);
-	header += "Content-length: " + std_ft::to_string(file.size());
+	ssize_t		size = fs::file_size(path);
+	assert(size >= 0);
+	header += "Content-length: " + std_ft::to_string(size);
 	header += "\r\n\r\n";
 
 	fd_t fd = open(path.c_str(), O_RDONLY);

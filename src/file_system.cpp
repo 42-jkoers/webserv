@@ -97,6 +97,11 @@ bool delete_file(const std::string& path) {
 	return remove(path.c_str()) == 0;
 }
 
+ssize_t file_size(const std::string& path) {
+	struct stat s;
+	return stat(path.c_str(), &s) ? -1 : s.st_size;
+}
+
 } // namespace fs
 
 namespace path {

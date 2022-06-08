@@ -5,10 +5,10 @@
 #include <math.h>
 
 // getting rid of the ';' and its precending whitespace
-void cut_till_collon(std::string& line) {
+void Config::_cut_till_collon(std::string& line) {
 	size_t end = line.find(";");
 	if (end == std::string::npos)
-		exit_with::message("config error: line \"" + line + "\" missing semicolon");
+		exit_with::message("config error: line " + std_ft::to_string(_line_count) + ": \"" + line + "\" missing semicolon");
 	while (end > 1 && std::iswspace(line[end - 1]))
 		end--;
 	if (end == 0)
@@ -16,7 +16,7 @@ void cut_till_collon(std::string& line) {
 	line = line.substr(0, end);
 }
 
-void cut_till_bracket(std::string& line) {
+static void cut_till_bracket(std::string& line) {
 	size_t find_bracket;
 	size_t end;
 
@@ -46,7 +46,7 @@ void Config::_parse_server_name(std::map<const std::string, std::string>& config
 
 	if (_inside_location)
 		exit_with::message("\"server_name\" directive only allowed in server scope");
-	cut_till_collon(serverName);
+	_cut_till_collon(serverName);
 	std::vector<std::string> serverName_splitted = ft_split(serverName, "\t ");
 	for (std::string serverName : serverName_splitted)
 		servers[servers.size() - 1].server_names.push_back(serverName);
@@ -63,16 +63,17 @@ void Config::_parse_server_name(std::map<const std::string, std::string>& config
  if there is no ip the ip will be set to 127.0.0.1
  */
 
-//TODO: error when to many '.'
+// TODO: error when to many '.'
+// TODO: make all error messages the same, consistent
 void Config::_parse_listen(std::map<const std::string, std::string>& config_info) {
 	std::string listen = config_info["listen"];
 	size_t		check_dots = 0;
-	uint32_t port;
+	uint32_t	port;
 	std::string ip;
-	
+
 	if (_inside_location)
 		exit_with::message("\"listen\" directive only allowed in server scope");
-	cut_till_collon(listen);
+	_cut_till_collon(listen);
 	for (size_t i = 0; i < listen.length(); i++) {
 		if (listen[i] == '.')
 			check_dots++;
@@ -91,8 +92,7 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 			if (str.find_first_not_of("[0123456789]") != std::string::npos || stoi(str) > 225 || stoi(str) < 0)
 				exit_with::message("\"listen\" not a right given value");
 		}
-	}
-	else if (listen_splitted.size() == 1) {
+	} else if (listen_splitted.size() == 1) {
 		ip = "127.0.0.1";
 		port = stoi(listen_splitted[listen_splitted.size() - 1]);
 	}
@@ -101,11 +101,11 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 		ip = listen.substr(0, listen.find_first_of(":"));
 	else if (listen_splitted.size() != 1)
 		ip = listen;
-	if (listen_splitted.size() == 4) 
+	if (listen_splitted.size() == 4)
 		port = 8080;
 	// TODO: validate this
 	if (port < ntohs(32768) || port > ntohs(61000))
-		exit_with::message("config error: invalid port");
+		exit_with::message("Config error: line " + std_ft::to_string(_line_count) + ": invalid port");
 	servers[servers.size() - 1].ports.push_back(port);
 	servers[servers.size() - 1].ips.push_back(ip);
 	// std::cout << " ip = " << servers[servers.size() - 1].ips[servers[servers.size() - 1].ips.size() - 1] << " port = " << servers[servers.size() - 1].ports[servers[servers.size() - 1].ports.size() - 1] << std::endl;
@@ -121,7 +121,7 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 
 	if (_inside_location)
 		exit_with::message("\"error_page\" directive only allowed in server scope");
-	cut_till_collon(error_page);
+	_cut_till_collon(error_page);
 	std::vector<std::string> splitted_error_page = ft_split(error_page, " \t");
 	if (splitted_error_page.size() < 2)
 		exit_with::message("\"error_page\" invalid number of arguments");
@@ -145,7 +145,7 @@ void Config::_parse_client_max_body_size(std::map<const std::string, std::string
 
 	static const std::string multipliers = "KMGTP";
 	std::string				 size = config_info["client_max_body_size"];
-	cut_till_collon(size);
+	_cut_till_collon(size);
 
 	if (size.size() == 0)
 		exit_with::message("config error: client_max_body_size: empty");
@@ -181,7 +181,7 @@ void Config::_parse_allowed_methods(std::map<const std::string, std::string>& co
 	if (!_inside_location)
 		exit_with::message("\"allowed_methods\" directive only allowed in location scope");
 	_last_location().allowed_methods.clear();
-	cut_till_collon(methods_str);
+	_cut_till_collon(methods_str);
 	_add_methods(methods_str, _last_location().allowed_methods);
 }
 
@@ -189,7 +189,7 @@ void Config::_parse_root(std::map<const std::string, std::string>& config_info) 
 	std::string				 root = config_info["root"];
 	std::vector<std::string> root_splitted = ft_split(root, "\t ");
 
-	cut_till_collon(root);
+	_cut_till_collon(root);
 	if (root_splitted.size() > 1)
 		exit_with::message("\"root\" invalid number of arguments");
 	if (!_last_location().root.empty())
@@ -224,7 +224,7 @@ void Config::_parse_index(std::map<const std::string, std::string>& config_info)
 
 	if (!_inside_location)
 		exit_with::message("\"index\" directive only allowed in location scope");
-	cut_till_collon(index);
+	_cut_till_collon(index);
 	_last_location().indexes = ft_split(index, " \t");
 }
 
@@ -233,7 +233,7 @@ void Config::_parse_auto_index(std::map<const std::string, std::string>& config_
 
 	if (!_inside_location)
 		exit_with::message("\"auto index\" directive only allowed in location scope");
-	cut_till_collon(autoIndex);
+	_cut_till_collon(autoIndex);
 	if (autoIndex.compare("on") != 0 && autoIndex.compare("off") != 0)
 		exit_with::message("config error: autoindex");
 	_last_location().auto_index = autoIndex;
@@ -245,7 +245,7 @@ void Config::_parse_cgi(std::map<const std::string, std::string>& config_info) {
 
 	if (!_inside_location)
 		exit_with::message("\"cgi\" directive only allowed in location scope");
-	cut_till_collon(cgi);
+	_cut_till_collon(cgi);
 	if (cgi_splitted.size() > 2)
 		exit_with::message("\"cgi\" invalid number of arguments");
 	_last_location().cgi_path.first = cgi_splitted[0];
@@ -259,7 +259,7 @@ void Config::_parse_return(std::map<const std::string, std::string>& config_info
 
 	if (!_inside_location)
 		exit_with::message("\"return\" directive only allowed in location scope");
-	cut_till_collon(ret);
+	_cut_till_collon(ret);
 
 	std::vector<std::string> redirects = ft_split(ret, " \t");
 	if (redirects.size() > 2)
@@ -278,7 +278,7 @@ void Config::_parse_upload_pass(std::map<const std::string, std::string>& config
 
 	if (!_inside_location)
 		exit_with::message("\"upload_pass\" directive only allowed in location scope");
-	cut_till_collon(upload_pass);
+	_cut_till_collon(upload_pass);
 	std::vector<std::string> upload_pass_splitted = ft_split(upload_pass, "\t ");
 	if (upload_pass_splitted.size() > 1)
 		exit_with::message("\"upload_pass\" invalid number of arguments");

@@ -35,6 +35,9 @@ int main(int argc, char** argv) {
 	else
 		exit_with::message("Usage: ./webserv [-t] [config_file.conf]");
 
+	if (argc > 1 && !strcmp(argv[1], "-t"))
+		return 0;
+
 	Poller poller;
 
 	for (std::vector<Config::Server>::iterator server = g_config.servers.begin(); server != g_config.servers.end(); ++server) {
@@ -43,9 +46,7 @@ int main(int argc, char** argv) {
 		}
 	}
 
-	if (argc == 1 || (argc > 1 && strcmp(argv[1], "-t"))) {
-		std::cout << "started" << std::endl;
-		poller.start(on_request);
-	}
+	std::cout << "started" << std::endl;
+	poller.start(on_request);
 	return 0;
 }

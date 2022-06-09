@@ -1,7 +1,9 @@
 #include "router.hpp"
 #include "constants.hpp"
 #include "file_system.hpp"
+#include "main.hpp"
 #include <ctime>
+#include <fcntl.h>
 
 Router::~Router() {
 }
@@ -68,7 +70,7 @@ const Config::Location& Router::find_location(const std::string& path, const Con
 	return server.locations[location_index];
 }
 
-static bool method_allowed(const Request& request) {
+bool method_allowed(const Request& request) {
 	const Config::Location location = request.associated_location();
 
 	for (std::string method : location.allowed_methods) {
@@ -78,22 +80,22 @@ static bool method_allowed(const Request& request) {
 	return false;
 }
 
-void Router::_respond_with_error_code(const Request& request, const std::string& path, uint16_t error_code) {
+Route Router::_respond_with_error_code(const Request& request, const std::string& path, uint16_t error_code) {
 	const Config::Server&	server = request.associated_server();
 	const Config::Location& location = request.associated_location();
 
-	for (const std::pair<size_t, std::string>& error_page : server.error_pages) {
+	for (const std::pair<const size_t, std::string>& error_page : server.error_pages) {
 		if (error_page.first == error_code) {
 			std::string error_path = location.root + error_page.second;
 			if (!fs::path_exists(error_path))
-				return Response::error(request, error_path, 500);	// TODO: infinite redirect -> 500 internal server error?
-			return Response::file(request, error_path, error_code); // return file if file exists
+				return Response::error(error_path, 500);   // TODO: infinite redirect -> 500 internal server error?
+			return Response::file(error_path, error_code); // return file if file exists
 		}
 	}
-	return Response::error(request, path, error_code);
+	return Route(Response::error(path, error_code));
 }
 
-void Router::_respond_redirect(const Request& request) {
+Route Router::_respond_redirect(const Request& request) {
 	// For a code in the 3xx series, the urlparameter defines the new (rewritten) URL
 	// return (301 | 302 | 303 | 307) url;
 	// only 300 | 301 | 302 | 303 | 307 (and 308) provide Location: <path> in response header
@@ -105,10 +107,10 @@ void Router::_respond_redirect(const Request& request) {
 	const Config::Location& location = request.associated_location();
 
 	if (location.redirect.code == 304)
-		return Response::redirect(request, location.redirect.code, "", "");
+		return Route(Response::redirect(location.redirect.code, "", ""));
 	else if ((location.redirect.code >= 301 && location.redirect.code <= 303) || location.redirect.code == 307)
-		return Response::redirect(request, location.redirect.code, "", location.redirect.text);
-	return Response::redirect(request, location.redirect.code, location.redirect.text, "");
+		return Route(Response::redirect(location.redirect.code, "", location.redirect.text));
+	return Route(Response::redirect(location.redirect.code, location.redirect.text, ""));
 	// request.path = location.redirect;
 	// g_router.route(client);
 }
@@ -122,7 +124,7 @@ std::string Router::_find_index(const Config::Location& location, std::string& p
 }
 
 // returns the path of the file on disk
-static std::string get_path_on_disk(const Request& request) {
+std::string get_path_on_disk(const Request& request) {
 	// The path where the server should start looking for files
 	// eg:  request.path = "/cgi/test"
 	//     location.path = "/cgi"
@@ -131,7 +133,7 @@ static std::string get_path_on_disk(const Request& request) {
 	return request.associated_location().root + request.path;
 }
 
-void Router::_dir_list(Request& request, const std::string& path) {
+Route Router::_dir_list(Request& request, const std::string& path) {
 	std::string					   response;
 	const std::vector<std::string> files = fs::list_dir(path, true);
 	response += "<html><head><title>Index of " + request.path + "</title></head>\n";
@@ -146,10 +148,10 @@ void Router::_dir_list(Request& request, const std::string& path) {
 	response += "</pre><hr></body>\n";
 	response += "</html>";
 
-	Response::text(request, 200, response);
+	return Route(Response::text(200, response));
 }
 
-void Router::_route_cgi(Request& request, std::string& path) {
+Route Router::_route_cgi(Request& request, std::string& path) {
 	// parse http://example.com/cgi-bin/printenv.pl/with/additional/path?and=a&query=string to:
 	// request.uri     : "/cgi-bin/printenv.pl/with/additional/path"
 	// exectutable_path: "/cgi-bin/printenv.pl"
@@ -159,15 +161,16 @@ void Router::_route_cgi(Request& request, std::string& path) {
 	if (!fs::path_exists(path))
 		return _respond_with_error_code(request, path, 404);
 	Response::cgi(request, path); // todo should we read the cgi executable from the config?
+	return Route("");
 }
 
-void Router::_route_get(Request& request, std::string& path) {
+Route Router::_route_get(Request& request, std::string& path) {
 	const Config::Location& location = request.associated_location();
 
 	if (path.at(path.size() - 1) == '/') { // directory -> find index or else dir listing if autoindex on
 		std::string index = _find_index(location, path);
 		if (index.size())
-			return Response::file(request, path + index, 200);
+			return Response::file(path + index, 200);
 		if (fs::is_direcory(path) && location.auto_index == "off")
 			return _respond_with_error_code(request, path, 403);
 		if (fs::is_direcory(path) && location.auto_index == "on")
@@ -176,30 +179,30 @@ void Router::_route_get(Request& request, std::string& path) {
 	}
 
 	if (fs::path_exists(path) && !fs::is_direcory(path))
-		return Response::file(request, path, 200);
+		return Response::file(path, 200);
 	return _respond_with_error_code(request, path, 404);
 }
 
-void Router::_route_post(Request& request) {
+Route Router::_route_post(Request& request) {
 	std::string save_path = path::join(request.associated_location().root, request.path);
 	if (!fs::path_exists(save_path))
-		return Response::text(request, 500, "Could not open path \"" + request.path + "\""); // TODO
+		return Route(Response::text(500, "Could not open path \"" + request.path + "\""));
 
 	std::string filename = request.field_filename();
 	if (filename == "")
 		filename = std::to_string(std::time(0));
 	save_path = path::join(save_path, filename);
 	fs::write_file(save_path, request.body);
-	Response::text(request, 200, "Saved upload to file \"" + save_path + "\" on disk");
+	return Route(Response::text(200, "Saved upload to file \"" + save_path + "\" on disk"));
 }
 
-void Router::_route_delete(Request& request) {
+Route Router::_route_delete(Request& request) {
 	std::string path = path::join(request.associated_location().root, request.path);
 
 	if (fs::delete_file(path))
-		Response::text(request, 200, "Deleted file \"" + path + "\" on disk");
+		return Route(Response::text(200, "Deleted file \"" + path + "\" on disk"));
 	else
-		Response::text(request, 500, "Could not delete file \"" + path + "\" on disk");
+		return Route(Response::text(500, "Could not delete file \"" + path + "\" on disk"));
 }
 
 /*
@@ -218,9 +221,9 @@ if dir and autoindex on -> dir listing
 if dir and autoindex off -> 403
 if not exist -> 404
 */
-void Router::route(Client& client) {
+Route Router::route(Client& client) {
 	if (client.request.response_code != 200) // do not route if error in request reading/parsing has happened
-		return Response::error(client.request, "", client.request.response_code);
+		return Route(Response::error("", client.request.response_code));
 
 	Request&				request = client.request;
 	const Config::Location& location = request.associated_location();
@@ -230,7 +233,7 @@ void Router::route(Client& client) {
 		return _respond_with_error_code(request, path, 405);
 	if (location.redirect.code != 0)
 		return _respond_redirect(request);
-	if (location.cgi_path.first.size())
+	if (location.cgi_path.first.size() && location.auto_index == "off" && !fs::is_direcory(path))
 		return _route_cgi(request, path);
 	if (request.method == "GET")
 		return _route_get(request, path);
@@ -238,4 +241,5 @@ void Router::route(Client& client) {
 		return _route_post(request);
 	if (request.method == "DELETE")
 		return _route_delete(request);
+	return Route(Response::text(500, "Critical internal error"));
 }

@@ -2,7 +2,7 @@
 NAME      		= webserv
 
 CC          	= clang++
-CFLAGS      	= -Wall -Wextra -Werror -Wpedantic -std=c++11 -O0 -g
+CFLAGS      	= -Wall -Wextra -Werror -Wpedantic -std=c++11 -O0 -g -fsanitize=address
 # -Wsign-conversion
 # CFLAGS      	= -Wall -Wextra -Werror -Wuninitialized -O3
 

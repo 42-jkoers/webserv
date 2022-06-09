@@ -1,6 +1,8 @@
 #include "poller.hpp"
+#include "file_system.hpp"
 #include "main.hpp"
 #include "response.hpp"
+#include "router.hpp"
 #include <fcntl.h>
 #include <limits>
 #include <netinet/in.h>
@@ -8,77 +10,112 @@
 #include <sys/ioctl.h>
 #include <sys/poll.h>
 
-Poller::Poller() {
-	_n_servers = 0;
-}
+#ifdef __APPLE__
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/uio.h>
+#else
+#include <sys/sendfile.h>
+#endif
+
+Router g_router;
+
+Poller::Poller() {}
 
 void Poller::add_server(IP_mode ip_mode, const char* str_addr, uint16_t port) {
-	for (size_t i = 0; i < _server_ports.size(); i++)
-		if (_server_ports[i] == port)
+	for (const std::pair<const fd_t, Server>& i : _servers)
+		if (i.second.port == port)
 			return;
 
 	fd_t				server_socket = constructors::server_socket(ip_mode, str_addr, port);
 	const struct pollfd pfd = constructors::pollfd(server_socket, POLLIN | POLLOUT);
 
-	_pollfds.push_back(pfd);
-	_server_ports.push_back(port);
-	_n_servers++;
+	add_fd(pfd, Server(pfd.fd, port));
 }
 
-void Poller::_accept_clients() {
-	for (size_t i = 0; i < _n_servers; i++) {
-		while (true) {
-			struct sockaddr address;
-			socklen_t		address_len = sizeof(address);
-			int				newfd = accept(_pollfds[i].fd, &address, &address_len);
+void Poller::accept_clients(const Server& server) {
+	while (true) {
+		struct sockaddr address;
+		socklen_t		address_len = sizeof(address);
+		int				newfd = accept(server.fd, &address, &address_len);
 
-			if (newfd < 0 && errno != EWOULDBLOCK)
-				exit_with::e_perror("accept() failed");
-			if (newfd < 0)
-				break;
+		if (newfd < 0 && errno != EWOULDBLOCK)
+			exit_with::e_perror("accept() failed");
+		if (newfd < 0)
+			break;
 
-			const struct pollfd client_pfd = constructors::pollfd(newfd, POLLIN | POLLOUT);
-			_pollfds.push_back(client_pfd);
-			if (_clients.find(client_pfd.fd) == _clients.end())
-				_clients[client_pfd.fd] = Client(cpp::inet_ntop(address), _server_ports[i]);
+		const struct pollfd client_pfd = constructors::pollfd(newfd, POLLIN | POLLOUT);
+		add_fd(client_pfd, Client(cpp::inet_ntop(address), server.port));
+	}
+}
+
+void Poller::on_poll(pollfd pfd, Client& client) {
+	client.on_pollevent(pfd);
+	if (client.parse_status() < Client::Parse_status::FINISHED)
+		return;
+
+	if (client.parse_status() == Client::Parse_status::FINISHED) {
+		Route route = g_router.route(client);
+		write(pfd.fd, route.header.data(), route.header.size());
+
+		if (route.file_fd > 0) {
+			if (fcntl(route.file_fd, F_SETFL, O_NONBLOCK) == -1)
+				exit_with::e_perror("Cannot set non blocking 2");
+#ifdef __APPLE__
+			off_t sent_len;
+			if (sendfile(route.file_fd, pfd.fd, 0, &sent_len, NULL, 0))
+#else
+			if (sendfile(pfd.fd, route.file_fd, NULL, 4096 * 1000))
+#endif
+				exit_with::e_perror("sendfile() failed");
+
+			close(route.file_fd);
 		}
 	}
-}
 
-#define FD_CLOSED -1
-void Poller::_on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client)) {
-	Client& client = _clients[pfd.fd];
-
-	client.on_pollevent(pfd);
-	if (client.parse_status() >= Client::FINISHED) {
-		on_request(client);
-	}
-	if (client.parse_status() >= Client::FINISHED) {
+	else if (client.parse_status() == Client::Parse_status::ERROR) {
+		_fd_types.erase(pfd.fd);
 		_clients.erase(pfd.fd);
-		close(pfd.fd); // TODO: only when keepalive is true
-		pfd.fd = FD_CLOSED;
+	}
+
+	close(pfd.fd);
+	_clients.erase(pfd.fd);
+	_fd_types[pfd.fd] = Fd_type::CLOSED;
+}
+
+void Poller::on_poll(pollfd pfd) {
+	switch (_fd_types[pfd.fd]) {
+	case Fd_type::SERVER:
+		accept_clients(_servers[pfd.fd]);
+		break;
+
+	case Fd_type::CLIENT:
+		on_poll(pfd, _clients[pfd.fd]);
+		break;
+
+	default:
+		break;
 	}
 }
 
-void Poller::start(void (*on_request)(Client& client)) {
-	assert(_n_servers > 0);
+void Poller::start() {
 	while (true) {
 		int rc = poll(_pollfds.data(), _pollfds.size(), -1);
 		if (rc < 0)
 			exit_with::e_perror("poll() failed");
 		if (rc == 0)
 			exit_with::e_perror("poll() timeout");
-		_accept_clients();
-		for (size_t i = _n_servers; i < _pollfds.size(); i++) {
+		for (size_t i = 0; i < _pollfds.size(); i++) {
 			if (_pollfds[i].revents == 0)
 				continue;
-			_on_new_pollfd(_pollfds[i], on_request);
+			on_poll(_pollfds[i]);
 		}
 		// removing closed fds from array by shifting them to the left
 		std::vector<struct pollfd>::iterator valid = _pollfds.begin();
 		std::vector<struct pollfd>::iterator current = _pollfds.begin();
 		while (current != _pollfds.end()) {
-			if (current->fd == FD_CLOSED) {
+			if (_fd_types.at(current->fd) == Fd_type::CLOSED) {
+				_fd_types.erase(current->fd);
 				++current;
 				continue;
 			}

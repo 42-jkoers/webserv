@@ -19,8 +19,6 @@ void				 Client::on_pollevent(struct pollfd pfd) {
 	}
 	if (pfd.revents & POLLIN)
 		on_pollevent_read(pfd);
-	if (pfd.revents & POLLOUT)
-		on_pollevent_write(pfd);
 }
 
 void Client::on_pollevent_read(struct pollfd pfd) {
@@ -48,10 +46,6 @@ void Client::on_pollevent_read(struct pollfd pfd) {
 		std::string resp = "HTTP/1.1 100 Continue\r\nHTTP/1.1 200 OK\r\n\r\n";
 		write(pfd.fd, resp.data(), resp.length());
 	}
-}
-
-void Client::on_pollevent_write(struct pollfd pfd) {
-	(void)pfd;
 }
 
 Client::Chunk_status Client::_append_chunk() {

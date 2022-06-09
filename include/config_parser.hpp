@@ -96,11 +96,13 @@ class Config {
 	void						  _safe_info(std::string& line, std::vector<std::string>& options);
 	void						  _cut_till_collon(std::string& line);
 	void						  _add_methods(const std::string& methods_str, std::vector<std::string>& methods);
+	const std::string			  _error_return();
 	bool						  _inside_server;
 	int							  _inside_location;
 	bool						  _safe_new_path_location;
 	std::map<size_t, std::string> _what_location;
 	size_t						  _line_count;
+	std::string					  _line;
 
 	typedef void (Config::*Jump_table)(std::map<const std::string, std::string>&);
 	std::vector<Jump_table> _jump_table;

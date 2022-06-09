@@ -119,6 +119,7 @@ void Config::_config_parser(const std::string& config_file_path) {
 			buffer = buffer.substr(0, buffer.find_first_of("#"));
 		if (buffer.length() == 0)
 			continue;
+		_line = buffer;
 		_safe_info(buffer, options);
 	}
 	config_file.close();

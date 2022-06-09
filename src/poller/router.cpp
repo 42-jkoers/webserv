@@ -233,7 +233,7 @@ Route Router::route(Client& client) {
 		return _respond_with_error_code(request, path, 405);
 	if (location.redirect.code != 0)
 		return _respond_redirect(request);
-	if (location.cgi_path.first.size())
+	if (location.cgi_path.first.size() && location.auto_index == "off" && !fs::is_direcory(path))
 		return _route_cgi(request, path);
 	if (request.method == "GET")
 		return _route_get(request, path);

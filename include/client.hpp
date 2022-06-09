@@ -35,7 +35,6 @@ class Client {
 	void		 reset();
 
 	Request		 request;
-	int			 server_index;
 
   private:
 	Parse_status _parse_status;

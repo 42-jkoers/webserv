@@ -61,7 +61,7 @@ class Request {
 	friend std::ostream& operator<<(std::ostream& output, Request const& rhs);
 
 	// disabled
-	// Request(const Request& cp); // TODO
+	// Request(const Request& cp);
 	// Request& operator=(const Request& cp);
 };
 

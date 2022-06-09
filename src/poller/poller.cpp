@@ -43,6 +43,8 @@ void Poller::accept_clients(const Server& server) {
 			exit_with::perror("accept() failed");
 		if (newfd < 0)
 			break;
+		if (fcntl(newfd, F_SETFL, O_NONBLOCK) == -1)
+			exit_with::perror("Cannot set non blocking");
 
 		const struct pollfd client_pfd = constructors::pollfd(newfd, POLLIN | POLLOUT);
 		add_fd(client_pfd, Client(cpp::inet_ntop(address), server.port));
@@ -71,11 +73,6 @@ void Poller::on_poll(pollfd pfd, Client& client) {
 
 			close(route.file_fd);
 		}
-	}
-
-	else if (client.parse_status() == Client::Parse_status::ERROR) {
-		_fd_types.erase(pfd.fd);
-		_clients.erase(pfd.fd);
 	}
 
 	close(pfd.fd);

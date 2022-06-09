@@ -5,7 +5,7 @@
 #include <math.h>
 
 const std::string Config::_error_return() {
-	return "Config error: line " + std_ft::to_string(_line_count) + ": \"" + _line + "\": "; 
+	return "Config error: line " + std_ft::to_string(_line_count) + ": \"" + _line + "\": ";
 }
 
 // getting rid of the ';' and its precending whitespace
@@ -63,6 +63,15 @@ void Config::_parse_server_name(std::map<const std::string, std::string>& config
 		servers[servers.size() - 1].server_names.push_back(serverName);
 }
 
+void Config::_check_for_numeric_argument(std::vector<std::string>& listen_splitted) {
+	for (std::string str : listen_splitted) {
+		for (size_t i = 0; i < str.length(); i++) {
+			if (!isdigit(str[i]))
+				exit_with::message(_error_return() + "argument should be numeric");
+		}
+	}
+}
+
 /*
  Function _parse_listen:
  searches if there are 2 parts on the listen line with ':' and if there is an ip adress present.
@@ -96,6 +105,7 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 		exit_with::message(_error_return() + "invalid number of arguments");
 	listen_splitted.clear();
 	listen_splitted = ft_split(listen, ".:");
+	_check_for_numeric_argument(listen_splitted);
 	if (listen_splitted.size() == 4 || listen_splitted.size() == 5) {
 		for (std::string str : listen_splitted) {
 			if (str.compare(listen_splitted[listen_splitted.size() - 1]) && listen_splitted.size() == 5)

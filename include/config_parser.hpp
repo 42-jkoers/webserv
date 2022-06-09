@@ -97,6 +97,7 @@ class Config {
 	void						  _cut_till_collon(std::string& line);
 	void						  _add_methods(const std::string& methods_str, std::vector<std::string>& methods);
 	const std::string			  _error_return();
+	void						  _check_for_numeric_argument(std::vector<std::string>& listen_splitted);
 	bool						  _inside_server;
 	int							  _inside_location;
 	bool						  _safe_new_path_location;

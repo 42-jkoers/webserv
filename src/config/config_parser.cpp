@@ -14,6 +14,22 @@ Config::Location::~Location() {
 }
 
 Config::Config(const std::string& config_file_path) {
+	_inside_location = 0;
+	_safe_new_path_location = false;
+	_line_count = 0;
+	_jump_table = {
+		&Config::_parse_server_name,
+		&Config::_parse_listen,
+		&Config::_parse_error_page,
+		&Config::_parse_client_max_body_size,
+		&Config::_parse_allowed_methods,
+		&Config::_parse_root,
+		&Config::_parse_location,
+		&Config::_parse_auto_index,
+		&Config::_parse_index,
+		&Config::_parse_cgi,
+		&Config::_parse_return,
+		&Config::_parse_upload_pass};
 	_config_parser(config_file_path);
 }
 
@@ -29,32 +45,28 @@ void tokenizer(std::string option, std::map<const std::string, std::string>& con
 	config_info[option] = &line[pos_not];
 }
 
-void Config::_safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options) {
-	typedef void (Config::*Jump_table)(std::map<const std::string, std::string>&);
-	const static Jump_table jump_table[] = {
-		&Config::_parse_server_name,
-		&Config::_parse_listen,
-		&Config::_parse_error_page,
-		&Config::_parse_client_max_body_size,
-		&Config::_parse_allowed_methods,
-		&Config::_parse_root,
-		&Config::_parse_location,
-		&Config::_parse_auto_index,
-		&Config::_parse_index,
-		&Config::_parse_cgi,
-		&Config::_parse_return,
-		&Config::_parse_upload_pass};
+// TODO: split
+void Config::_safe_info(std::string& line, std::vector<std::string>& options) {
+	std::map<const std::string, std::string> config_info;
+	std::vector<std::string>				 splitted_line = ft_split(line, "\t ");
+
+	if (splitted_line.size() == 0)
+		return;
+	if (splitted_line.size() == 2 && !splitted_line[0].compare("server") && !splitted_line[1].compare("{")) {
+		if (_inside_server)
+			exit_with::message("Config error: line " + std_ft::to_string(_line_count) + ": no nested servers");
+		servers.push_back(Server());
+		_inside_server = true;
+		return;
+	}
 	for (size_t i = 0; i < options.size(); i++) {
-		if (line.find("server") != std::string::npos && line.find("{") != std::string::npos) {
-			servers.push_back(Server());
-			_inside_server = true;
-			return;
-		}
 		if (line.find(options[i]) != std::string::npos) {
 			tokenizer(options[i], config_info, line);
+		}
+		if (!splitted_line[0].compare(options[i])) {
 			if (!_inside_server)
-				exit_with::message("directive not allowed here");
-			(this->*jump_table[i])(config_info);
+				exit_with::message("Config error: line " + std_ft::to_string(_line_count) + ": directive not allowed here");
+			(this->*_jump_table[i])(config_info);
 			return;
 		} else if (line.find_first_not_of("\t ") == std::string::npos)
 			return;
@@ -73,19 +85,18 @@ void Config::_safe_info(std::string line, std::map<const std::string, std::strin
 					servers[servers.size() - 1].ips.push_back("127.0.0.1");
 				_inside_server = false;
 			} else
-				exit_with::message("config: syntax error: \"" + line + "\"");
+				exit_with::message("Config error: line " + std_ft::to_string(_line_count) + ":  syntax error: \"" + line + "\"");
 			return;
 		}
 	}
-	exit_with::message("config error: \"" + line + "\" invalid line");
+	exit_with::message("Config error: line " + std_ft::to_string(_line_count) + ": \"" + line + "\" invalid line");
 }
 
 // TODO: work with comments
 void Config::_config_parser(const std::string& config_file_path) {
-	std::ifstream							 config_file;
-	std::string								 buffer;
-	std::map<const std::string, std::string> config_info;
-	std::vector<std::string>				 options;
+	std::ifstream			 config_file;
+	std::string				 buffer;
+	std::vector<std::string> options;
 
 	options.push_back("server_name");
 	options.push_back("listen");
@@ -99,17 +110,16 @@ void Config::_config_parser(const std::string& config_file_path) {
 	options.push_back("cgi");
 	options.push_back("return");
 	options.push_back("upload_pass");
-	_inside_location = 0;
-	_safe_new_path_location = false;
 	config_file.open(config_file_path);
 	if (!config_file.is_open())
-		exit_with::e_perror("Cannot open config file: \"" + config_file_path + "\"");
+		exit_with::message("Error: cannot open config file: \"" + config_file_path + "\"");
 	while (getline(config_file, buffer)) {
+		_line_count++;
 		if (buffer.find_first_of("#") != std::string::npos)
 			buffer = buffer.substr(0, buffer.find_first_of("#"));
 		if (buffer.length() == 0)
 			continue;
-		_safe_info(buffer, config_info, options);
+		_safe_info(buffer, options);
 	}
 	config_file.close();
 }

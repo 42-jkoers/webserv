@@ -13,21 +13,64 @@ struct pollfd		pollfd(int fd, short events);
 
 } // namespace constructors
 
+enum class Fd_type {
+	SERVER,
+	CLIENT,
+	RESPONSE,
+	CLOSED
+};
+
 class Poller {
   public:
+	class Server {
+	  public:
+		Server() {}
+		Server(fd_t fd, uint16_t port) : fd(fd), port(port) {}
+
+		fd_t	 fd;
+		uint16_t port;
+	};
+
+	class Response {
+	  public:
+		Response() {}
+		Response(fd_t fd) : fd(fd) {}
+		fd_t fd;
+	};
+
 	Poller();
 	void add_server(IP_mode ip_mode, const char* str_addr, uint16_t port);
-	void start(void (*on_request)(Client& client));
+	void start();
 	~Poller();
 
   private:
-	void					   _accept_clients();
+	void accept_clients(const Server& server);
 
-	void					   _on_new_pollfd(pollfd& pfd, void (*on_request)(Client& client));
-	size_t					   _n_servers;
+	void on_poll(pollfd pfd);
+	void on_poll(pollfd pfd, Client& client);
+
+	void add_fd(pollfd pfd, const Server& server) {
+		_pollfds.push_back(pfd);
+		_fd_types[pfd.fd] = Fd_type::SERVER;
+		_servers[pfd.fd] = server;
+	}
+	void add_fd(pollfd pfd, const Client& client) {
+		_pollfds.push_back(pfd);
+		_fd_types[pfd.fd] = Fd_type::CLIENT;
+		_clients[pfd.fd] = client;
+	}
+	void add_fd(pollfd pfd, const Response& response) {
+		_pollfds.push_back(pfd);
+		_fd_types[pfd.fd] = Fd_type::RESPONSE;
+		_responses[pfd.fd] = response;
+	}
+
 	std::vector<struct pollfd> _pollfds;
-	std::vector<uint16_t>	   _server_ports;
+
+	std::map<fd_t, Fd_type>	   _fd_types;
+	std::map<fd_t, Server>	   _servers;
 	std::map<fd_t, Client>	   _clients;
+	std::map<fd_t, Response>   _responses;
 
 	// disabled
 	Poller(const Poller& cp);

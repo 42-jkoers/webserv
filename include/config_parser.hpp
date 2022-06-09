@@ -93,12 +93,17 @@ class Config {
 	void						  _parse_upload_pass(std::map<const std::string, std::string>& config_info);
 	void						  _print_class();
 	void						  _config_parser(const std::string& config_file_path);
-	void						  _safe_info(std::string line, std::map<const std::string, std::string>& config_info, std::vector<std::string>& options);
+	void						  _safe_info(std::string& line, std::vector<std::string>& options);
+	void						  _cut_till_collon(std::string& line);
 	void						  _add_methods(const std::string& methods_str, std::vector<std::string>& methods);
 	bool						  _inside_server;
 	int							  _inside_location;
 	bool						  _safe_new_path_location;
 	std::map<size_t, std::string> _what_location;
+	size_t						  _line_count;
+
+	typedef void (Config::*Jump_table)(std::map<const std::string, std::string>&);
+	std::vector<Jump_table> _jump_table;
 };
 
 std::ostream& operator<<(std::ostream& stream, Config const& config);

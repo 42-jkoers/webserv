@@ -30,6 +30,7 @@ bool					 path_exists(const std::string& path);
 bool					 is_direcory(const std::string& path);
 std::string				 get_working_path();
 bool					 delete_file(const std::string& path);
+ssize_t					 file_size(const std::string& path);
 
 } // namespace fs
 

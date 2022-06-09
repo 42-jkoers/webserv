@@ -26,7 +26,7 @@ struct sockaddr_in sockaddr(const char* str_addr, uint16_t port) {
 	address.sin_port = htons(port);
 	in_addr_t addr = inet_addr(str_addr);
 	if (addr == (in_addr_t)(-1))
-		exit_with::e_perror("Error creating socket address");
+		exit_with::perror("Error creating socket address");
 	address.sin_addr.s_addr = addr;
 	return address;
 }
@@ -35,12 +35,12 @@ struct sockaddr_in sockaddr(const char* str_addr, uint16_t port) {
 fd_t server_socket(IP_mode ip_mode, const char* str_addr, uint16_t port) {
 	fd_t fd = socket(ip_mode == mode_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM, 0);
 	if (fd < 0)
-		exit_with::e_perror("Cannot create socket");
+		exit_with::perror("Cannot create socket");
 	int on = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&on, sizeof(on)) < 0)
-		exit_with::e_perror("setsockopt() failed");
+		exit_with::perror("setsockopt() failed");
 	if (ioctl(fd, FIONBIO, (char*)&on) < 0)
-		exit_with::e_perror("ioctl() failed");
+		exit_with::perror("ioctl() failed");
 
 	int rc;
 	if (ip_mode == mode_ipv6) {
@@ -51,13 +51,13 @@ fd_t server_socket(IP_mode ip_mode, const char* str_addr, uint16_t port) {
 		rc = bind(fd, (struct sockaddr*)&address, sizeof(address));
 	}
 	if (rc < 0)
-		exit_with::e_perror("Cannot bind to port");
+		exit_with::perror("Cannot bind to port");
 
 	// if (fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | O_NONBLOCK) == -1) // hopefully this is equivalent to the line below
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
-		exit_with::e_perror("Cannot set non blocking");
+		exit_with::perror("Cannot set non blocking");
 	if (listen(fd, 128) < 0) // TODO: what should this number be? 128 is maximum
-		exit_with::e_perror("Cannot listen on port");
+		exit_with::perror("Cannot listen on port");
 
 	return fd;
 }

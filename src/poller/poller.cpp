@@ -40,7 +40,7 @@ void Poller::accept_clients(const Server& server) {
 		int				newfd = accept(server.fd, &address, &address_len);
 
 		if (newfd < 0 && errno != EWOULDBLOCK)
-			exit_with::e_perror("accept() failed");
+			exit_with::perror("accept() failed");
 		if (newfd < 0)
 			break;
 
@@ -60,14 +60,14 @@ void Poller::on_poll(pollfd pfd, Client& client) {
 
 		if (route.file_fd > 0) {
 			if (fcntl(route.file_fd, F_SETFL, O_NONBLOCK) == -1)
-				exit_with::e_perror("Cannot set non blocking 2");
+				exit_with::perror("Cannot set non blocking 2");
 #ifdef __APPLE__
 			off_t sent_len;
 			if (sendfile(route.file_fd, pfd.fd, 0, &sent_len, NULL, 0))
 #else
 			if (sendfile(pfd.fd, route.file_fd, NULL, 4096 * 1000))
 #endif
-				exit_with::e_perror("sendfile() failed");
+				exit_with::perror("sendfile() failed");
 
 			close(route.file_fd);
 		}
@@ -102,9 +102,9 @@ void Poller::start() {
 	while (true) {
 		int rc = poll(_pollfds.data(), _pollfds.size(), -1);
 		if (rc < 0)
-			exit_with::e_perror("poll() failed");
+			exit_with::perror("poll() failed");
 		if (rc == 0)
-			exit_with::e_perror("poll() timeout");
+			exit_with::perror("poll() timeout");
 		for (size_t i = 0; i < _pollfds.size(); i++) {
 			if (_pollfds[i].revents == 0)
 				continue;

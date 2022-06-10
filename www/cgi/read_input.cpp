@@ -4,7 +4,7 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-int	main(void) {
+int main(void) {
 	setvbuf(stdout, NULL, _IONBF, 0);
 
 	char buf[10000];

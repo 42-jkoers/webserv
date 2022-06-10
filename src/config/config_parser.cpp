@@ -45,7 +45,6 @@ void tokenizer(std::string option, std::map<const std::string, std::string>& con
 	config_info[option] = &line[pos_not];
 }
 
-// TODO: split
 void Config::_safe_info(std::string& line, std::vector<std::string>& options) {
 	std::map<const std::string, std::string> config_info;
 	std::vector<std::string>				 splitted_line = ft_split(line, "\t ");
@@ -92,7 +91,6 @@ void Config::_safe_info(std::string& line, std::vector<std::string>& options) {
 	exit_with::message("Config error: line " + std_ft::to_string(_line_count) + ": \"" + line + "\" invalid line");
 }
 
-// TODO: work with comments
 void Config::_config_parser(const std::string& config_file_path) {
 	std::ifstream			 config_file;
 	std::string				 buffer;
@@ -132,7 +130,7 @@ std::ostream& operator<<(std::ostream& stream, Config const& config) {
 			stream << "PORTS = " << config.servers[server].ports[j] << std::endl;
 		}
 		for (size_t k = 0; k < config.servers[server].ports.size(); k++) {
-			stream << "IP = " << config.servers[server].ips[k] << std::endl;
+			stream << "IPS = " << config.servers[server].ips[k] << std::endl;
 		}
 		for (size_t j = 0; j < config.servers[server].server_names.size(); j++) {
 			std::cout << "SERVER NAME = " << config.servers[server].server_names[j] << std::endl;
@@ -146,9 +144,10 @@ std::ostream& operator<<(std::ostream& stream, Config const& config) {
 			stream << "\nALL LOCATION INFO " << location << std::endl;
 			stream << "ROOT = " << config.servers[server].locations[location].root << std::endl;
 			stream << "PATH = " << config.servers[server].locations[location].path << std::endl;
-			for (size_t m = 0; m < config.servers[server].locations[location].allowed_methods.size(); m++) {
-				stream << "METHODS = " << config.servers[server].locations[location].allowed_methods[m] << std::endl;
+			for (size_t j = 0; j < config.servers[server].locations[location].indexes.size(); j++) {
+				stream << "INDEXES = " << config.servers[server].locations[location].indexes[j] << std::endl;
 			}
+			stream << "REDIRECTS = " << config.servers[server].locations[location].redirect.code << config.servers[server].locations[location].redirect.text << std::endl;
 			stream << "AUTOINDEX = " << config.servers[server].locations[location].auto_index << std::endl;
 			stream << "CGI = " << config.servers[server].locations[location].cgi_path.first << " | " << config.servers[server].locations[location].cgi_path.second << std::endl;
 			stream << "METHODS = ";

@@ -22,8 +22,6 @@ so it will be either:
 * config._server[x]._variable_name
 */
 
-// TODO: if empty give error
-// TODO: make directive for POST where to put all the files // upload_pass directive
 class Config {
   public:
 	Config(const std::string& config_file_path);
@@ -43,7 +41,7 @@ class Config {
 		Location();
 		~Location();
 
-		// READONLY // TODO: require all these to be defined in the block or set defaults
+		// READONLY
 		std::string							path;
 		std::vector<std::string>			indexes;		 // If empty is set to: index.html
 		std::vector<std::string>			allowed_methods; // If empty is set to: GET, POST, DELETE

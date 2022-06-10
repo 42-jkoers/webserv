@@ -83,8 +83,6 @@ void Config::_check_for_numeric_argument(std::vector<std::string>& listen_splitt
  if there is no ip the ip will be set to 127.0.0.1
  */
 
-// TODO: error when to many '.'
-// TODO: make all error messages the same, consistent
 void Config::_parse_listen(std::map<const std::string, std::string>& config_info) {
 	std::string listen = config_info["listen"];
 	size_t		check_dots = 0;
@@ -125,16 +123,13 @@ void Config::_parse_listen(std::map<const std::string, std::string>& config_info
 	if (listen_splitted.size() == 4)
 		port = 8080;
 	if (port < ntohs(32768) || port > ntohs(61000))
-		exit_with::message("Config error: line " + std_ft::to_string(_line_count) + ": invalid port");
-	// TODO: no duplicate port error when port is set with 127.0.0.1
+		exit_with::message(_error_return() + "invalid port");
 	for (size_t cmp_port : servers[servers.size() - 1].ports) {
 		if (cmp_port == port)
-			exit_with::message("Config error: line " + std_ft::to_string(_line_count) + ": duplicate port");
+			exit_with::message(_error_return() + "duplicate port");
 	}
 	servers[servers.size() - 1].ports.push_back(port);
 	servers[servers.size() - 1].ips.push_back(ip);
-	// std::cout << " ip = " << servers[servers.size() - 1].ips[servers[servers.size() - 1].ips.size() - 1] << " port = " << servers[servers.size() - 1].ports[servers[servers.size() - 1].ports.size() - 1] << std::endl;
-	// std::cout << servers[servers.size() - 1].ports.size() << " | " << servers[servers.size() - 1].ips.size() << std::endl;
 }
 
 // error pages are saved in a map structure so you can see what html file to use for what error code

@@ -1,6 +1,7 @@
 #include <iostream>
 
 int main(int argc, char* argv[], char* envp[]) {
+	(void)argc;
 	std::cout << "Content-type: text/plain\r\n\r\n"
 			  << std::endl;
 
@@ -16,5 +17,6 @@ int main(int argc, char* argv[], char* envp[]) {
 		std::cout << *p << std::endl;
 		p++;
 	}
+	std::cout << "\n==== END =====" << std::endl;
 	return 0;
 }

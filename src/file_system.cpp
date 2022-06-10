@@ -32,7 +32,7 @@ void mkdir(const std::string& path) {
 		if (path_exists(dir))
 			continue;
 		if (::mkdir(dir.c_str(), 0777))
-			exit_with::e_perror("mkdir");
+			exit_with::perror("mkdir");
 	}
 }
 

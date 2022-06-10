@@ -4,7 +4,7 @@
 	"configurations": [
 
 		{
-			"name": "osx x64",
+			"name": "osx cppdbg",
 			"type": "cppdbg",
 			"request": "launch",
 			"program": "${workspaceFolder}/webserv",
@@ -19,7 +19,7 @@
 			"preLaunchTask": "make"
 		},
 		{
-			"name": "osx arm64",
+			"name": "osx lldb",
 			"type": "lldb",
 			"request": "launch",
 			"program": "${workspaceFolder}/webserv",

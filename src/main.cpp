@@ -15,14 +15,20 @@
 
 Config			g_config;
 const Constants g_constants;
-//
 
+// usage: ./webserv [-t] [config_file.conf]
+// -t: test configuration and exit
+// if no config_file is specified, ./testing/default.conf is used
+//
+// steps:
+// parse config file
+// create server sockets and add to poll
+// start poll
 int main(int argc, char** argv) {
 	if (argc == 1 || (argc == 2 && !strcmp(argv[1], "-t"))) {
 		std::cout << "No conf file provided, using ./testing/default.conf" << std::endl;
 		g_config = Config("testing/default.conf");
-	} //
-	else if (argc == 2 && strcmp(argv[1], "-t"))
+	} else if (argc == 2 && strcmp(argv[1], "-t"))
 		g_config = Config(argv[1]);
 	else if (argc == 3 && !strcmp(argv[1], "-t"))
 		g_config = Config(argv[2]);

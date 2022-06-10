@@ -8,9 +8,11 @@ Client::Client(const std::string& ip, uint16_t port) {
 	request = Request(ip, port);
 }
 
-Client::Parse_status Client::parse_status() const { return _parse_status; }
+Client::Parse_status Client::parse_status() const {
+	return _parse_status;
+}
 
-void				 Client::on_pollevent(struct pollfd pfd) {
+void Client::on_pollevent(struct pollfd pfd) {
 	if (_parse_status == ERROR)
 		return;
 	if (request.response_code != 200) {

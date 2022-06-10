@@ -26,27 +26,30 @@ void Client::on_pollevent(struct pollfd pfd) {
 void Client::on_pollevent_read(struct pollfd pfd) {
 	request.set_fd(pfd.fd);
 
-	ssize_t		bytes_read;
 	static char buf[4096];
+	ssize_t		bytes_read = read(pfd.fd, buf, sizeof(buf));
 
-	while (true) {
-		bytes_read = read(pfd.fd, buf, sizeof(buf));
-		if (bytes_read == 0)
-			break;
-		if (bytes_read < 0)
-			return;
-		for (ssize_t i = 0; i < bytes_read; i++)
-			_buf_read.push_back(buf[i]);
-		_parse();
-		if (_parse_status == HEADER_DONE)
-			break;
-		if (_parse_status >= FINISHED)
-			return;
+	if (bytes_read < 0) {
+		_parse_status = ERROR;
+		return;
 	}
+	if (bytes_read == 0) {
+		_parse_status = _parse_status >= HEADER_DONE ? FINISHED : ERROR;
+		return;
+	}
+	for (ssize_t i = 0; i < bytes_read; i++)
+		_buf_read.push_back(buf[i]);
+	_parse();
+	if (_parse_status >= FINISHED)
+		return;
+
 	if (_parse_status == HEADER_DONE && // TODO
 		pfd.revents & POLLOUT) {
 		std::string resp = "HTTP/1.1 100 Continue\r\nHTTP/1.1 200 OK\r\n\r\n";
-		write(pfd.fd, resp.data(), resp.length());
+		if (write(pfd.fd, resp.data(), resp.length()) != (ssize_t)resp.length()) {
+			_parse_status = ERROR;
+			return;
+		}
 	}
 }
 

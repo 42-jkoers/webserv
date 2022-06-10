@@ -23,13 +23,15 @@ OBJ				= $(foreach src,$(SRC),$(BUILDDIR)/$(notdir $(src:.$(SRCEXT)=.$(OBJEXT)))
 
 SILECE_MAKE 	= | grep -v -E ".*Leaving directory|.*Entering directory"
 VPATH 			= $(shell find $(SRCDIR) -type d | tr '\n' ':' | sed -E 's/(.*):/\1/')
+CGI		 		= www/cgi
+
 .SUFFIXES:
 
 ifdef DEBUG
 CFLAGS += -fsanitize=address
 endif
 
-all: $(NAME) www/cgi/input
+all: $(NAME) cgi
 
 $(NAME): $(BUILDDIR)/ $(OBJ) $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) $(OBJ) $(LIBS) -o $(NAME) $(LINK)
@@ -37,9 +39,14 @@ $(NAME): $(BUILDDIR)/ $(OBJ) $(HEADERS)
 $(BUILDDIR)/%.$(OBJEXT): %.$(SRCEXT) $(HEADERS)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $(BUILDDIR)/$(notdir $@)
 
-www/cgi/input: www/cgi/input.c
-	gcc -Wall -Wextra www/cgi/input.c -o www/cgi/input
 
+cgi: $(CGI)/read_input $(CGI)/log_input
+
+$(CGI)/read_input: $(CGI)/read_input.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(CGI)/log_input: $(CGI)/log_input.cpp
+	$(CC) $(CFLAGS) -c $< -o $@
 # sources
 
 

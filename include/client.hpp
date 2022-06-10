@@ -30,7 +30,6 @@ class Client {
 
 	void		 on_pollevent(struct pollfd pfd);
 	void		 on_pollevent_read(struct pollfd pfd);
-	void		 on_pollevent_write(struct pollfd pfd);
 	Parse_status parse_status() const;
 	void		 reset();
 

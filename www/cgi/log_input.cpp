@@ -17,5 +17,6 @@ int main(int argc, char* argv[], char* envp[]) {
 		std::cout << *p << std::endl;
 		p++;
 	}
+	std::cout << "\n==== END =====" << std::endl;
 	return 0;
 }

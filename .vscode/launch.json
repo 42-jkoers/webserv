@@ -4,12 +4,12 @@
 	"configurations": [
 
 		{
-			"name": "osx x64",
+			"name": "osx cppdbg",
 			"type": "cppdbg",
 			"request": "launch",
 			"program": "${workspaceFolder}/webserv",
 			"args": [
-				"testing/config_file.conf"
+				"testing/default.conf"
 			],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}",
@@ -19,12 +19,12 @@
 			"preLaunchTask": "make"
 		},
 		{
-			"name": "osx arm64",
+			"name": "osx lldb",
 			"type": "lldb",
 			"request": "launch",
 			"program": "${workspaceFolder}/webserv",
 			"args": [
-				"testing/config_file.conf"
+				"testing/default.conf"
 			],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}",

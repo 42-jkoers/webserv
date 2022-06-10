@@ -8,13 +8,15 @@ Client::Client(const std::string& ip, uint16_t port) {
 	request = Request(ip, port);
 }
 
-Client::Parse_status Client::parse_status() const { return _parse_status; }
+Client::Parse_status Client::parse_status() const {
+	return _parse_status;
+}
 
-void				 Client::on_pollevent(struct pollfd pfd) {
+void Client::on_pollevent(struct pollfd pfd) {
 	if (_parse_status == ERROR)
 		return;
 	if (request.response_code != 200) {
-		_parse_status = ERROR;
+		_parse_status = FINISHED;
 		return;
 	}
 	if (pfd.revents & POLLIN)
@@ -24,27 +26,30 @@ void				 Client::on_pollevent(struct pollfd pfd) {
 void Client::on_pollevent_read(struct pollfd pfd) {
 	request.set_fd(pfd.fd);
 
-	ssize_t		bytes_read;
 	static char buf[4096];
+	ssize_t		bytes_read = read(pfd.fd, buf, sizeof(buf));
 
-	while (true) {
-		bytes_read = read(pfd.fd, buf, sizeof(buf));
-		if (bytes_read == 0)
-			break;
-		if (bytes_read < 0)
-			return;
-		for (ssize_t i = 0; i < bytes_read; i++)
-			_buf_read.push_back(buf[i]);
-		_parse();
-		if (_parse_status == HEADER_DONE)
-			break;
-		if (_parse_status >= FINISHED)
-			return;
+	if (bytes_read < 0) {
+		_parse_status = ERROR;
+		return;
 	}
+	if (bytes_read == 0) {
+		_parse_status = _parse_status >= HEADER_DONE ? FINISHED : ERROR;
+		return;
+	}
+	for (ssize_t i = 0; i < bytes_read; i++)
+		_buf_read.push_back(buf[i]);
+	_parse();
+	if (_parse_status >= FINISHED)
+		return;
+
 	if (_parse_status == HEADER_DONE && // TODO
 		pfd.revents & POLLOUT) {
 		std::string resp = "HTTP/1.1 100 Continue\r\nHTTP/1.1 200 OK\r\n\r\n";
-		write(pfd.fd, resp.data(), resp.length());
+		if (write(pfd.fd, resp.data(), resp.length()) != (ssize_t)resp.length()) {
+			_parse_status = ERROR;
+			return;
+		}
 	}
 }
 
@@ -90,7 +95,7 @@ void Client::_parse() {
 		request.parse_header(_buf_read.data());
 		_buf_read.erase(_buf_read.begin(), _buf_read.begin() + _buf_read.find("\r\n\r\n") + 4);
 		if (request.response_code != 200) {
-			_parse_status = ERROR;
+			_parse_status = FINISHED;
 			return;
 		}
 		if (!request_has_body(request)) {
@@ -110,7 +115,7 @@ void Client::_parse() {
 	_body_size += _buf_read.size();
 	if (_body_size > request.associated_server().client_max_body_size) {
 		request.response_code = 413;
-		_parse_status = ERROR;
+		_parse_status = FINISHED;
 		return;
 	}
 	if (_parse_status == READING_BODY_HEADER) {

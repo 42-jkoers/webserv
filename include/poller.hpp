@@ -16,7 +16,6 @@ struct pollfd		pollfd(int fd, short events);
 enum class Fd_type {
 	SERVER,
 	CLIENT,
-	RESPONSE,
 	CLOSED
 };
 
@@ -29,13 +28,6 @@ class Poller {
 
 		fd_t	 fd;
 		uint16_t port;
-	};
-
-	class Response {
-	  public:
-		Response() {}
-		Response(fd_t fd) : fd(fd) {}
-		fd_t fd;
 	};
 
 	Poller();
@@ -59,10 +51,11 @@ class Poller {
 		_fd_types[pfd.fd] = Fd_type::CLIENT;
 		_clients[pfd.fd] = client;
 	}
-	void add_fd(pollfd pfd, const Response& response) {
-		_pollfds.push_back(pfd);
-		_fd_types[pfd.fd] = Fd_type::RESPONSE;
-		_responses[pfd.fd] = response;
+	void close_fd(pollfd pfd) {
+		close(pfd.fd);
+		_clients.erase(pfd.fd);
+		_servers.erase(pfd.fd);
+		_fd_types[pfd.fd] = Fd_type::CLOSED;
 	}
 
 	std::vector<struct pollfd> _pollfds;
@@ -70,7 +63,6 @@ class Poller {
 	std::map<fd_t, Fd_type>	   _fd_types;
 	std::map<fd_t, Server>	   _servers;
 	std::map<fd_t, Client>	   _clients;
-	std::map<fd_t, Response>   _responses;
 
 	// disabled
 	Poller(const Poller& cp);

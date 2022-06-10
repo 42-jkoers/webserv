@@ -32,7 +32,7 @@ enum IP_mode {
 
 namespace exit_with {
 
-void e_perror(const std::string& msg);
+void perror(const std::string& msg);
 void e_errno(const std::string& msg);
 void message(const std::string& msg);
 

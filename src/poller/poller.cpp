@@ -56,28 +56,31 @@ void Poller::on_poll(pollfd pfd, Client& client) {
 	if (client.parse_status() < Client::Parse_status::FINISHED)
 		return;
 
-	if (client.parse_status() == Client::Parse_status::FINISHED) {
-		Route route = g_router.route(client);
-		write(pfd.fd, route.header.data(), route.header.size());
-
-		if (route.file_fd > 0) {
-			if (fcntl(route.file_fd, F_SETFL, O_NONBLOCK) == -1)
-				exit_with::perror("Cannot set non blocking 2");
-#ifdef __APPLE__
-			off_t sent_len;
-			if (sendfile(route.file_fd, pfd.fd, 0, &sent_len, NULL, 0))
-#else
-			if (sendfile(pfd.fd, route.file_fd, NULL, 4096 * 1000))
-#endif
-				exit_with::perror("sendfile() failed");
-
-			close(route.file_fd);
-		}
+	if (client.parse_status() == Client::Parse_status::ERROR) {
+		close_fd(pfd);
+		return;
 	}
 
-	close(pfd.fd);
-	_clients.erase(pfd.fd);
-	_fd_types[pfd.fd] = Fd_type::CLOSED;
+	Route route = g_router.route(client);
+	if (write(pfd.fd, route.header.data(), route.header.size()) != (ssize_t)route.header.size()) {
+		close_fd(pfd);
+		return;
+	}
+
+	if (route.file_fd > 0) {
+		if (fcntl(route.file_fd, F_SETFL, O_NONBLOCK) == -1)
+			exit_with::perror("Cannot set non blocking 2");
+#ifdef __APPLE__
+		off_t sent_len;
+		if (sendfile(route.file_fd, pfd.fd, 0, &sent_len, NULL, 0))
+#else
+		if (sendfile(pfd.fd, route.file_fd, NULL, 4096 * 1000))
+#endif
+			exit_with::perror("sendfile() failed");
+
+		close(route.file_fd);
+	}
+	close_fd(pfd);
 }
 
 void Poller::on_poll(pollfd pfd) {

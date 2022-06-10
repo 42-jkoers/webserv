@@ -16,7 +16,7 @@ void Client::on_pollevent(struct pollfd pfd) {
 	if (_parse_status == ERROR)
 		return;
 	if (request.response_code != 200) {
-		_parse_status = ERROR;
+		_parse_status = FINISHED;
 		return;
 	}
 	if (pfd.revents & POLLIN)
@@ -92,7 +92,7 @@ void Client::_parse() {
 		request.parse_header(_buf_read.data());
 		_buf_read.erase(_buf_read.begin(), _buf_read.begin() + _buf_read.find("\r\n\r\n") + 4);
 		if (request.response_code != 200) {
-			_parse_status = ERROR;
+			_parse_status = FINISHED;
 			return;
 		}
 		if (!request_has_body(request)) {
@@ -112,7 +112,7 @@ void Client::_parse() {
 	_body_size += _buf_read.size();
 	if (_body_size > request.associated_server().client_max_body_size) {
 		request.response_code = 413;
-		_parse_status = ERROR;
+		_parse_status = FINISHED;
 		return;
 	}
 	if (_parse_status == READING_BODY_HEADER) {

@@ -1,8 +1,8 @@
 #pragma once
 #include "main.hpp"
 #include "request.hpp"
+#include "route.hpp"
 #include "router.hpp"
-class Route;
 
 namespace Response {
 

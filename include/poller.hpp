@@ -3,6 +3,7 @@
 #include "main.hpp"
 #include "request.hpp"
 #include "response.hpp"
+#include "route.hpp"
 
 namespace constructors {
 
@@ -16,6 +17,7 @@ struct pollfd		pollfd(int fd, short events);
 enum class Fd_type {
 	SERVER,
 	CLIENT,
+	ROUTE,
 	CLOSED
 };
 
@@ -51,10 +53,17 @@ class Poller {
 		_fd_types[pfd.fd] = Fd_type::CLIENT;
 		_clients[pfd.fd] = client;
 	}
+	void add_fd(pollfd pfd, const Route& route) {
+		_pollfds.push_back(pfd);
+		_fd_types[pfd.fd] = Fd_type::ROUTE;
+		_routes[pfd.fd] = route;
+	}
+
 	void close_fd(pollfd pfd) {
 		close(pfd.fd);
 		_clients.erase(pfd.fd);
 		_servers.erase(pfd.fd);
+		_routes.erase(pfd.fd);
 		_fd_types[pfd.fd] = Fd_type::CLOSED;
 	}
 
@@ -63,6 +72,7 @@ class Poller {
 	std::map<fd_t, Fd_type>	   _fd_types;
 	std::map<fd_t, Server>	   _servers;
 	std::map<fd_t, Client>	   _clients;
+	std::map<fd_t, Route>	   _routes;
 
 	// disabled
 	Poller(const Poller& cp);

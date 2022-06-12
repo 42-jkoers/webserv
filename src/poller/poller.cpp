@@ -62,25 +62,13 @@ void Poller::on_poll(pollfd pfd, Client& client) {
 	}
 
 	Route route = g_router.route(client);
-	if (write(pfd.fd, route.header.data(), route.header.size()) != (ssize_t)route.header.size()) {
+	if (route.send(pfd.fd) != Route::Status::IN_PROGRESS) {
 		close_fd(pfd);
 		return;
 	}
-
-	if (route.file_fd > 0) {
-		if (fcntl(route.file_fd, F_SETFL, O_NONBLOCK) == -1)
-			exit_with::perror("Cannot set non blocking 2");
-#ifdef __APPLE__
-		off_t sent_len;
-		if (sendfile(route.file_fd, pfd.fd, 0, &sent_len, NULL, 0))
-#else
-		if (sendfile(pfd.fd, route.file_fd, NULL, 4096 * 1000))
-#endif
-			exit_with::perror("sendfile() failed");
-
-		close(route.file_fd);
-	}
-	close_fd(pfd);
+	std::cout << "retry later..." << std::endl;
+	_clients.erase(pfd.fd);
+	add_fd(pfd, route);
 }
 
 void Poller::on_poll(pollfd pfd) {
@@ -92,7 +80,10 @@ void Poller::on_poll(pollfd pfd) {
 	case Fd_type::CLIENT:
 		on_poll(pfd, _clients[pfd.fd]);
 		break;
-
+	case Fd_type::ROUTE:
+		if (_routes[pfd.fd].send(pfd.fd) != Route::Status::IN_PROGRESS)
+			close_fd(pfd);
+		break;
 	default:
 		break;
 	}
@@ -114,7 +105,7 @@ void Poller::start() {
 		std::vector<struct pollfd>::iterator valid = _pollfds.begin();
 		std::vector<struct pollfd>::iterator current = _pollfds.begin();
 		while (current != _pollfds.end()) {
-			if (_fd_types.at(current->fd) == Fd_type::CLOSED) {
+			if (_fd_types.find(current->fd) == _fd_types.end() || _fd_types.at(current->fd) == Fd_type::CLOSED) {
 				_fd_types.erase(current->fd);
 				++current;
 				continue;

@@ -35,6 +35,7 @@ runner curl -v localhost:8081/cgi/input --request POST --data $(head -c 1000 < /
 
 runner curl -v -X POST -F "upfile=@webserv" localhost:8081
 runner curl -v -H transfer-encoding:chunked -X POST -F "upfile=@webserv" -v localhost:8081
+runner curl -v -X DELETE localhost:8080/delete.txt
 # END TESTS
 
 pkill webserv

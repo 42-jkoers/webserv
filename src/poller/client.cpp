@@ -56,17 +56,31 @@ void Client::on_pollevent_read(struct pollfd pfd) {
 Client::Chunk_status Client::_append_chunk() {
 	size_t block_size;
 	size_t hex_len = parse_hex(block_size, _buf_read.data(), '\r');
-	assert(hex_len > 0); // if parse_hex is successful
-	hex_len += 2;		 // also include \r\n suffix
+	if (hex_len <= 0) {
+		request.response_code = 400;
+		return CS_ERROR;
+	}
+	hex_len += 2; // also include \r\n suffix
 	if (block_size == 0) {
 		_buf_read.clear(); // TODO: end values
 		return CS_NULL_BLOCK_REACHED;
 	}
 	if (block_size <= _buf_read.size() - hex_len) {
-		request.body.insert(request.body.end(), _buf_read.begin() + hex_len, _buf_read.begin() + hex_len + block_size);
+		size_t boundary = ~0;
+		if (request.field_contains("content-type", "boundary=")) {
+			boundary = _buf_read.find(request.field_multipart_boundary());
+			if (boundary != std::string::npos && boundary >= 8)
+				boundary -= 8;
+		}
+
+		request.body.insert(request.body.end(),
+							_buf_read.begin() + hex_len,
+							_buf_read.begin() + hex_len + std_ft::min(block_size, boundary));
 		_buf_read.erase(_buf_read.begin(), _buf_read.begin() + hex_len + block_size + 2); // also remove \r\n suffix
-	}
-	if (_buf_read.size())
+	} else
+		return CS_IN_PROGRESS;
+
+	if (_buf_read.size() && _buf_read.find("\r\n") != std::string::npos)
 		return _append_chunk();
 	return CS_IN_PROGRESS;
 }
@@ -132,14 +146,16 @@ void Client::_parse() {
 			request.parse_line(line, false);
 			start = end + 2;
 		}
-		_buf_read.erase(_buf_read.begin(), _buf_read.begin() + header_end + header_end_str.size());
+		_buf_read.erase(_buf_read.begin(), _buf_read.begin() + header_end + header_end_str.size() + 2);
 		_parse_status = READING_BODY;
 	}
 
+	if (_buf_read.size() == 0)
+		return;
+
 	if (_parse_status == READING_BODY && request.field_is("transfer-encoding", "chunked")) {
 		Chunk_status cs = _append_chunk();
-		assert(cs != CS_ERROR);
-		if (cs == CS_NULL_BLOCK_REACHED)
+		if (cs == CS_NULL_BLOCK_REACHED || cs == CS_ERROR)
 			_parse_status = FINISHED;
 		return;
 	}

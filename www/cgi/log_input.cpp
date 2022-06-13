@@ -3,7 +3,7 @@
 int main(int argc, char* argv[], char* envp[]) {
 	(void)argc;
 	std::cout << "Content-type: text/plain\r\n\r\n"
-			  << std::endl;
+			  << std::ends;
 
 	std::cout << "==== ARGV ====" << std::endl;
 	char** v = argv;

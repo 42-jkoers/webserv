@@ -53,10 +53,9 @@ fd_t server_socket(IP_mode ip_mode, const char* str_addr, uint16_t port) {
 	if (rc < 0)
 		exit_with::perror("Cannot bind to port");
 
-	// if (fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | O_NONBLOCK) == -1) // hopefully this is equivalent to the line below
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
 		exit_with::perror("Cannot set non blocking");
-	if (listen(fd, 128) < 0) // TODO: what should this number be? 128 is maximum
+	if (listen(fd, 128) < 0) // 128 is maximum backlog connections pending
 		exit_with::perror("Cannot listen on port");
 
 	return fd;

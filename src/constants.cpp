@@ -66,5 +66,5 @@ bool Constants::is_valid_method(const std::string& method) const {
 }
 
 std::string Constants::webserver_name() const {
-	return "webbysetserv/3.0";
+	return "webbysetserv/4.0";
 }

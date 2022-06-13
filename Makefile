@@ -43,10 +43,10 @@ $(BUILDDIR)/%.$(OBJEXT): %.$(SRCEXT) $(HEADERS)
 cgi: $(CGI)/read_input $(CGI)/log_input
 
 $(CGI)/read_input: $(CGI)/read_input.cpp
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $< -o $@
 
 $(CGI)/log_input: $(CGI)/log_input.cpp
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $< -o $@
 # sources
 
 

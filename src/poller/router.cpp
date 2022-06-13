@@ -82,11 +82,10 @@ bool method_allowed(const Request& request) {
 
 Route Router::_respond_with_error_code(const Request& request, const std::string& path, uint16_t error_code) {
 	const Config::Server&	server = request.associated_server();
-	const Config::Location& location = request.associated_location();
 
 	for (const std::pair<const size_t, std::string>& error_page : server.error_pages) {
 		if (error_page.first == error_code) {
-			std::string error_path = location.root + error_page.second;
+			std::string error_path = "www/html" + error_page.second;
 			if (!fs::path_exists(error_path))
 				return Response::error(error_path, 500);   // TODO: infinite redirect -> 500 internal server error?
 			return Response::file(error_path, error_code); // return file if file exists

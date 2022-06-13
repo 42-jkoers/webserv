@@ -66,7 +66,6 @@ void Poller::on_poll(pollfd pfd, Client& client) {
 		close_fd(pfd);
 		return;
 	}
-	std::cout << "retry later..." << std::endl;
 	_clients.erase(pfd.fd);
 	add_fd(pfd, route);
 }

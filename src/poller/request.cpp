@@ -12,7 +12,6 @@ Request::Request(const std::string& ip, uint16_t port) {
 	header_fields.clear();
 }
 
-// TODO: add absolute form checker: should start with http://, otherwise: bad request
 void Request::parse_header(const std::string& raw) {
 	_raw = raw;
 	if (_parse_request_line() == 1)
@@ -93,7 +92,7 @@ int Request::_parse_host() {
 		if (parse_int(it->second.port, it->second.values[0].substr(colon)) == 0)
 			return _set_response_code(400);
 	}
-	return 0; // TODO: not sure if correct server name is needed
+	return 0;
 }
 
 int Request::parse_line(const std::string& line, bool overwrite) {
@@ -134,14 +133,11 @@ int Request::parse_line(const std::string& line, bool overwrite) {
 A recipient that receives whitespace between the start-line and the first header field MUST either reject
 the message as invalid or consume each whitespace-preceded line without further processing of it
 
-TODO: starting with ws and obs-fold difference: maybe difference in key and value (p25)
-field values are parsed after whole header section has been processed
-
 header-field = field-name ":" OWS field-value OWS
 each header field name is case-insensitive
 ows = optional whitespaces = *(SP / HTAB)
 */
-int Request::_parse_header_fields() { // TODO: set return code and return in case of error
+int Request::_parse_header_fields() {
 	size_t		start;
 	size_t		end;
 	std::string line;
@@ -217,16 +213,16 @@ int Request::_parse_request_line() {
 		if (components[i] != "HTTP_version" && delimiter == end)
 			return _set_response_code(400);
 		if (delimiter - prev <= 0)
-			return _set_response_code(400); // TODO: if URI is empty -> error; but this should probably be checked later
+			return _set_response_code(400);
 		_request_line[components[i]] = _raw.substr(prev, delimiter - prev);
 		prev = delimiter + 1;
 	}
 	if (delimiter != end)
 		return _set_response_code(400);
-	if (!g_constants.is_valid_method(_request_line["method"])) // TODO: invalid request line, decide: 400 bad request/301 moved permanently
+	if (!g_constants.is_valid_method(_request_line["method"]))
 		return _set_response_code(400);
 	if (_request_line["HTTP_version"].compare("HTTP/1.1") != 0)
-		return _set_response_code(505); // TODO: generate representation why version is not supported & what is supported [RFC7231; 6.6.6]
+		return _set_response_code(505);
 	if (_parse_URI() == 1)
 		return 1;
 	return 0;

@@ -99,7 +99,6 @@ std::string redirect(const Request& request, uint32_t code, const std::string& m
 	return response;
 }
 
-// TODO: optimize
 std::string text(uint32_t code, const std::string& message) {
 	std::string response = header_template(code);
 	response += "\r\n";
@@ -118,7 +117,6 @@ std::vector<std::string> get_cgi_env(const Request& request, const std::string& 
 	env.push_back("SERVER_PROTOCOL=HTTP/1.1");
 	env.push_back("PATH_INFO=" + path::join("/" + request.associated_location().root, request.path));
 	env.push_back("SERVER_SOFTWARE=" + g_constants.webserver_name());
-	// if (request.method != "POST") // TODO: should this be here?
 	env.push_back("QUERY_STRING=" + request.query);
 	if (request.body.size())
 		env.push_back("CONTENT_LENGTH=" + std::to_string(request.body.size()));
@@ -145,8 +143,7 @@ void cgi(const Request& request, const std::string& path) {
 			path::absolute(path::join(request.associated_location().root, request.path)),
 			path::absolute(path::join(request.associated_location().root, request.path))};
 		if (cpp::execve(path, argv, envp)) {
-		} // TODO
-		// Response::text(500, "Could not start cgi script \"" + request.path + "\"");
+		}
 
 		close(pipe_in[0]);
 		close(pipe_in[1]);

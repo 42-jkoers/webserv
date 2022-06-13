@@ -158,7 +158,6 @@ void Config::_parse_error_page(std::map<const std::string, std::string>& config_
 	}
 }
 
-// TODO: check if there are not more
 void Config::_parse_client_max_body_size(std::map<const std::string, std::string>& config_info) {
 	if (_inside_location)
 		exit_with::message(_error_return() + "directive only allowed in server scope");

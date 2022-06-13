@@ -17,7 +17,7 @@ class Router {
 
   private:
 	// disabled
-	// Router(const Router& cp); // TODO
+	// Router(const Router& cp);
 	// Router& operator=(const Router& cp);
 	Route		_respond_with_error_code(const Request& request, const std::string& path, uint16_t error_code);
 	std::string _find_index(const Config::Location& location, std::string& path);

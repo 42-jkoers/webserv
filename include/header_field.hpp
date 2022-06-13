@@ -23,7 +23,7 @@ class Header_field {
 
   private:
 	// disabled
-	// Header_field(const Header_field& cp); // TODO
+	// Header_field(const Header_field& cp);
 	// Header_field& operator=(const Header_field& cp);
 };
 

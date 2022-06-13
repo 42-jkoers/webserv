@@ -43,7 +43,7 @@ void Client::on_pollevent_read(struct pollfd pfd) {
 	if (_parse_status >= FINISHED)
 		return;
 
-	if (_parse_status == HEADER_DONE && // TODO
+	if (_parse_status == HEADER_DONE &&
 		pfd.revents & POLLOUT) {
 		std::string resp = "HTTP/1.1 100 Continue\r\nHTTP/1.1 200 OK\r\n\r\n";
 		if (write(pfd.fd, resp.data(), resp.length()) != (ssize_t)resp.length()) {
@@ -62,7 +62,7 @@ Client::Chunk_status Client::_append_chunk() {
 	}
 	hex_len += 2; // also include \r\n suffix
 	if (block_size == 0) {
-		_buf_read.clear(); // TODO: end values
+		_buf_read.clear();
 		return CS_NULL_BLOCK_REACHED;
 	}
 	if (block_size <= _buf_read.size() - hex_len) {

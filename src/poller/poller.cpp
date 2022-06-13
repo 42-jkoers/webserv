@@ -115,4 +115,4 @@ void Poller::start() {
 	}
 }
 
-Poller::~Poller() {} // TODO: close fds etc.
+Poller::~Poller() {}

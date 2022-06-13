@@ -81,13 +81,13 @@ bool method_allowed(const Request& request) {
 }
 
 Route Router::_respond_with_error_code(const Request& request, const std::string& path, uint16_t error_code) {
-	const Config::Server&	server = request.associated_server();
+	const Config::Server& server = request.associated_server();
 
 	for (const std::pair<const size_t, std::string>& error_page : server.error_pages) {
 		if (error_page.first == error_code) {
 			std::string error_path = "www/html" + error_page.second;
 			if (!fs::path_exists(error_path))
-				return Response::error(error_path, 500);   // TODO: infinite redirect -> 500 internal server error?
+				return Response::error(error_path, 500);
 			return Response::file(error_path, error_code); // return file if file exists
 		}
 	}
@@ -102,7 +102,6 @@ Route Router::_respond_redirect(const Request& request) {
 	// other codes:
 	// you optionally define a text string which appears in the body of the response (and not the header)
 	// return (1xx | 2xx | 4xx | 5xx) ["text"];
-	// TODO: check if redirection works!!!
 	const Config::Location& location = request.associated_location();
 
 	if (location.redirect.code == 304)
@@ -151,15 +150,9 @@ Route Router::_dir_list(Request& request, const std::string& path) {
 }
 
 Route Router::_route_cgi(Request& request, std::string& path) {
-	// parse http://example.com/cgi-bin/printenv.pl/with/additional/path?and=a&query=string to:
-	// request.uri     : "/cgi-bin/printenv.pl/with/additional/path"
-	// exectutable_path: "/cgi-bin/printenv.pl"
-	// path_info	   : "/with/additional/path" // TODO: not implemented
-	// request.query   : "and=a&query=string"
-
 	if (!fs::path_exists(path))
 		return _respond_with_error_code(request, path, 404);
-	Response::cgi(request, path); // todo should we read the cgi executable from the config?
+	Response::cgi(request, path);
 	return Route("");
 }
 

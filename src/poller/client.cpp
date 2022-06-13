@@ -54,6 +54,10 @@ void Client::on_pollevent_read(struct pollfd pfd) {
 }
 
 Client::Chunk_status Client::_append_chunk() {
+	if (_buf_read == "\r\n" && request.body.size() == 0) {
+		_buf_read.clear();
+		return CS_IN_PROGRESS;
+	}
 	size_t block_size;
 	size_t hex_len = parse_hex(block_size, _buf_read.data(), '\r');
 	if (hex_len <= 0) {
@@ -84,9 +88,6 @@ Client::Chunk_status Client::_append_chunk() {
 		return _append_chunk();
 	return CS_IN_PROGRESS;
 }
-
-// void write_body_to_file(const std::string& root, const std::vector<char>& data) {
-// }
 
 bool request_has_body(const Request& request) {
 	if (request.field_exists("content-length"))
@@ -146,7 +147,7 @@ void Client::_parse() {
 			request.parse_line(line, false);
 			start = end + 2;
 		}
-		_buf_read.erase(_buf_read.begin(), _buf_read.begin() + header_end + header_end_str.size() + 2);
+		_buf_read.erase(_buf_read.begin(), _buf_read.begin() + header_end + header_end_str.size());
 		_parse_status = READING_BODY;
 	}
 

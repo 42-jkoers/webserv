@@ -58,6 +58,8 @@ endif
 fclean: | clean
 	/bin/rm -f $(NAME)
 	/bin/rm -f www/cgi/input
+	/bin/rm -f $(CGI)/read_input
+	/bin/rm -f $(CGI)/log_input
 
 re: | fclean all
 
